@@ -8,11 +8,11 @@
     <link rel="shortcut icon" href="https://dailyscape.github.io/img/dailyscape.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <link rel="stylesheet" href="dailyscape.css?v=21">
+    <link rel="stylesheet" href="dailyscape.css?v=23">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <script src="/rsdata/rsdata.js"></script>
-    <script src="dailyscape.js?v=33"></script>
+    <script src="dailyscape.js?v=35"></script>
 
     <meta name="title" content="DailyScape">
     <meta name="description" content="RS3 Dailies, Weeklies, Monthlies Task Checklist for RuneScape. Money making guides linked to the wiki to provide further detail.">
@@ -50,6 +50,9 @@
                 </li>
                 <li class="nav-item">
                     <a href="#weeklies" class="nav-link" id="rs3weekly_nav">Weeklies</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#weekly-gathering" class="nav-link" id="rs3weeklyshops_nav">Weekly Gathering</a>
                 </li>
                 <li class="nav-item">
                     <a href="#monthlies" class="nav-link" id="rs3monthly_nav">Monthlies</a>
@@ -106,6 +109,24 @@
                         </form>
                     </div>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link expanding_button" href="#" id="settings-button" title="Settings">⚙<span class="expanding_text">&nbsp;Settings</span></a>
+                    <div id="settings-control" style="display:none; visibility: hidden;" data-display="none">
+                        <strong>Settings</strong>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="setting-split-daily-tables" checked>
+                            <label class="form-check-label" for="setting-split-daily-tables">
+                                Split Dailies and Daily Gathering
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="setting-split-weekly-tables">
+                            <label class="form-check-label" for="setting-split-weekly-tables">
+                                Split Weeklies and Weekly Gathering
+                            </label>
+                        </div>
+                    </div>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link expanding_button" href="#" id="layout-button" title="Toggle Layout">⊟ <span class="expanding_text"> Compact Mode</span></a>
                 </li>
@@ -124,8 +145,10 @@
                 <tr>
                     <th>Dailies <span id="countdown-rs3daily" class="countdown"></span></th>
                     <td>
+                        <span id="rs3daily_totalprofit"></span>
                         <span class="text-nowrap">
                             <button id="rs3daily_reset_button" class="reset_button expanding_button btn btn-secondary btn-sm active" title="Reset hiding and order to default">↺<span class="expanding_text">Reset</span></button>
+                            <button id="rs3daily_show_hidden_button" class="show_hidden_button expanding_button btn btn-secondary btn-sm active" title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
                             <button id="rs3daily_hide_button" class="hide_button expanding_button btn btn-secondary btn-sm active" title="Hide section">▲<span class="expanding_text">Hide</span></button>
                             <button id="rs3daily_unhide_button" class="unhide_button expanding_button btn btn-secondary btn-sm active" title="Unhide Section">▼<span class="expanding_text">Unhide</span></button>
                         </span>
@@ -146,6 +169,7 @@
                         <span class="text-nowrap">
                             <button id="rs3dailyshops_reset_button" class="reset_button expanding_button btn btn-secondary btn-sm active" title="Reset hiding and order to default">↺<span class="expanding_text">Reset</span></button>
                             <button id="rs3dailyshops_sort_button" class="sort_button expanding_button btn btn-secondary btn-sm active" title="Sort by profit/alpha/default">⇅<span class="expanding_text">Sort</span></button>
+                            <button id="rs3dailyshops_show_hidden_button" class="show_hidden_button expanding_button btn btn-secondary btn-sm active" title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
                             <button id="rs3dailyshops_hide_button" class="hide_button expanding_button btn btn-secondary btn-sm active" title="Hide section">▲<span class="expanding_text">Hide</span></button>
                             <button id="rs3dailyshops_unhide_button" class="unhide_button expanding_button btn btn-secondary btn-sm active" title="Unhide Section">▼<span class="expanding_text">Unhide</span></button>
                         </span>
@@ -162,10 +186,33 @@
                 <tr>
                     <th>Weeklies <span id="countdown-rs3weekly" class="countdown"></span></th>
                     <td>
+                        <span id="rs3weekly_totalprofit"></span>
                         <span class="text-nowrap">
                             <button id="rs3weekly_reset_button" class="reset_button expanding_button btn btn-secondary btn-sm active" title="Reset hiding and order to default">↺<span class="expanding_text">Reset</span></button>
+                            <button id="rs3weekly_show_hidden_button" class="show_hidden_button expanding_button btn btn-secondary btn-sm active" title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
                             <button id="rs3weekly_hide_button" class="hide_button expanding_button btn btn-secondary btn-sm active" title="Hide section">▲<span class="expanding_text">Hide</span></button>
                             <button id="rs3weekly_unhide_button" class="unhide_button expanding_button btn btn-secondary btn-sm active" title="Unhide Section">▼<span class="expanding_text">Unhide</span></button>
+                        </span>
+                    </td>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="weekly-gathering" class="table_container rs3weeklyshops_table">
+        <table id="rs3weeklyshops_table" class="activity_table table table-dark table-striped table-hover" data-timeframe="rs3weeklyshops" data-sort="default">
+            <thead>
+                <tr>
+                    <th>Weekly Gathering <span id="countdown-rs3weeklyshops" class="countdown"></span></th>
+                    <td>
+                        <span id="rs3weeklyshops_totalprofit"></span>
+                        <span class="text-nowrap">
+                            <button id="rs3weeklyshops_reset_button" class="reset_button expanding_button btn btn-secondary btn-sm active" title="Reset hiding and order to default">↺<span class="expanding_text">Reset</span></button>
+                            <button id="rs3weeklyshops_sort_button" class="sort_button expanding_button btn btn-secondary btn-sm active" title="Sort by profit/alpha/default">⇅<span class="expanding_text">Sort</span></button>
+                            <button id="rs3weeklyshops_show_hidden_button" class="show_hidden_button expanding_button btn btn-secondary btn-sm active" title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                            <button id="rs3weeklyshops_hide_button" class="hide_button expanding_button btn btn-secondary btn-sm active" title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                            <button id="rs3weeklyshops_unhide_button" class="unhide_button expanding_button btn btn-secondary btn-sm active" title="Unhide Section">▼<span class="expanding_text">Unhide</span></button>
                         </span>
                     </td>
                 </tr>
@@ -182,6 +229,7 @@
                     <td>
                         <span class="text-nowrap">
                             <button id="rs3monthly_reset_button" class="reset_button expanding_button btn btn-secondary btn-sm active" title="Reset hiding and order to default">↺<span class="expanding_text">Reset</span></button>
+                            <button id="rs3monthly_show_hidden_button" class="show_hidden_button expanding_button btn btn-secondary btn-sm active" title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
                             <button id="rs3monthly_hide_button" class="hide_button expanding_button btn btn-secondary btn-sm active" title="Hide section">▲<span class="expanding_text">Hide</span></button>
                             <button id="rs3monthly_unhide_button" class="unhide_button expanding_button btn btn-secondary btn-sm active" title="Unhide Section">▼<span class="expanding_text">Unhide</span></button>
                         </span>
@@ -195,7 +243,7 @@
 
 <template id="sample_row">
     <tr draggable="true">
-        <td class="activity_name" draggable="false"><a target="_blank" rel="noopener noreferrer" draggable="false">Name</a><button class="hide-button expanding_button btn btn-danger btn-sm active">⊘<span class="expanding_text">Hide</span></button></td>
+        <td class="activity_name" draggable="false"><a target="_blank" rel="noopener noreferrer" draggable="false">Name</a><button class="hide-button btn btn-danger btn-sm active" title="Hide row">⊘</button></td>
         <td class="activity_color"><span class="activity_check_off">☐</span><span class="activity_check_on">☑</span><span class="activity_desc">&nbsp;</span></td>
     </tr>
 </template>

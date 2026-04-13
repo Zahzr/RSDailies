@@ -20,25 +20,57 @@
 
 ## Dev setup / How to contribute
 
-```
-# fork this rep and replace with your repo URL
+This project is a static site. There is no build step, but local development does depend on the generated data files from the [`rsdata`](https://github.com/dailyscape/rsdata) repository.
+
+### Requirements
+
+* `git`
+* `python3`
+* `make` (optional convenience wrapper)
+
+### Local setup
+
+```bash
+# fork this repo and replace with your repo URL
 git clone https://github.com/dailyscape/dailyscape.github.io.git
+cd dailyscape.github.io
 
-# setup data import locally
-cd ..
-git clone https://github.com/dailyscape/rsdata.git
+# clone the data repository inside this checkout
+git clone https://github.com/dailyscape/rsdata.git rsdata
+
+# generate the data files the site expects
 cd rsdata
-pip install requests
-python ./.github/scripts/rsapidata.py
-python ./.github/scripts/rselydata.py
-cd ../dailyscape.github.io
-ln -s rsdata ../rsdata
+python3 -m pip install requests
+python3 ./.github/scripts/rsapidata.py
+python3 ./.github/scripts/rselydata.py
 
-# run a local test server
-python -m http.server
-
-# commit to your fork and make a PR to this repo!
+# verify everything is present
+cd ..
+./scripts/setup-local.sh
 ```
+
+### Run locally
+
+```bash
+./scripts/dev-local.sh
+```
+
+Then open `http://127.0.0.1:8000/`.
+
+If your `rsdata` checkout lives somewhere else, point the setup script at it explicitly:
+
+```bash
+./scripts/setup-local.sh /absolute/path/to/rsdata
+```
+
+If you prefer `make`, the repo also includes:
+
+```bash
+make setup-local
+make serve
+```
+
+After that, commit to your fork and open a PR.
 
 ## Requests
 

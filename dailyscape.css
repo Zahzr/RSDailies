@@ -59,6 +59,21 @@ body {
     z-index: 100;
 }
 
+#settings-control {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+    right: 0;
+    min-width: 265px;
+    background: #333;
+    padding: 8px;
+    z-index: 100;
+}
+
+#settings-control .form-check {
+    margin-top: 8px;
+}
+
 #profile-list {
     margin: 0 0 7px 0;
     padding: 0;
@@ -71,6 +86,7 @@ body {
 }
 
 #profile-button span.expanding_text,
+#settings-button span.expanding_text,
 #layout-button span.expanding_text,
 #token-button span.expanding_text {
     font-size: 1rem;
@@ -113,8 +129,30 @@ div.table_container[data-hide="hide"] table tbody {
     max-width: 7rem;
 }
 
+/* Keep header control buttons stable; use title tooltips for labels instead of expanding width */
+.activity_table thead .expanding_button span.expanding_text {
+    display: none;
+}
+
+.activity_table thead .expanding_button:hover span {
+    max-width: 0;
+}
+
+/* Keep header control buttons from retaining focus/active ring visuals after click */
+.activity_table thead .btn:focus,
+.activity_table thead .btn:focus-visible,
+.activity_table thead .btn:active,
+.activity_table thead .btn.active:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 div.table_container .unhide_button {
     display: inline-block;
+}
+
+div.table_container .show_hidden_button {
+    display: none;
 }
 
 div.table_container .unhide_button {
@@ -149,6 +187,14 @@ div.table_container[data-hide="hide"] .unhide_button {
     position: relative;
 }
 
+.activity_table td.activity_name::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
 .activity_table td.activity_name a,
 .activity_table td.activity_name a:active,
 .activity_table td.activity_name a:link,
@@ -160,9 +206,10 @@ div.table_container[data-hide="hide"] .unhide_button {
     left: 0;
     height: 100%;
     width: 100%;
-    padding: 1rem;
+    padding: 1rem 4.25rem 1rem 1rem;
     line-height: 1rem;
     text-decoration: none;
+    z-index: 1;
 }
 
 .activity_table td.activity_name a:hover {
@@ -199,9 +246,11 @@ div.table_container[data-hide="hide"] .unhide_button {
 
 .activity_table td.activity_name button.hide-button {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
     display: none;
+    z-index: 120;
 }
 
 .activity_table tbody tr:hover td.activity_name button.hide-button {
@@ -220,14 +269,45 @@ div.table_container[data-hide="hide"] .unhide_button {
     color: #4083ca;
 }
 
-.activity_table tr[data-completed="hide"] {
+div.table_container:not([data-show-hidden="true"]) .activity_table tr[data-completed="hide"] {
     display: none;
     visibility: hidden;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_color {
+    background-color: #4a3a08;
+    box-shadow: inset 0 0 0 9999px #4a3a08;
+    cursor: not-allowed;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr:hover[data-completed="hide"] .activity_color {
+    background-color: #382c06;
+    box-shadow: inset 0 0 0 9999px #382c06;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_check_off {
+    display: inline-block;
+    visibility: visible;
+    opacity: 0.55;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_check_on {
+    display: none;
+    visibility: hidden;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_desc,
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_name a {
+    opacity: 0.8;
 }
 
 .activity_table tr[data-completed="true"] .activity_color {
     background-color: #163600;
     box-shadow: inset 0 0 0 9999px #163600;
+}
+
+.activity_table tr[data-completed="true"] td.activity_name::before {
+    background: linear-gradient(0deg, rgba(40, 130, 73, 0.18), rgba(40, 130, 73, 0.18));
 }
 
 .activity_table tr[data-completed="true"] .activity_color .activity_check_off {
@@ -243,6 +323,10 @@ div.table_container[data-hide="hide"] .unhide_button {
 .activity_table tr:hover[data-completed="true"] .activity_color {
     background-color: #102700;
     box-shadow: inset 0 0 0 9999px #102700;
+}
+
+.activity_table tr:hover[data-completed="true"] td.activity_name::before {
+    background: linear-gradient(0deg, rgba(40, 130, 73, 0.25), rgba(40, 130, 73, 0.25));
 }
 
 .activity_table tr[data-completed="false"] .activity_color {
@@ -278,10 +362,6 @@ div.table_container[data-hide="hide"] .unhide_button {
 
 .compact .activity_table td {
     border: none;
-}
-
-.compact .activity_table tbody tr[data-completed="hide"] {
-    display: none;
 }
 
 .compact .activity_table th,
@@ -321,8 +401,14 @@ div.table_container[data-hide="hide"] .unhide_button {
 
 .compact .activity_table td.activity_color .item_profit {
     position: absolute;
-    right: 5px;
-    z-index: 100;
+    right: 6px;
+    z-index: 50;
+    pointer-events: none;
+    transition: right 0.15s ease;
+}
+
+.compact .activity_table tbody tr:hover td.activity_color .item_profit {
+    right: 50px;
 }
 
 .compact .activity_table td.activity_color .item_profit .item_profit_label {
@@ -331,14 +417,30 @@ div.table_container[data-hide="hide"] .unhide_button {
 }
 
 .compact .activity_table td.activity_name button.hide-button {
-    /* left: 10px; */
-    position: relative;
-    top: auto;
-    right: auto;
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
 }
 
 .compact #rs3dailyshops_totalprofit {
     float:none;
+}
+
+.compact #rs3weeklyshops_totalprofit {
+    float:none;
+}
+
+#rs3daily_totalprofit {
+    float: left;
+    white-space: nowrap;
+    display: none;
+}
+
+#rs3weekly_totalprofit {
+    float: left;
+    white-space: nowrap;
+    display: none;
 }
 
 #tooltip {
@@ -364,6 +466,35 @@ div.table_container[data-hide="hide"] .unhide_button {
 #rs3dailyshops_totalprofit {
     float: left;
     white-space: nowrap;
+}
+
+#rs3weeklyshops_totalprofit {
+    float: left;
+    white-space: nowrap;
+}
+
+.combine-daily-sections #rs3dailyshops_nav {
+    display: none;
+}
+
+.combine-daily-sections #gathering {
+    display: none;
+}
+
+.combine-daily-sections #rs3daily_totalprofit {
+    display: inline-block;
+}
+
+.combine-weekly-sections #rs3weeklyshops_nav {
+    display: none;
+}
+
+.combine-weekly-sections #weekly-gathering {
+    display: none;
+}
+
+.combine-weekly-sections #rs3weekly_totalprofit {
+    display: inline-block;
 }
 
 .coin {
@@ -439,7 +570,13 @@ footer a img {
         left: 0;
     }
 
+    #settings-control {
+        right: auto;
+        left: 0;
+    }
+
     #profile-button,
+    #settings-button,
     #layout-button {
         padding: 10px;
     }
