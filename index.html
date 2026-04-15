@@ -37,25 +37,6 @@
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a href="#custom-tasks" class="nav-link" id="custom_nav">Custom Tasks</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#farming" class="nav-link" id="rs3farming_nav">Farming</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#dailies" class="nav-link" id="rs3daily_nav">Dailies</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#gathering" class="nav-link" id="gathering_nav">Gathering</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#weeklies" class="nav-link" id="rs3weekly_nav">Weeklies</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#monthlies" class="nav-link" id="rs3monthly_nav">Monthlies</a>
-                    </li>
-
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -86,10 +67,13 @@
 
                 <ul class="navbar-nav nav-pills ms-auto nav-right">
                     <li class="nav-item">
-                        <a class="nav-link expanding_button" href="#overview-panel" id="overview-button"
-                            title="Overview">
-                            ☰<span class="expanding_text">&nbsp;Overview</span>
+                        <a class="nav-link expanding_button" href="#" id="views-button" title="Views">
+                            ☰<span class="expanding_text">&nbsp;Views</span>
                         </a>
+                        <div id="views-control" style="display:none; visibility:hidden;" data-display="none">
+                            <strong>Views</strong>
+                            <ul id="views-list"></ul>
+                        </div>
                     </li>
 
                     <li class="nav-item dropdown">
@@ -191,11 +175,6 @@
         <div id="overview-panel" class="overview_panel" data-view="all">
             <div class="overview_header">
                 <div class="overview_title">Overview</div>
-                <div class="overview_actions">
-                    <button id="view-overview-button" type="button"
-                        class="btn btn-secondary btn-sm active">Overview</button>
-                    <button id="view-all-button" type="button" class="btn btn-secondary btn-sm active">All</button>
-                </div>
             </div>
             <div id="overview-content" class="overview_content">
                 <div class="overview_empty">Overview mode will be wired next.</div>
@@ -392,6 +371,8 @@
         <tr draggable="true">
             <td class="activity_name" draggable="false">
                 <a target="_blank" rel="noopener noreferrer" draggable="false">Name</a>
+                <button type="button" class="pin-button btn btn-secondary btn-sm active" title="Pin to Overview"
+                    aria-label="Pin to Overview">☆</button>
                 <button class="hide-button btn btn-danger btn-sm active" title="Hide row">⊘</button>
             </td>
             <td class="activity_color">

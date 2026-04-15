@@ -260,12 +260,34 @@ function saveCooldowns(data) {
   save('cooldowns', data);
 }
 
-function getViewMode() {
-  return load('viewMode', 'all');
+const PAGE_MODES = ['overview', 'all', 'custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'];
+
+function migrateLegacyViewModeToPageMode() {
+  const existing = load('pageMode', null);
+  if (typeof existing === 'string' && PAGE_MODES.includes(existing)) return;
+
+  const legacy = load('viewMode', null);
+  save('pageMode', legacy === 'overview' ? 'overview' : 'all');
 }
 
-function setViewMode(mode) {
-  save('viewMode', mode === 'overview' ? 'overview' : 'all');
+function getPageMode() {
+  const mode = load('pageMode', null);
+  if (typeof mode === 'string' && PAGE_MODES.includes(mode)) return mode;
+
+  const legacy = load('viewMode', 'all');
+  return legacy === 'overview' ? 'overview' : 'all';
+}
+
+function setPageMode(mode) {
+  save('pageMode', PAGE_MODES.includes(mode) ? mode : 'all');
+}
+
+function getOverviewPins() {
+  return load('overviewPins', {});
+}
+
+function saveOverviewPins(pins) {
+  save('overviewPins', pins);
 }
 
 /* -----------------------------
@@ -871,6 +893,7 @@ function createBaseRow(sectionKey, task, options = {}) {
 
   const nameCell = row.querySelector('.activity_name');
   const nameLink = nameCell.querySelector('a');
+  const pinBtn = nameCell.querySelector('.pin-button');
   const hideBtn = nameCell.querySelector('.hide-button');
   const colorCell = row.querySelector('.activity_color');
   const desc = row.querySelector('.activity_desc');
@@ -907,6 +930,31 @@ function createBaseRow(sectionKey, task, options = {}) {
 
   const actions = createInlineActions(task, isCustom);
   if (actions) desc.appendChild(actions);
+
+  if (pinBtn) {
+    const pinId = taskId.includes('::') ? taskId : `${sectionKey}::${taskId}`;
+    const pins = getOverviewPins();
+    const pinned = !!pins[pinId];
+
+    pinBtn.textContent = pinned ? '★' : '☆';
+    pinBtn.title = pinned ? 'Unpin from Overview' : 'Pin to Overview';
+    pinBtn.setAttribute('aria-label', pinBtn.title);
+
+    pinBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const nextPins = { ...getOverviewPins() };
+      if (nextPins[pinId]) {
+        delete nextPins[pinId];
+      } else {
+        nextPins[pinId] = true;
+      }
+
+      saveOverviewPins(nextPins);
+      renderApp();
+    });
+  }
 
   hideBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1301,74 +1349,235 @@ function renderStandardSection(sectionKey, tasks) {
    Overview
 ----------------------------- */
 
-function collectOverviewItems() {
-  return [];
+function sectionLabel(sectionKey) {
+  return {
+    custom: 'Custom Tasks',
+    rs3daily: 'Dailies',
+    gathering: 'Gathering',
+    rs3weekly: 'Weeklies',
+    rs3monthly: 'Monthlies',
+    rs3farming: 'Farming'
+  }[sectionKey] || sectionKey;
 }
 
-function renderOverviewPanel() {
-  const panel = document.getElementById('overview-panel');
-  const content = document.getElementById('overview-content');
-  const tables = document.querySelector('.activity_tables');
-  const mode = getViewMode();
+function formatOverviewCountdown(kind, targetMs) {
+  const diff = targetMs - Date.now();
+  if (diff <= 0) return kind === 'ready' ? 'Ready now' : 'Due now';
 
-  if (!panel || !content || !tables) return;
+  const label = kind === 'reset' ? 'Resets in' : (kind === 'ready' ? 'Ready in' : 'Due in');
+  return `${label} ${formatDurationMs(diff)}`;
+}
+
+function collectOverviewItems(sections) {
+  const pins = getOverviewPins();
+  const pinnedIds = Object.entries(pins)
+    .filter(([, on]) => !!on)
+    .map(([id]) => id);
+
+  if (!pinnedIds.length) return [];
+
+  const pinnedSet = new Set(pinnedIds);
+  const cooldowns = getCooldowns();
+
+  const now = Date.now();
+  const results = [];
+
+  [
+    ['custom', sections.custom],
+    ['rs3daily', sections.rs3daily],
+    ['gathering', sections.gathering],
+    ['rs3weekly', sections.rs3weekly],
+    ['rs3monthly', sections.rs3monthly]
+  ].forEach(([sectionKey, tasks]) => {
+    const list = Array.isArray(tasks) ? tasks : [];
+    const state = getSectionState(sectionKey);
+
+    list.forEach((task) => {
+      const taskId = task?.id;
+      if (!taskId) return;
+
+      const pinId = `${sectionKey}::${taskId}`;
+      if (!pinnedSet.has(pinId)) return;
+
+      if (state.hiddenRows[taskId]) return; // Hide wins everywhere
+
+      const cooldown = cooldowns[taskId];
+      if (cooldown && cooldown.readyAt > now) {
+        results.push({
+          id: pinId,
+          sectionKey,
+          title: task.name,
+          note: task.note || '',
+          kind: 'ready',
+          nextActionAtMs: cooldown.readyAt,
+          actionable: false
+        });
+        return;
+      }
+
+      const completed = !!state.completed[taskId];
+      if (completed && !task.reset) return;
+
+      const nextActionAtMs = completed
+        ? getTaskNextReset(task).getTime()
+        : (task.reset ? getTaskAlertTarget(task).getTime() : now);
+
+      results.push({
+        id: pinId,
+        sectionKey,
+        title: task.name,
+        note: task.note || '',
+        kind: completed ? 'reset' : 'due',
+        nextActionAtMs,
+        actionable: !completed
+      });
+    });
+  });
+
+  results.sort((a, b) => {
+    if (a.nextActionAtMs !== b.nextActionAtMs) return a.nextActionAtMs - b.nextActionAtMs;
+    if (a.actionable !== b.actionable) return a.actionable ? -1 : 1;
+    return String(a.title).localeCompare(String(b.title));
+  });
+
+  return results.slice(0, 5);
+}
+
+function applyPageModeVisibility(mode) {
+  const panel = document.getElementById('overview-panel');
+  const tables = document.querySelector('.activity_tables');
+
+  if (!panel || !tables) return;
 
   panel.dataset.view = mode;
-  content.innerHTML = '';
-
-  const items = collectOverviewItems();
 
   if (mode === 'overview') {
     tables.style.display = 'none';
-
-    const empty = document.createElement('div');
-    empty.className = 'overview_empty';
-    empty.textContent = items.length
-      ? 'Overview items will appear here.'
-      : 'Nothing has been added to Overview yet.';
-    content.appendChild(empty);
-
     return;
   }
 
   tables.style.display = '';
-  const empty = document.createElement('div');
-  empty.className = 'overview_empty';
-  empty.textContent = 'Nothing has been added to Overview yet.';
-  content.appendChild(empty);
+
+  const modeToSectionKey = {
+    custom: 'custom',
+    rs3farming: 'rs3farming',
+    rs3daily: 'rs3daily',
+    gathering: 'gathering',
+    rs3weekly: 'rs3weekly',
+    rs3monthly: 'rs3monthly'
+  };
+
+  const activeSectionKey = modeToSectionKey[mode] || null;
+
+  ['custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'].forEach((sectionKey) => {
+    const container = document.getElementById(getContainerId(sectionKey));
+    if (!container) return;
+
+    const visible = mode === 'all' || !activeSectionKey || activeSectionKey === sectionKey;
+    container.style.display = visible ? '' : 'none';
+  });
 }
 
-function setupOverviewControls() {
-  const overviewBtn = document.getElementById('view-overview-button');
-  const allBtn = document.getElementById('view-all-button');
-  const topOverviewLink = document.getElementById('overview-button');
+function renderOverviewPanel(sections) {
+  const panel = document.getElementById('overview-panel');
+  const content = document.getElementById('overview-content');
+  const mode = getPageMode();
 
-  function syncButtons() {
-    const mode = getViewMode();
-    if (overviewBtn) overviewBtn.classList.toggle('btn-primary', mode === 'overview');
-    if (overviewBtn) overviewBtn.classList.toggle('btn-secondary', mode !== 'overview');
-    if (allBtn) allBtn.classList.toggle('btn-primary', mode === 'all');
-    if (allBtn) allBtn.classList.toggle('btn-secondary', mode !== 'all');
+  if (!panel || !content) return;
+
+  panel.dataset.view = mode;
+
+  content.innerHTML = '';
+
+  const items = collectOverviewItems(sections);
+
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'overview_empty';
+    empty.textContent = 'Pin rows to show them here.';
+    content.appendChild(empty);
+    return;
   }
 
-  overviewBtn?.addEventListener('click', () => {
-    setViewMode('overview');
-    syncButtons();
-    renderApp();
-  });
+  items.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'overview_row';
 
-  allBtn?.addEventListener('click', () => {
-    setViewMode('all');
-    syncButtons();
-    renderApp();
-  });
+    const title = document.createElement('div');
+    title.className = 'overview_row_title';
+    title.textContent = item.title;
 
-  topOverviewLink?.addEventListener('click', (e) => {
+    const meta = document.createElement('div');
+    meta.className = 'overview_row_meta';
+    meta.textContent = `${sectionLabel(item.sectionKey)} • ${formatOverviewCountdown(item.kind, item.nextActionAtMs)}`;
+
+    row.appendChild(title);
+    row.appendChild(meta);
+
+    if (item.note) {
+      const note = document.createElement('div');
+      note.className = 'overview_row_meta';
+      note.textContent = item.note;
+      row.appendChild(note);
+    }
+
+    content.appendChild(row);
+  });
+}
+
+function setupViewsControl() {
+  const button = document.getElementById('views-button');
+  const panel = document.getElementById('views-control');
+  const list = document.getElementById('views-list');
+
+  if (!button || !panel || !list) return;
+
+  const views = [
+    { mode: 'overview', label: 'Overview' },
+    { mode: 'all', label: 'All' },
+    { mode: 'custom', label: 'Custom Tasks' },
+    { mode: 'rs3farming', label: 'Farming' },
+    { mode: 'rs3daily', label: 'Dailies' },
+    { mode: 'gathering', label: 'Gathering' },
+    { mode: 'rs3weekly', label: 'Weeklies' },
+    { mode: 'rs3monthly', label: 'Monthlies' }
+  ];
+
+  function renderViews() {
+    const current = getPageMode();
+    list.innerHTML = '';
+
+    views.forEach((view) => {
+      const li = document.createElement('li');
+      li.className = 'profile-row';
+
+      const link = document.createElement('a');
+      link.href = '#';
+      link.className = 'profile-link';
+      link.textContent = view.mode === current ? `${view.label} (active)` : view.label;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        setPageMode(view.mode);
+        closeFloatingControls();
+        renderApp();
+      });
+
+      li.appendChild(link);
+      list.appendChild(li);
+    });
+  }
+
+  button.addEventListener('click', (e) => {
     e.preventDefault();
-    document.getElementById('overview-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const visible = panel.dataset.display === 'block';
+    closeFloatingControls();
+    if (!visible) {
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.dataset.display = 'block';
+      renderViews();
+    }
   });
-
-  syncButtons();
 }
 
 /* -----------------------------
@@ -1380,16 +1589,37 @@ function renderApp() {
   cleanupReadyCooldowns();
   hideTooltip();
 
+  const mode = getPageMode();
   const sections = getResolvedSections();
 
-  renderStandardSection('custom', sections.custom);
-  renderStandardSection('rs3farming', sections.rs3farming);
-  renderStandardSection('rs3daily', sections.rs3daily);
-  renderStandardSection('gathering', sections.gathering);
-  renderStandardSection('rs3weekly', sections.rs3weekly);
-  renderStandardSection('rs3monthly', sections.rs3monthly);
+  const modeToSectionKey = {
+    custom: 'custom',
+    rs3farming: 'rs3farming',
+    rs3daily: 'rs3daily',
+    gathering: 'gathering',
+    rs3weekly: 'rs3weekly',
+    rs3monthly: 'rs3monthly'
+  };
 
-  renderOverviewPanel();
+  if (mode === 'all') {
+    renderStandardSection('custom', sections.custom);
+    renderStandardSection('rs3farming', sections.rs3farming);
+    renderStandardSection('rs3daily', sections.rs3daily);
+    renderStandardSection('gathering', sections.gathering);
+    renderStandardSection('rs3weekly', sections.rs3weekly);
+    renderStandardSection('rs3monthly', sections.rs3monthly);
+  } else if (mode !== 'overview') {
+    const active = modeToSectionKey[mode];
+    if (active === 'custom') renderStandardSection('custom', sections.custom);
+    if (active === 'rs3farming') renderStandardSection('rs3farming', sections.rs3farming);
+    if (active === 'rs3daily') renderStandardSection('rs3daily', sections.rs3daily);
+    if (active === 'gathering') renderStandardSection('gathering', sections.gathering);
+    if (active === 'rs3weekly') renderStandardSection('rs3weekly', sections.rs3weekly);
+    if (active === 'rs3monthly') renderStandardSection('rs3monthly', sections.rs3monthly);
+  }
+
+  applyPageModeVisibility(mode);
+  renderOverviewPanel(sections);
   fetchProfits();
   renderCooldownButtons();
   updateProfileHeader();
@@ -1589,7 +1819,7 @@ function setupSettingsControl() {
 }
 
 function closeFloatingControls() {
-  ['profile-control', 'settings-control'].forEach((id) => {
+  ['profile-control', 'settings-control', 'views-control'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.style.display = 'none';
@@ -1602,6 +1832,8 @@ function setupGlobalClickCloser() {
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (
+      target.closest('#views-button') ||
+      target.closest('#views-control') ||
       target.closest('#profile-button') ||
       target.closest('#profile-control') ||
       target.closest('#settings-button') ||
@@ -1775,6 +2007,7 @@ function setupSectionBindings() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initProfileContext();
+  migrateLegacyViewModeToPageMode();
   applySettingsToDom();
   checkAutoReset();
   updateCountdowns();
@@ -1790,11 +2023,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSectionBindings();
   setupProfileControl();
   setupSettingsControl();
+  setupViewsControl();
   setupGlobalClickCloser();
   setupCompactMode();
   setupImportExport();
   setupCustomAdd();
-  setupOverviewControls();
 
   renderApp();
 });

@@ -49,7 +49,8 @@ body {
 }
 
 #profile-control,
-#settings-control {
+#settings-control,
+#views-control {
     display: none;
     visibility: hidden;
     position: absolute;
@@ -299,7 +300,7 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     left: 0;
     height: 100%;
     width: 100%;
-    padding: 0.62rem 4.05rem 0.62rem 0.85rem;
+    padding: 0.62rem 6.55rem 0.62rem 0.85rem;
     line-height: 1.02rem;
     text-decoration: none;
     z-index: 1;
@@ -343,6 +344,7 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     visibility: hidden;
 }
 
+.activity_table td.activity_name button.pin-button,
 .activity_table td.activity_name button.hide-button,
 .activity_table td.activity_name button.delete-button {
     position: absolute;
@@ -356,13 +358,23 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     right: 10px;
 }
 
-.activity_table td.activity_name button.delete-button {
+.activity_table td.activity_name button.pin-button {
     right: 52px;
 }
 
+.activity_table td.activity_name button.delete-button {
+    right: 94px;
+}
+
+.activity_table tbody tr:hover td.activity_name button.pin-button,
 .activity_table tbody tr:hover td.activity_name button.hide-button,
-.activity_table tbody tr:hover td.activity_name button.delete-button {
-    display: inline-block;
+.activity_table tbody tr:hover td.activity_name button.delete-button,
+.activity_table tbody tr:focus-within td.activity_name button.pin-button,
+.activity_table tbody tr:focus-within td.activity_name button.hide-button,
+.activity_table tbody tr:focus-within td.activity_name button.delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .activity_table td.activity_color a,
@@ -591,6 +603,7 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     background: #0a0a0a !important;
 }
 
+.farming-child-row td.activity_name button.pin-button,
 .farming-child-row td.activity_name button.hide-button,
 .farming-child-row td.activity_name button.delete-button {
     display: none !important;
@@ -693,8 +706,12 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     right: 10px;
 }
 
-.compact .activity_table td.activity_name button.delete-button {
+.compact .activity_table td.activity_name button.pin-button {
     right: 52px;
+}
+
+.compact .activity_table td.activity_name button.delete-button {
+    right: 94px;
 }
 
 /* -----------------------------
@@ -759,7 +776,7 @@ footer a img {
     .activity_table td.activity_name a:active,
     .activity_table td.activity_name a:link,
     .activity_table td.activity_name a:visited {
-        padding: 0.58rem 3.55rem 0.58rem 0.72rem;
+        padding: 0.58rem 5.85rem 0.58rem 0.72rem;
         font-size: 0.95rem;
     }
 
@@ -784,7 +801,8 @@ footer a img {
 @media (max-width: 992px) {
 
     #profile-control,
-    #settings-control {
+    #settings-control,
+    #views-control {
         right: auto;
         left: 0;
     }
