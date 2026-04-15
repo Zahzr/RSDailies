@@ -409,6 +409,18 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     padding: 0.6rem 0.85rem !important;
 }
 
+.farming-subgroup-row td,
+.gathering-group-row td {
+    background: #1a1a1a !important;
+    color: #d9d9d9;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-top: 1px solid #333 !important;
+    border-bottom: 1px solid #333 !important;
+    padding: 0.45rem 0.85rem !important;
+}
+
 .compact .activity_tables {
     column-count: 2;
 }
