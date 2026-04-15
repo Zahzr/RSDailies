@@ -1,2 +1,12 @@
 rsdata
 .idea
+.env
+.env.local
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.vscode/
+*.swp
+*.swo
