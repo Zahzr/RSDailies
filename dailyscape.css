@@ -67,7 +67,8 @@ body {
     margin-top: 8px;
 }
 
-#profile-list {
+#profile-list,
+#views-list {
     margin: 0 0 7px 0;
     padding: 0;
     list-style: none;
@@ -360,6 +361,7 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table td.activity_name button.pin-button {
     right: 52px;
+    top: 44%;
 }
 
 .activity_table td.activity_name button.delete-button {

@@ -1077,7 +1077,8 @@ function createHeaderRow(label, blockId, options = {}) {
   const {
     className = '',
     rightText = '',
-    onRightClick = null
+    onRightClick = null,
+    collapsible = true
   } = options;
 
   const row = document.createElement('tr');
@@ -1097,15 +1098,15 @@ function createHeaderRow(label, blockId, options = {}) {
   status.className = 'header_like_status';
   status.textContent = rightText || '';
 
-  const collapse = makeCollapseButton(blockId);
-
   rightInner.appendChild(status);
-  rightInner.appendChild(collapse);
+
+  const collapse = (collapsible && blockId) ? makeCollapseButton(blockId) : null;
+  if (collapse) rightInner.appendChild(collapse);
   right.appendChild(rightInner);
 
   if (onRightClick) {
     right.addEventListener('click', (e) => {
-      if (e.target.closest('.mini-collapse-btn')) return;
+      if (collapse && e.target.closest('.mini-collapse-btn')) return;
       onRightClick();
     });
   }
@@ -1138,113 +1139,119 @@ function getFarmingHeaderStatus(task) {
 }
 
 function renderGroupedFarming(tbody, groups) {
-  groups.forEach((group) => {
-    const groupBlockId = `farm-group:${group.id}`;
-    const timers = Array.isArray(group.timers) ? group.timers : [];
-    const plots = Array.isArray(group.plots) ? group.plots : [];
+  const groupsById = new Map((Array.isArray(groups) ? groups : []).map((g) => [g.id, g]));
 
-    if (group.id === 'trees' || group.id === 'specialty') {
-      tbody.appendChild(createHeaderRow(displayFarmingLabel(group.label), groupBlockId, {
-        className: 'farming-group-row',
-        rightText: ''
-      }));
-
-      if (isCollapsedBlock(groupBlockId)) return;
-
-      timers.forEach((timerTask) => {
-        const subBlockId = `farm-sub:${group.id}:${timerTask.id}`;
-        tbody.appendChild(createHeaderRow(timerTask.name.toUpperCase(), subBlockId, {
-          className: 'farming-subgroup-row',
-          rightText: getFarmingHeaderStatus(timerTask),
-          onRightClick: () => {
-            const state = getTaskState('rs3farming', timerTask.id, { ...timerTask, isTimerParent: true });
-            if (state === 'running') {
-              clearFarmingTimer(timerTask.id);
-            } else {
-              startFarmingTimer(timerTask);
-            }
-            renderApp();
-          }
-        }));
-
-        if (isCollapsedBlock(subBlockId)) return;
-
-        const timerPlots = Array.isArray(timerTask.plots) ? timerTask.plots : [];
-        if (timerPlots.length) {
-          const plotsBlockId = `farm-plots:${timerTask.id}`;
-          tbody.appendChild(createHeaderRow('PLOTS / LOCATIONS', plotsBlockId, {
-            className: 'farming-subgroup-row',
-            rightText: ''
-          }));
-
-          if (!isCollapsedBlock(plotsBlockId)) {
-            timerPlots.forEach((plotTask) => {
-              tbody.appendChild(
-                createRightSideChildRow(
-                  'rs3farming',
-                  {
-                    ...plotTask,
-                    reset: 'daily',
-                    alertDaysBeforeReset: 0,
-                    isChildRow: true
-                  },
-                  timerTask.id,
-                  'farming-child-row'
-                )
-              );
-            });
-          }
-        }
-      });
-
-      return;
+  function toggleTimer(timerTask) {
+    const state = getTaskState('rs3farming', timerTask.id, { ...timerTask, isTimerParent: true });
+    if (state === 'running') {
+      clearFarmingTimer(timerTask.id);
+    } else {
+      startFarmingTimer(timerTask);
     }
+    renderApp();
+  }
 
-    if (!timers.length) return;
+  function renderPlots(timerTask, plots) {
+    (Array.isArray(plots) ? plots : []).forEach((plotTask) => {
+      tbody.appendChild(
+        createRightSideChildRow(
+          'rs3farming',
+          {
+            ...plotTask,
+            reset: 'daily',
+            alertDaysBeforeReset: 0,
+            isChildRow: true
+          },
+          timerTask.id,
+          'farming-child-row'
+        )
+      );
+    });
+  }
 
-    const timerTask = timers[0];
-    tbody.appendChild(createHeaderRow(displayFarmingLabel(group.label), groupBlockId, {
-      className: 'farming-group-row',
+  function renderTimerRow(label, timerTask, plots) {
+    tbody.appendChild(createHeaderRow(label, `farm-timer:${timerTask.id}`, {
+      className: 'farming-subgroup-row',
       rightText: getFarmingHeaderStatus(timerTask),
-      onRightClick: () => {
-        const state = getTaskState('rs3farming', timerTask.id, { ...timerTask, isTimerParent: true });
-        if (state === 'running') {
-          clearFarmingTimer(timerTask.id);
-        } else {
-          startFarmingTimer(timerTask);
-        }
-        renderApp();
-      }
+      onRightClick: () => toggleTimer(timerTask),
+      collapsible: false
     }));
 
-    if (isCollapsedBlock(groupBlockId)) return;
+    renderPlots(timerTask, plots);
+  }
 
-    if (plots.length) {
-      const plotsBlockId = `farm-plots:${group.id}`;
-      tbody.appendChild(createHeaderRow('PLOTS / LOCATIONS', plotsBlockId, {
-        className: 'farming-subgroup-row',
-        rightText: ''
-      }));
+  // Parent collapsible: HERB (includes ALLOTMENTS within it)
+  const herbsGroup = groupsById.get('herbs');
+  const allotmentsGroup = groupsById.get('allotments');
 
-      if (!isCollapsedBlock(plotsBlockId)) {
-        plots.forEach((plotTask) => {
-          tbody.appendChild(
-            createRightSideChildRow(
-              'rs3farming',
-              {
-                ...plotTask,
-                reset: 'daily',
-                alertDaysBeforeReset: 0,
-                isChildRow: true
-              },
-              timerTask.id,
-              'farming-child-row'
-            )
-          );
-        });
+  if (herbsGroup?.timers?.length) {
+    const herbTimer = herbsGroup.timers[0];
+    const herbBlockId = 'farm-parent:herb';
+
+    tbody.appendChild(createHeaderRow('HERB', herbBlockId, {
+      className: 'farming-group-row',
+      rightText: getFarmingHeaderStatus(herbTimer),
+      onRightClick: () => toggleTimer(herbTimer),
+      collapsible: true
+    }));
+
+    if (!isCollapsedBlock(herbBlockId)) {
+      renderPlots(herbTimer, herbsGroup.plots);
+
+      if (allotmentsGroup?.timers?.length) {
+        const allotTimer = allotmentsGroup.timers[0];
+        renderTimerRow('ALLOTMENT', allotTimer, allotmentsGroup.plots);
       }
     }
-  });
+  }
+
+  // Parent collapsible: HOPS
+  const hopsGroup = groupsById.get('hops');
+  if (hopsGroup?.timers?.length) {
+    const hopTimer = hopsGroup.timers[0];
+    const hopsBlockId = 'farm-parent:hops';
+
+    tbody.appendChild(createHeaderRow('HOPS', hopsBlockId, {
+      className: 'farming-group-row',
+      rightText: getFarmingHeaderStatus(hopTimer),
+      onRightClick: () => toggleTimer(hopTimer),
+      collapsible: true
+    }));
+
+    if (!isCollapsedBlock(hopsBlockId)) {
+      renderPlots(hopTimer, hopsGroup.plots);
+    }
+  }
+
+  // Non-collapsible: TREES (render all timers; no per-timer collapse)
+  const treesGroup = groupsById.get('trees');
+  if (treesGroup?.timers?.length) {
+    tbody.appendChild(createHeaderRow('TREES', 'farm-label:trees', {
+      className: 'farming-group-row',
+      rightText: '',
+      collapsible: false
+    }));
+
+    treesGroup.timers.forEach((timerTask) => {
+      const timerPlots = Array.isArray(timerTask.plots) ? timerTask.plots : [];
+      renderTimerRow(timerTask.name.toUpperCase(), timerTask, timerPlots);
+    });
+  }
+
+  // Non-collapsible: SPECIALTY (bushes/cactus/etc timers are not collapsible)
+  const specialtyGroup = groupsById.get('specialty');
+  if (specialtyGroup?.timers?.length) {
+    tbody.appendChild(createHeaderRow('SPECIALTY', 'farm-label:specialty', {
+      className: 'farming-group-row',
+      rightText: '',
+      collapsible: false
+    }));
+
+    specialtyGroup.timers.forEach((timerTask) => {
+      const timerPlots = Array.isArray(timerTask.plots) ? timerTask.plots : [];
+      renderTimerRow(timerTask.name.toUpperCase(), timerTask, timerPlots);
+    });
+  }
 }
 
 function renderGroupedGathering(tbody, tasks) {
@@ -1526,11 +1533,13 @@ function renderOverviewPanel(sections) {
 }
 
 function setupViewsControl() {
-  const button = document.getElementById('views-button');
+  const navbarButton = document.getElementById('views-button');
+  const panelButton = document.getElementById('views-button-panel');
   const panel = document.getElementById('views-control');
   const list = document.getElementById('views-list');
 
-  if (!button || !panel || !list) return;
+  const buttons = [navbarButton, panelButton].filter(Boolean);
+  if (!buttons.length || !panel || !list) return;
 
   const views = [
     { mode: 'overview', label: 'Overview' },
@@ -1567,16 +1576,18 @@ function setupViewsControl() {
     });
   }
 
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    const visible = panel.dataset.display === 'block';
-    closeFloatingControls();
-    if (!visible) {
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.dataset.display = 'block';
-      renderViews();
-    }
+  buttons.forEach((button) => {
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      const visible = panel.dataset.display === 'block';
+      closeFloatingControls();
+      if (!visible) {
+        panel.style.display = 'block';
+        panel.style.visibility = 'visible';
+        panel.dataset.display = 'block';
+        renderViews();
+      }
+    });
   });
 }
 
@@ -1833,6 +1844,7 @@ function setupGlobalClickCloser() {
     const target = e.target;
     if (
       target.closest('#views-button') ||
+      target.closest('#views-button-panel') ||
       target.closest('#views-control') ||
       target.closest('#profile-button') ||
       target.closest('#profile-control') ||
@@ -1997,7 +2009,7 @@ function setupCustomAdd() {
 ----------------------------- */
 
 function setupSectionBindings() {
-  bindSectionControls('custom');
+  bindSectionControls('custom', { sortable: true });
   bindSectionControls('rs3farming');
   bindSectionControls('rs3daily');
   bindSectionControls('gathering', { sortable: true });
