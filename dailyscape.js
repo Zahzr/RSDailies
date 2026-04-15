@@ -771,13 +771,19 @@ function loadSettings() {
   if (settings.herbTicks === 3) el('setting-3tick-herbs').checked = true;
   if (settings.browserNotif) el('setting-browser-notif').checked = true;
   if (settings.webhookUrl) el('setting-webhook-url').value = settings.webhookUrl;
+  if (typeof settings.growthOffsetMinutes === 'number') el('setting-growth-offset').value = String(settings.growthOffsetMinutes);
 }
 
 function saveSettings() {
+  const growthOffsetRaw = document.getElementById('setting-growth-offset')?.value;
+  const parsedGrowthOffset = Number.isFinite(parseInt(growthOffsetRaw, 10)) ? parseInt(growthOffsetRaw, 10) : 0;
+  const growthOffsetMinutes = Math.max(-60, Math.min(60, parsedGrowthOffset));
+
   const settings = {
     splitDailies: document.getElementById('setting-split-dailies').checked,
     splitWeeklies: document.getElementById('setting-split-weeklies').checked,
     herbTicks: document.getElementById('setting-3tick-herbs').checked ? 3 : 4,
+    growthOffsetMinutes,
     browserNotif: document.getElementById('setting-browser-notif').checked,
     webhookUrl: document.getElementById('setting-webhook-url').value.trim()
   };
@@ -883,6 +889,239 @@ function setupImportExport() {
 }
 
 // ---------------------------------------------------------------------------
+// Farming Timers (config-driven, multiple concurrent)
+// ---------------------------------------------------------------------------
+let farmingIntervalId = null;
+
+function loadFarmingTimers() {
+  return load('farming-timers', {});
+}
+
+function saveFarmingTimers(timers) {
+  save('farming-timers', timers);
+}
+
+function ensureFarmingInterval() {
+  if (farmingIntervalId) return;
+  farmingIntervalId = setInterval(renderFarmingPanel, 1000);
+}
+
+function stopFarmingIntervalIfIdle() {
+  const timers = loadFarmingTimers();
+  const anyActive = Object.values(timers).some(t => t && t.readyAt);
+  if (anyActive) return;
+  if (farmingIntervalId) clearInterval(farmingIntervalId);
+  farmingIntervalId = null;
+}
+
+function nextWindowStartMs(nowMs, cycleMinutes, offsetMinutes) {
+  const cycleMs = Math.max(1, cycleMinutes) * 60 * 1000;
+  const offsetMs = (offsetMinutes || 0) * 60 * 1000;
+  const anchorMs = Date.UTC(1970, 0, 1, 0, 0, 0, 0) + offsetMs;
+
+  const elapsed = nowMs - anchorMs;
+  const steps = Math.floor(elapsed / cycleMs);
+  const currentStart = anchorMs + steps * cycleMs;
+  const nextStart = currentStart <= nowMs ? currentStart + cycleMs : currentStart;
+  return nextStart;
+}
+
+function computeReadyAtMs(nowMs, cycleMinutes, stages, offsetMinutes) {
+  const cycleMs = Math.max(1, cycleMinutes) * 60 * 1000;
+  const nextStart = nextWindowStartMs(nowMs, cycleMinutes, offsetMinutes);
+  const remainingStages = Math.max(0, (stages || 1) - 1);
+  return nextStart + remainingStages * cycleMs;
+}
+
+function setupFarmingPanel() {
+  const toggle = document.getElementById('farming-toggle');
+  const panel = document.getElementById('farming-panel');
+  const closeBtn = document.getElementById('farming-close-btn');
+  if (!toggle || !panel || !closeBtn) return;
+
+  toggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+      ensureFarmingInterval();
+      renderFarmingPanel();
+    } else {
+      stopFarmingIntervalIfIdle();
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    panel.classList.add('hidden');
+    stopFarmingIntervalIfIdle();
+  });
+}
+
+function startFarmingTimer(timerId, variantId) {
+  const cfg = window.FARMING_CONFIG?.timers?.find(t => t.id === timerId);
+  if (!cfg) return;
+
+  const settings = load('settings', {});
+  const offsetMinutes = settings.growthOffsetMinutes || 0;
+
+  const variant = (cfg.variants || []).find(v => v.id === variantId) || null;
+  const stages = variant?.stages || cfg.stages || 1;
+  const cycleMinutes = cfg.cycleMinutes || FARMING_TICK_MINUTES;
+
+  const startedAt = Date.now();
+  const readyAt = computeReadyAtMs(startedAt, cycleMinutes, stages, offsetMinutes);
+
+  const timers = loadFarmingTimers();
+  timers[timerId] = {
+    id: timerId,
+    name: cfg.name,
+    variantId: variant?.id || null,
+    variantName: variant?.name || null,
+    cycleMinutes,
+    stages,
+    startedAt,
+    readyAt,
+    alerted: false,
+  };
+  saveFarmingTimers(timers);
+  ensureFarmingInterval();
+  renderFarmingPanel();
+}
+
+function clearFarmingTimer(timerId) {
+  const timers = loadFarmingTimers();
+  delete timers[timerId];
+  saveFarmingTimers(timers);
+  renderFarmingPanel();
+  stopFarmingIntervalIfIdle();
+}
+
+function renderFarmingPanel() {
+  const panel = document.getElementById('farming-panel');
+  const container = document.getElementById('farming-timers');
+  if (!panel || !container) return;
+
+  const cfgTimers = window.FARMING_CONFIG?.timers || [];
+  const timers = loadFarmingTimers();
+  const now = Date.now();
+  const settings = load('settings', {});
+  const offsetMinutes = settings.growthOffsetMinutes || 0;
+
+  container.innerHTML = '';
+
+  cfgTimers.forEach(cfg => {
+    const state = timers[cfg.id] || null;
+
+    const row = document.createElement('div');
+    row.className = 'farming-row';
+
+    const left = document.createElement('div');
+    left.className = 'farming-left';
+
+    const title = document.createElement('div');
+    title.className = 'farming-title';
+    title.textContent = cfg.name;
+    left.appendChild(title);
+
+    if (cfg.sourceUrl) {
+      const src = document.createElement('a');
+      src.className = 'farming-source';
+      src.href = cfg.sourceUrl;
+      src.target = '_blank';
+      src.rel = 'noopener';
+      src.textContent = 'wiki';
+      left.appendChild(src);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'farming-meta';
+    const cycle = cfg.cycleMinutes || FARMING_TICK_MINUTES;
+    meta.textContent = `Cycle: ${cycle}m | Offset: ${offsetMinutes}m`;
+    left.appendChild(meta);
+
+    const right = document.createElement('div');
+    right.className = 'farming-right';
+
+    let variantId = state?.variantId || (cfg.variants?.[0]?.id ?? null);
+    if (Array.isArray(cfg.variants) && cfg.variants.length > 1) {
+      const select = document.createElement('select');
+      select.className = 'farming-select';
+      cfg.variants.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = v.name;
+        select.appendChild(opt);
+      });
+      select.value = variantId || cfg.variants[0].id;
+      select.addEventListener('change', () => {
+        // only updates selection for the next start; does not mutate running timer
+        const nextTimers = loadFarmingTimers();
+        if (nextTimers[cfg.id]) {
+          nextTimers[cfg.id].variantId = select.value;
+          const v = cfg.variants.find(x => x.id === select.value);
+          nextTimers[cfg.id].variantName = v?.name || null;
+          nextTimers[cfg.id].stages = v?.stages || nextTimers[cfg.id].stages;
+          saveFarmingTimers(nextTimers);
+        }
+        renderFarmingPanel();
+      });
+      right.appendChild(select);
+      variantId = select.value;
+    }
+
+    const status = document.createElement('div');
+    status.className = 'farming-status';
+    if (!state || !state.readyAt) {
+      status.textContent = 'Not running';
+    } else {
+      const remaining = state.readyAt - now;
+      status.textContent = remaining <= 0 ? 'Ready' : `Ready in ${formatMMSS(remaining)}`;
+    }
+    right.appendChild(status);
+
+    const actions = document.createElement('div');
+    actions.className = 'farming-actions';
+
+    const startBtn = document.createElement('button');
+    startBtn.type = 'button';
+    startBtn.textContent = state?.readyAt ? 'Restart' : 'Start';
+    startBtn.addEventListener('click', () => startFarmingTimer(cfg.id, variantId));
+    actions.appendChild(startBtn);
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'danger';
+    clearBtn.textContent = 'Clear';
+    clearBtn.disabled = !state;
+    clearBtn.addEventListener('click', () => clearFarmingTimer(cfg.id));
+    actions.appendChild(clearBtn);
+
+    right.appendChild(actions);
+
+    row.appendChild(left);
+    row.appendChild(right);
+    container.appendChild(row);
+
+    // Ready notifications (best-effort) - reuse browserNotif setting.
+    if (state && state.readyAt && state.readyAt <= now && !state.alerted) {
+      if (settings.browserNotif && Notification.permission === 'granted') {
+        try {
+          new Notification('RSDailies', { body: `${cfg.name} is ready.` });
+        } catch {
+          // ignore
+        }
+      }
+      const nextTimers = loadFarmingTimers();
+      if (nextTimers[cfg.id]) {
+        nextTimers[cfg.id].alerted = true;
+        saveFarmingTimers(nextTimers);
+      }
+    }
+  });
+
+  stopFarmingIntervalIfIdle();
+}
+
+// ---------------------------------------------------------------------------
 // Profiles
 // ---------------------------------------------------------------------------
 function setupProfiles() {
@@ -969,6 +1208,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDropdowns();
   setupCompactToggle();
   setupImportExport();
+  setupFarmingPanel();
   setupProfiles();
   loadSettings();
   renderApp();

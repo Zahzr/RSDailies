@@ -15,6 +15,10 @@ Live: `https://zahzr.github.io/RSDailies/`
   - Aligns to RS3 farming growth ticks (20-minute cycles, UTC)
   - Supports 3-tick vs 4-tick herbs via Settings
   - Optional checklist panel for common herb patch locations
+- Farming Timers panel:
+  - Multiple concurrent timers (per patch type)
+  - Driven by `farming-config.js` (edit data without touching logic)
+  - Optional growth tick offset setting (minutes)
 
 ## Repo Layout
 
@@ -22,6 +26,7 @@ Live: `https://zahzr.github.io/RSDailies/`
 - `dailyscape.css`: styling
 - `dailyscape.js`: app logic (storage, timers, profiles, rendering)
 - `tasks-config.js`: curated task content (edit this to add/remove built-in tasks)
+- `farming-config.js`: farming timers data (cycle minutes + stages)
 
 ## Local Development
 
@@ -54,4 +59,3 @@ GitHub Pages deploys via `.github/workflows/deploy.yml` on pushes to `main`.
 - Discord webhooks can post messages, but they do not reliably ping users. If you want @mentions, you need a bot.
 
 RuneScape is a registered trademark of Jagex. This project is fan-made and unofficial.
-

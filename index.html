@@ -59,6 +59,9 @@
                     <label><input type="checkbox" id="setting-split-weeklies"> Split Weeklies and Weekly
                         Gathering</label>
                     <label><input type="checkbox" id="setting-3tick-herbs"> 3-tick herb patches (vs 4-tick)</label>
+                    <label>Farming tick offset (minutes, optional):
+                        <input type="number" id="setting-growth-offset" placeholder="0" min="-60" max="60" step="1">
+                    </label>
                     <hr>
                     <strong>Notifications</strong>
                     <label><input type="checkbox" id="setting-browser-notif"> Browser notifications on reset</label>
@@ -70,6 +73,7 @@
             </li>
 
             <li><a href="#" id="compact-toggle">&#8863; Compact</a></li>
+            <li><a href="#" id="farming-toggle">Farming Timers</a></li>
             <li><a href="#" id="import-export-toggle">&#128428; Import/Export</a></li>
         </ul>
     </nav>
@@ -170,6 +174,18 @@
         </p>
     </div>
 
+    <div id="farming-panel" class="panel hidden">
+        <div class="panel-header">
+            <strong>Farming Timers</strong>
+            <button id="farming-close-btn" type="button">Close</button>
+        </div>
+        <p class="panel-sub">
+            Timers are tick-window aligned (UTC). This is a best-effort approximation; actual growth can vary slightly
+            based on your growth tick offset and world/login behavior.
+        </p>
+        <div id="farming-timers"></div>
+    </div>
+
     <div id="import-export-panel" class="panel hidden">
         <strong>Import / Export</strong>
         <p>Copy your token to back up or move your data to another browser.</p>
@@ -189,8 +205,8 @@
     </footer>
 
     <script src="./tasks-config.js"></script>
+    <script src="./farming-config.js"></script>
     <script src="./dailyscape.js"></script>
 </body>
 
 </html>
-
