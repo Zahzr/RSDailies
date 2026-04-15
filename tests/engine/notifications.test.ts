@@ -5,12 +5,15 @@
 import { WebNotificationAdapter } from '@engine/notifications'
 
 // Mock Web Notifications API for tests
-global.Notification = jest.fn() as any
+const mockNotification = jest.fn() as any
+mockNotification.permission = 'granted'
+mockNotification.requestPermission = jest.fn()
+global.Notification = mockNotification
 
 describe('Web Notification Adapter', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(global.Notification as any).permission = 'granted'
+    ;(mockNotification as any).permission = 'granted'
   })
 
   describe('requestPermission', () => {
@@ -82,7 +85,7 @@ describe('Web Notification Adapter', () => {
 
       await adapter.send('Reset!', 'Daily tasks reset')
 
-      const call = (Notification as jest.Mock).mock.calls[0]
+      const call = (mockNotification).mock.calls[0]
       expect(call[1]).toHaveProperty('icon')
     })
 
@@ -92,7 +95,7 @@ describe('Web Notification Adapter', () => {
 
       await adapter.send('Task', 'Herb Run', 'herb-run')
 
-      const call = (Notification as jest.Mock).mock.calls[0]
+      const call = (mockNotification).mock.calls[0]
       expect(call[1]).toHaveProperty('tag', 'herb-run')
     })
 
@@ -105,17 +108,14 @@ describe('Web Notification Adapter', () => {
 
     it('should handle notification close event', async () => {
       ;(global.Notification as any).permission = 'granted'
-      const mockNotification = { close: jest.fn(), onclick: null }
-      ;(global.Notification as any).mockImplementation(() => mockNotification)
+      const notificationInstance = { close: jest.fn(), onclick: jest.fn() }
+      mockNotification.mockImplementation(() => notificationInstance)
 
       const adapter = new WebNotificationAdapter()
-      const closeHandler = jest.fn()
       await adapter.send('Test', 'Message')
 
-      // Simulate calling the onclick handler
-      if (mockNotification.onclick) {
-        mockNotification.onclick()
-      }
+      // Verify notification was created
+      expect(mockNotification).toHaveBeenCalled()
     })
   })
 
@@ -165,7 +165,7 @@ describe('Web Notification Adapter', () => {
       const maliciousMessage = '<script>alert("xss")</script>'
       await adapter.send('Title', maliciousMessage)
 
-      const call = (Notification as jest.Mock).mock.calls[0]
+      const call = mockNotification.mock.calls[0]
       expect(call[1].body).not.toContain('<script>')
     })
   })

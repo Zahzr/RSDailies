@@ -6,16 +6,16 @@
  */
 
 // Storage Abstraction
-export { IStorageAdapter, StorageWatchCallback } from './storage/interface'
+export type { IStorageAdapter, StorageWatchCallback } from './storage/interface'
 export { LocalStorageAdapter } from './storage/adapters/localStorage'
 export { SupabaseAdapter } from './storage/adapters/supabase'
 
 // Timer & Reset Logic
-export { ResetType, getNextReset, calculateCountdown, isTaskStillCompleteThisPeriod } from './timer'
-export type { CountdownResult } from './timer'
+export type { ResetType, CountdownResult } from './timer'
+export { getNextReset, calculateCountdown, isTaskStillCompleteThisPeriod } from './timer'
 
 // Schema & Types
-export {
+export type {
   TaskSlug,
   TaskStatus,
   ProfileName,
@@ -29,6 +29,8 @@ export {
   ApplicationState,
   UserSettings,
   Timeframe,
+} from './schema/types'
+export {
   TIMEFRAMES,
   STORAGE_KEYS,
   buildTaskKey,
@@ -49,9 +51,8 @@ export {
 export type { EfficiencyMetrics } from './calculations'
 
 // Notifications
+export type { INotificationAdapter, NotificationPermission } from './notifications'
 export {
-  INotificationAdapter,
   WebNotificationAdapter,
   NullNotificationAdapter,
 } from './notifications'
-export type { NotificationPermission } from './notifications'

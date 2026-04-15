@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@engine": ["src/engine/index.ts"],
       "@engine/*": ["src/engine/*"],
       "@react/*": ["src/react/*"],
       "@tests/*": ["tests/*"]

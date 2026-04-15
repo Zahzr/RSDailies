@@ -6,7 +6,7 @@
 
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useTimer } from '@react/hooks/useTimer'
-import { ResetType } from '../../engine'
+import type { ResetType } from '@engine'
 
 describe('useTimer Hook', () => {
   beforeEach(() => {

@@ -4,7 +4,7 @@
   "description": "RS3 Dailies, Weeklies, Monthlies Task Checklist for RuneScape - React Rebuild",
   "type": "module",
   "main": "dist/index.js",
-  "homepage": "https://dailyscape.github.io",
+  "homepage": "https://rsdailies.github.io",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

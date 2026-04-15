@@ -1,80 +1,104 @@
-[![DailyScape](./img/dailyscape.png)](https://dailyscape.github.io)
-# DailyScape - RS3 Dailies, Weeklies, Monthlies Task Checklist for RuneScape
+# Dailyscape - React Edition
 
-## Features
-* List of daily, weekly and monthly repeatable tasks for Runescape 3
-* Click the red area in right column (incomplete) to switch to green (completed)
-* Brief comments on the benefits of completing the task
-* Links to runescape.wiki or other relevant pages with further info
-* Automatic countdown timer til the next reset time
-* Once the reset time has past, completed tasks are automatically reset for you
-* Saves what you checked off in the right column across visits in your browser's localStorage
-* Drag and drop reordering (on desktop) that's saved so you can move the stuff you find more important to the top
-* Links in nav to "more resources" that might be useful for gameplay information
-* Makes profit calculations in "realtime" with data from [runescape.wiki GE API](https://runescape.wiki/w/User:Gaz_Lloyd/using_gemw#Exchange_API)
-* Tooltips on items showing more info
-* Allows hiding of tasks and sections and saves preference in localStorage
-* Compact view mode
-* Multiple profile capability
-* Ad free / tracking free
+**Dailyscape** is a tool for RuneScape 3 players to track their daily, weekly, and monthly in-game tasks. This modernized version is built with React and TypeScript, offering a fast, reliable, and extensible experience.
 
-## Dev setup / How to contribute
+## Architecture Overview
 
-This project is a static site. There is no build step, but local development does depend on the generated data files from the [`rsdata`](https://github.com/dailyscape/rsdata) repository.
+This project follows a **dual-track architecture** to ensure both a modern experience and maximum backwards compatibility.
 
-### Requirements
+-   **React Layer (Primary):** The main application is a modern Single Page Application (SPA) built with React, TypeScript, and Tailwind CSS. It provides a rich, interactive user experience.
+-   **Vanilla JS Fallback:** A lightweight, modernized vanilla JavaScript version is included. A service worker will automatically serve this fallback version if a user's browser fails to load the React application, ensuring no user is left behind.
+-   **Decoupled Engine:** All core business logic (timers, calculations, storage) is isolated in a framework-agnostic `engine` layer. This pure TypeScript module is consumed by both the React app and the vanilla fallback, ensuring consistency and preventing code duplication.
 
-* `git`
-* `python3`
-* `make` (optional convenience wrapper)
+### Architecture Diagram
 
-### Local setup
+```mermaid
+graph TB
+    UI["Browser UI"]
 
-```bash
-# fork this repo and replace with your repo URL
-git clone https://github.com/dailyscape/dailyscape.github.io.git
-cd dailyscape.github.io
+    subgraph React["React Layer (Primary)"]
+        App["App.tsx"]
+        Timeline["Timeline Comp"]
+        TaskMgr["TaskManager Comp"]
+        Hooks["useStorage, useTasks, useTimer, useProfitCalculation"]
+    end
 
-# clone the data repository inside this checkout
-git clone https://github.com/dailyscape/rsdata.git rsdata
+    subgraph Engine["Engine Layer (Framework-Agnostic)"]
+        Storage["Storage Abstraction"]
+        Timer["Timer Logic"]
+        Calc["Calculations"]
+        Notif["Notifications"]
+    end
 
-# generate the data files the site expects
-cd rsdata
-python3 -m pip install requests
-python3 ./.github/scripts/rsapidata.py
-python3 ./.github/scripts/rselydata.py
+    subgraph Adapters["Storage Adapters"]
+        LocalAdapter["LocalStorage"]
+        SupabaseAdapter["Supabase (Phase 2)"]
+    end
 
-# verify everything is present
-cd ..
-./scripts/setup-local.sh
+    subgraph Vanilla["Vanilla Fallback"]
+        FallbackHTML["fallback.html"]
+        FallbackJS["fallback.js"]
+    end
+
+    UI -->|Primary| React
+    React --> Hooks
+    Hooks --> Engine
+    Engine --> Adapters
+    LocalAdapter -->|Phase 1| Browser["browser<br/>localStorage"]
+    SupabaseAdapter -->|Phase 2| Cloud["Supabase<br/>Cloud"]
+
+    UI -->|Fallback| Vanilla
+    Vanilla --> Engine
+
+    Engine --> rsdata["rsdata<br/>(RuneScape API)"]
 ```
 
-### Run locally
+## Development Setup
 
-```bash
-./scripts/dev-local.sh
-```
+To get started with development, clone the repository and install the dependencies.
 
-Then open `http://127.0.0.1:8000/`.
+1.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
 
-If your `rsdata` checkout lives somewhere else, point the setup script at it explicitly:
+2.  **Run Development Server:**
+    This will start the Vite dev server for the React application, usually on `http://localhost:5173`.
+    ```bash
+    npm run dev
+    ```
 
-```bash
-./scripts/setup-local.sh /absolute/path/to/rsdata
-```
+3.  **Run Tests:**
+    Execute the full test suite using Jest and React Testing Library.
+    ```bash
+    npm test
+    ```
 
-If you prefer `make`, the repo also includes:
+## Build & Deployment
 
-```bash
-make setup-local
-make serve
-```
+The application is designed for deployment on static hosting services like GitHub Pages.
 
-After that, commit to your fork and open a PR.
+1.  **Build the Project:**
+    This command bundles the React app, the vanilla fallback, and all assets into the `dist/` directory.
+    ```bash
+    npm run build
+    ```
 
-## Requests
+2.  **Deployment:**
+    The project is configured to deploy the contents of the `dist/` directory. For GitHub Pages, this is now automated via a GitHub Action. Pushing to the `main` branch will trigger a new deployment.
 
-Please submit any missing tasks, bugs or new feature requests to the [issue tracker](https://github.com/dailyscape/dailyscape.github.io/issues).
+## Contributing
 
+We welcome contributions! Here’s a quick guide on where to make changes:
+
+-   **UI Components:** If you're changing how something looks or feels in the main app, look in `src/react/components/`.
+-   **Core Logic:** For changes to timers, profit calculations, or how data is stored, head to `src/engine/`.
+-   **State Management:** Global state and data flow are managed in React Context (`src/react/context/`) and custom hooks (`src/react/hooks/`).
+-   **Fallback App:** To modify the non-React version, see `src/vanilla/`.
+
+## Known Limitations
+
+-   **Cloud Sync (Phase 2):** The current version only stores data in the browser's `localStorage`. The storage adapter for Supabase is a placeholder for future cloud sync functionality.
+-   **Discord Notifications (Phase 1.5):** The hooks for Discord bot integration are in place within the notification engine, but the implementation is pending.
 
 RuneScape ® is a registered trademark of Jagex © 1999 Jagex Ltd.
