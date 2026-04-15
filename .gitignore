@@ -11,3 +11,11 @@ coverage/
 .vscode/
 *.swp
 *.swo
+
+# Ignore these specific files in the root directory:
+config.json
+credentials.json
+test-output.log
+node_modules/
+.github/
+timer.test.txt
