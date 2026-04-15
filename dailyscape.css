@@ -179,23 +179,23 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 .activity_table th {
     font-size: 1.5em;
     vertical-align: top;
-    width: 64%;
+    width: 62%;
     border: none;
 }
 
 .activity_table thead td {
     text-align: right;
     position: relative;
-    width: 36%;
+    width: 38%;
 }
 
 .activity_table td.activity_name {
     padding: 0;
-    width: 64%;
-    min-height: 72px;
-    height: 72px;
+    height: 100%;
+    width: 62%;
+    min-height: 69px;
     position: relative;
-    vertical-align: stretch;
+    vertical-align: middle;
 }
 
 .activity_table td.activity_name::before {
@@ -212,18 +212,15 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 .activity_table td.activity_name a:visited {
     color: #fff;
     position: absolute;
-    display: flex;
-    align-items: center;
+    display: block;
     top: 0;
     left: 0;
     height: 100%;
     width: 100%;
-    padding: 0 6.25rem 0 1rem;
-    line-height: 1.1rem;
+    padding: 1rem 4.25rem 1rem 1rem;
+    line-height: 1rem;
     text-decoration: none;
     z-index: 1;
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 .activity_table td.activity_name a:hover {
@@ -245,23 +242,21 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table td.activity_color {
     cursor: pointer;
-    width: 36%;
+    width: 38%;
+    padding: 0.75rem 1rem;
     vertical-align: top;
-    padding: 0;
-    overflow: hidden;
 }
 
-.activity_table td.activity_color .activity_check_off,
-.activity_table td.activity_color .activity_check_on {
-    display: inline-block;
+.activity_table td.activity_color .activity_check_off {
+    margin-right: 5px;
     vertical-align: top;
-    margin-right: 8px;
-    margin-top: 2px;
 }
 
 .activity_table td.activity_color .activity_check_on {
+    margin-right: 5px;
     display: none;
     visibility: hidden;
+    vertical-align: top;
 }
 
 .activity_table td.activity_name button.hide-button,
@@ -298,14 +293,9 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     color: #4083ca;
 }
 
-.activity_table tr[data-completed="hide"] {
+div.table_container:not([data-show-hidden="true"]) .activity_table tr[data-completed="hide"] {
     display: none;
     visibility: hidden;
-}
-
-div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] {
-    display: table-row;
-    visibility: visible;
 }
 
 div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_color {
@@ -374,30 +364,23 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
 }
 
 .activity_desc {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    min-height: 72px;
-    padding: 10px 14px;
+    display: inline-block;
     white-space: normal;
-    line-height: 1.25rem;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    line-height: 1.35rem;
+    width: 100%;
 }
 
 .activity_note_line {
     display: block;
     margin-top: 4px;
-    color: #c3c3c3;
-    opacity: 0.9;
-    line-height: 1.25rem;
+    color: #d4d4d4;
+    line-height: 1.35rem;
 }
 
 .item_profit {
     display: inline-block;
     margin-left: 0;
-    margin-top: 4px;
+    margin-top: 6px;
     white-space: nowrap;
     font-weight: 700;
     color: #c1991c;
@@ -415,12 +398,15 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     white-space: nowrap;
 }
 
-.inline-danger {
-    order: 2;
-}
-
-.inline-primary {
-    order: 1;
+.farming-group-row td {
+    background: #111 !important;
+    color: #fff;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-top: 1px solid #555 !important;
+    border-bottom: 1px solid #555 !important;
+    padding: 0.6rem 0.85rem !important;
 }
 
 .compact .activity_tables {
@@ -450,12 +436,12 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
 
 .compact .activity_table th,
 .compact .activity_table td.activity_name {
+    width: 100%;
     width: calc(100% - 20px);
 }
 
 .compact .activity_table td.activity_name {
-    min-height: 52px;
-    height: 52px;
+    min-height: 48px;
     display: flex;
     flex-direction: row-reverse;
 }
@@ -465,18 +451,17 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
 .compact .activity_table td.activity_name a:link,
 .compact .activity_table td.activity_name a:visited {
     position: relative;
-    padding-right: 6.25rem;
 }
 
 .compact .activity_color {
     text-align: center;
-    min-height: 52px;
-    min-width: 52px;
+    min-height: 48px;
+    min-width: 48px;
 }
 
 .compact .activity_desc {
-    min-height: 52px;
-    padding: 8px 10px;
+    display: none;
+    visibility: hidden;
 }
 
 .compact .activity_table td.activity_color .activity_check_off,
@@ -492,14 +477,9 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     right: 52px;
 }
 
-.compact .activity_inline_actions {
-    margin-top: 4px;
-}
-
 .countdown {
     font-size: 1rem;
     white-space: nowrap;
-    display: inline-block;
 }
 
 .dragover {
@@ -514,7 +494,6 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
 footer {
     text-align: center;
     margin-top: 15px;
-    margin-bottom: 20px;
 }
 
 footer a,
@@ -543,29 +522,13 @@ footer a img {
         width: 50%;
     }
 
-    .activity_table thead td,
-    .activity_table td.activity_color {
+    .activity_table td.activity_color,
+    .activity_table thead td {
         width: 50%;
     }
 
-    .activity_table td.activity_name {
-        min-height: 80px;
-        height: 80px;
-    }
-
-    .activity_table td.activity_name a,
-    .activity_table td.activity_name a:active,
-    .activity_table td.activity_name a:link,
-    .activity_table td.activity_name a:visited {
-        padding-right: 5.5rem;
-        font-size: 0.95rem;
+    .activity_table a {
         text-decoration: underline;
-    }
-
-    .activity_desc {
-        min-height: 80px;
-        padding: 8px 10px;
-        font-size: 0.95rem;
     }
 }
 
@@ -579,8 +542,7 @@ footer a img {
 
     #profile-button,
     #settings-button,
-    #layout-button,
-    #token-button {
+    #layout-button {
         padding: 10px;
     }
 
@@ -596,8 +558,8 @@ footer a img {
         width: 60%;
     }
 
-    .activity_table thead td,
-    .activity_table td.activity_color {
+    .activity_table td.activity_color,
+    .activity_table thead td {
         width: 40%;
     }
 }
@@ -609,8 +571,8 @@ footer a img {
         width: 66%;
     }
 
-    .activity_table thead td,
-    .activity_table td.activity_color {
+    .activity_table td.activity_color,
+    .activity_table thead td {
         width: 34%;
     }
 }

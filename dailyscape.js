@@ -320,10 +320,6 @@ function applyOrderingAndSort(sectionKey, tasks) {
   return result;
 }
 
-function cloneRowTemplate() {
-  return document.getElementById('sample_row').content.firstElementChild.cloneNode(true);
-}
-
 function startFarmingTimer(task) {
   const timers = getFarmingTimers();
   const settings = getSettings();
@@ -423,9 +419,7 @@ function cleanupReadyFarmingTimers() {
 
 function getTaskAlertConfig(task) {
   const days = Number.isFinite(task?.alertDaysBeforeReset) ? Math.max(0, task.alertDaysBeforeReset) : 0;
-  return {
-    alertDaysBeforeReset: days
-  };
+  return { alertDaysBeforeReset: days };
 }
 
 function getTaskNextReset(task) {
@@ -442,6 +436,8 @@ function getTaskAlertTarget(task) {
 }
 
 function maybeNotifyTaskAlert(task, sectionKey) {
+  if (!task?.reset) return;
+
   const target = getTaskAlertTarget(task);
   if (Date.now() < target.getTime()) return;
 
@@ -459,6 +455,61 @@ function maybeNotifyTaskAlert(task, sectionKey) {
 
 function cleanupTaskNotificationsForReset(sectionKey) {
   removeKey(`notified:${sectionKey}`);
+}
+
+function cloneRowTemplate() {
+  return document.getElementById('sample_row').content.firstElementChild.cloneNode(true);
+}
+
+function createInlineActions(task, sectionKey, isCustom) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'activity_inline_actions';
+
+  if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
+    const cdBtn = document.createElement('button');
+    cdBtn.className = 'btn btn-warning btn-sm inline-primary cooldown-inline-btn';
+    cdBtn.type = 'button';
+    cdBtn.dataset.taskId = task.id;
+    cdBtn.dataset.cooldownMinutes = String(task.cooldownMinutes);
+    cdBtn.textContent = 'Start Cooldown';
+    cdBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startCooldown(task.id, task.cooldownMinutes);
+    });
+    wrapper.appendChild(cdBtn);
+  }
+
+  if (isCustom) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm inline-danger';
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const remove = confirm(`Delete custom task "${task.name}"?`);
+      if (!remove) return;
+
+      const next = getCustomTasks().filter(t => t.id !== task.id);
+      saveCustomTasks(next);
+
+      const completed = load('completed:custom', {});
+      const hiddenRows = load('hiddenRows:custom', {});
+      const notified = load('notified:custom', {});
+      delete completed[task.id];
+      delete hiddenRows[task.id];
+      delete notified[task.id];
+      save('completed:custom', completed);
+      save('hiddenRows:custom', hiddenRows);
+      save('notified:custom', notified);
+
+      renderApp();
+    });
+    wrapper.appendChild(delBtn);
+  }
+
+  return wrapper.children.length ? wrapper : null;
 }
 
 function createRow(sectionKey, task, isCustom = false) {
@@ -491,16 +542,11 @@ function createRow(sectionKey, task, isCustom = false) {
 
   if (sectionKey !== 'rs3farming' && task.reset) {
     const target = getTaskAlertTarget(task);
-
     const meta = document.createElement('span');
     meta.className = 'activity_note_line';
-
-    if (task.alertDaysBeforeReset && task.alertDaysBeforeReset > 0) {
-      meta.textContent = `⚠ Do before reset: ${formatDateTimeLocal(target)}`;
-    } else {
-      meta.textContent = `Reset: ${formatDateTimeLocal(target)}`;
-    }
-
+    meta.textContent = task.alertDaysBeforeReset && task.alertDaysBeforeReset > 0
+      ? `⚠ Do before reset: ${formatDateTimeLocal(target)}`
+      : `Reset: ${formatDateTimeLocal(target)}`;
     desc.appendChild(meta);
   }
 
@@ -513,73 +559,19 @@ function createRow(sectionKey, task, isCustom = false) {
     desc.appendChild(profit);
   }
 
-  const inlineActions = document.createElement('div');
-  inlineActions.className = 'activity_inline_actions';
-
   if (sectionKey === 'rs3farming') {
     const timers = getFarmingTimers();
     const state = timers[task.id];
-
     const statusLine = document.createElement('span');
     statusLine.className = 'activity_note_line';
-
-    if (state) {
-      const remaining = formatDurationMs(state.readyAt - Date.now());
-      statusLine.textContent = `⏳ Ready in ${remaining}`;
-    } else {
-      statusLine.textContent = 'Click to start timer';
-    }
-
+    statusLine.textContent = state
+      ? `⏳ Ready in ${formatDurationMs(state.readyAt - Date.now())}`
+      : 'Click to start timer';
     desc.appendChild(statusLine);
   }
 
-  if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
-    const cdBtn = document.createElement('button');
-    cdBtn.className = 'btn btn-warning btn-sm inline-primary cooldown-inline-btn';
-    cdBtn.type = 'button';
-    cdBtn.dataset.taskId = task.id;
-    cdBtn.dataset.cooldownMinutes = String(task.cooldownMinutes);
-    cdBtn.textContent = 'Start Cooldown';
-    cdBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startCooldown(task.id, task.cooldownMinutes);
-    });
-    inlineActions.appendChild(cdBtn);
-  }
-
-  if (isCustom) {
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn btn-danger btn-sm inline-danger';
-    delBtn.type = 'button';
-    delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const remove = confirm(`Delete custom task "${task.name}"?`);
-      if (!remove) return;
-
-      const next = getCustomTasks().filter(t => t.id !== task.id);
-      saveCustomTasks(next);
-
-      const completed = load('completed:custom', {});
-      const hiddenRows = load('hiddenRows:custom', {});
-      const notified = load('notified:custom', {});
-      delete completed[task.id];
-      delete hiddenRows[task.id];
-      delete notified[task.id];
-      save('completed:custom', completed);
-      save('hiddenRows:custom', hiddenRows);
-      save('notified:custom', notified);
-
-      renderApp();
-    });
-    inlineActions.appendChild(delBtn);
-  }
-
-  if (inlineActions.children.length > 0) {
-    desc.appendChild(inlineActions);
-  }
+  const actions = createInlineActions(task, sectionKey, isCustom);
+  if (actions) desc.appendChild(actions);
 
   hideBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -638,7 +630,6 @@ function createRow(sectionKey, task, isCustom = false) {
     e.preventDefault();
     const target = row;
     if (!dragRow || dragRow === target) return;
-
     const tbody = target.parentElement;
     const rect = target.getBoundingClientRect();
     const next = (e.clientY - rect.top) > rect.height / 2;
@@ -656,6 +647,31 @@ function persistOrderFromTable(sectionKey) {
   save(`order:${sectionKey}`, order);
 }
 
+function renderGroupedFarming(tbody, tasks) {
+  const groups = new Map();
+
+  tasks.forEach(task => {
+    const category = task.category || 'other';
+    if (!groups.has(category)) groups.set(category, []);
+    groups.get(category).push(task);
+  });
+
+  groups.forEach((groupTasks, category) => {
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'farming-group-row';
+    const headerCell = document.createElement('td');
+    headerCell.colSpan = 2;
+    headerCell.innerHTML = `<strong>${String(category).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</strong>`;
+    headerRow.appendChild(headerCell);
+    tbody.appendChild(headerRow);
+
+    groupTasks.forEach(task => {
+      const row = createRow('rs3farming', task, false);
+      tbody.appendChild(row);
+    });
+  });
+}
+
 function renderSection(sectionKey, tasks) {
   const container = document.getElementById(getContainerId(sectionKey));
   const table = document.getElementById(getTableId(sectionKey));
@@ -670,35 +686,11 @@ function renderSection(sectionKey, tasks) {
 
   const finalTasks = applyOrderingAndSort(sectionKey, tasks);
 
-  // 🔥 Farming grouping logic
   if (sectionKey === 'rs3farming') {
-    const groups = {};
-
-    finalTasks.forEach(task => {
-      const cat = task.category || 'Other';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(task);
-    });
-
-    Object.entries(groups).forEach(([category, list]) => {
-      const headerRow = document.createElement('tr');
-      headerRow.innerHTML = `
-        <td colspan="2" style="background:#111; font-weight:bold; padding:8px;">
-          ${category.toUpperCase().replace('-', ' ')}
-        </td>
-      `;
-      tbody.appendChild(headerRow);
-
-      list.forEach(task => {
-        const row = createRow(sectionKey, task);
-        tbody.appendChild(row);
-      });
-    });
-
+    renderGroupedFarming(tbody, finalTasks);
     return;
   }
 
-  // normal sections
   finalTasks.forEach(task => {
     const row = createRow(sectionKey, task, sectionKey === 'custom');
     tbody.appendChild(row);
