@@ -220,6 +220,17 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     min-height: 46px;
 }
 
+#overview-panel .activity_tables {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+#overview-panel .table_container {
+    padding-top: 0;
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
 .overview_empty {
     color: #b9b9b9;
     font-size: 0.92rem;
@@ -375,7 +386,7 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table td.activity_name button.pin-button {
     right: 52px;
-    top: 40%;
+    top: 50%;
 }
 
 .activity_table td.activity_name button.delete-button {
@@ -604,8 +615,22 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     border-bottom: 1px solid #333 !important;
 }
 
-.farming-subgroup-row .header_like_text {
+.farming-subheader-row .header_like_text {
     padding-left: 1.35rem;
+}
+
+.farming-location-row .activity_check_off,
+.farming-location-row .activity_check_on {
+    display: none !important;
+}
+
+.farming-location-row .activity_desc {
+    font-weight: 600;
+    margin-top: 0;
+}
+
+.farming-location-row .activity_note_line {
+    margin-top: 0;
 }
 
 /* -----------------------------
