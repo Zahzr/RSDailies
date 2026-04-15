@@ -217,6 +217,25 @@ function getSectionState(sectionKey) {
   };
 }
 
+function getCollapsedBlocks() {
+  return load('collapsedBlocks', {});
+}
+
+function setCollapsedBlock(blockId, collapsed) {
+  const blocks = getCollapsedBlocks();
+  if (collapsed) {
+    blocks[blockId] = true;
+  } else {
+    delete blocks[blockId];
+  }
+  save('collapsedBlocks', blocks);
+}
+
+function isCollapsedBlock(blockId) {
+  const blocks = getCollapsedBlocks();
+  return !!blocks[blockId];
+}
+
 function getCustomTasks() {
   return load('customTasks', []);
 }
@@ -250,6 +269,35 @@ function setViewMode(mode) {
 }
 
 /* -----------------------------
+   Penguin helper storage
+----------------------------- */
+
+function getPenguinWeeklyData() {
+  return load('penguinWeeklyData', {});
+}
+
+function mergePenguinChildRows(task) {
+  if (task.id !== 'penguins' || !Array.isArray(task.childRows)) {
+    return task;
+  }
+
+  const weeklyData = getPenguinWeeklyData();
+  const merged = task.childRows.map((child) => {
+    const override = weeklyData[child.id] || {};
+    return {
+      ...child,
+      name: override.name || child.name,
+      note: override.note || child.note
+    };
+  });
+
+  return {
+    ...task,
+    childRows: merged
+  };
+}
+
+/* -----------------------------
    Task resolution
 ----------------------------- */
 
@@ -264,12 +312,13 @@ function getResolvedSections() {
   const custom = getCustomTasks();
 
   const farmingGroups = Array.isArray(window.FARMING_CONFIG?.groups) ? window.FARMING_CONFIG.groups : [];
+  const resolvedWeeklies = weeklies.map((task) => mergePenguinChildRows(task));
 
   return {
     custom,
     rs3daily: dailies,
     gathering: gatheringDaily.concat(gatheringWeekly),
-    rs3weekly: weeklies,
+    rs3weekly: resolvedWeeklies,
     rs3monthly: monthlies,
     rs3farming: farmingGroups
   };
@@ -301,14 +350,20 @@ function childStorageKey(sectionKey, parentId, childId) {
   return `${sectionKey}::${parentId}::${childId}`;
 }
 
-function getTaskState(sectionKey, taskId) {
+function getTaskState(sectionKey, taskId, task = null) {
   const section = getSectionState(sectionKey);
 
   if (section.hiddenRows[taskId]) return 'hide';
 
-  if (sectionKey === 'rs3farming') {
+  if (task?.cooldownMinutes) {
+    const cooldowns = getCooldowns();
+    const cooldown = cooldowns[taskId];
+    if (cooldown && cooldown.readyAt > Date.now()) return 'hide';
+  }
+
+  if (sectionKey === 'rs3farming' && task?.isTimerParent) {
     const timers = getFarmingTimers();
-    if (timers[taskId]) return 'true';
+    return timers[task.id] ? 'running' : 'idle';
   }
 
   return section.completed[taskId] ? 'true' : 'false';
@@ -428,22 +483,17 @@ function clearFarmingTimer(taskId) {
 
 function cleanupReadyFarmingTimers() {
   const timers = getFarmingTimers();
-  const farmingState = getSectionState('rs3farming');
   let timersChanged = false;
-  let completionChanged = false;
 
   Object.values(timers).forEach((timer) => {
     if (!timer) return;
     if (timer.readyAt > Date.now()) return;
 
-    delete farmingState.completed[timer.id];
     delete timers[timer.id];
     timersChanged = true;
-    completionChanged = true;
   });
 
   if (timersChanged) saveFarmingTimers(timers);
-  if (completionChanged) saveSectionValue('rs3farming', 'completed', farmingState.completed);
 }
 
 /* -----------------------------
@@ -623,7 +673,7 @@ async function fetchProfits() {
 }
 
 /* -----------------------------
-   Cooldowns
+   Cooldown-based hidden timers
 ----------------------------- */
 
 function startCooldown(taskId, minutes) {
@@ -633,44 +683,101 @@ function startCooldown(taskId, minutes) {
     minutes: Math.max(1, Math.floor(minutes))
   };
   saveCooldowns(cooldowns);
-  renderCooldownButtons();
+}
+
+function cleanupReadyCooldowns() {
+  const cooldowns = getCooldowns();
+  const sections = ['custom', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'];
+  let changed = false;
+
+  Object.entries(cooldowns).forEach(([taskId, state]) => {
+    if (!state || state.readyAt > Date.now()) return;
+
+    delete cooldowns[taskId];
+    changed = true;
+
+    sections.forEach((sectionKey) => {
+      const section = getSectionState(sectionKey);
+      if (section.completed[taskId]) {
+        delete section.completed[taskId];
+        saveSectionValue(sectionKey, 'completed', section.completed);
+      }
+    });
+  });
+
+  if (changed) saveCooldowns(cooldowns);
 }
 
 function renderCooldownButtons() {
-  const cooldowns = getCooldowns();
-  const now = Date.now();
+  /* intentionally no-op */
+}
 
-  document.querySelectorAll('.cooldown-inline-btn').forEach((btn) => {
-    const taskId = btn.dataset.taskId;
-    const state = cooldowns[taskId];
+/* -----------------------------
+   Tooltip
+----------------------------- */
 
-    if (!state) {
-      btn.textContent = 'Start Cooldown';
-      btn.classList.remove('btn-success');
-      btn.classList.add('btn-warning');
-      btn.onclick = null;
-      return;
-    }
+function getTooltipEl() {
+  return document.getElementById('tooltip');
+}
 
-    const ms = state.readyAt - now;
+function showTooltip(text, anchorRect) {
+  const tooltip = getTooltipEl();
+  if (!tooltip || !text) return;
 
-    if (ms <= 0) {
-      btn.textContent = 'Ready';
-      btn.classList.remove('btn-warning');
-      btn.classList.add('btn-success');
-      btn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const next = getCooldowns();
-        delete next[taskId];
-        saveCooldowns(next);
-        renderApp();
-      };
-    } else {
-      btn.textContent = `Cooldown ${formatDurationMs(ms)}`;
-      btn.onclick = null;
-    }
-  });
+  tooltip.textContent = text;
+  tooltip.style.display = 'block';
+  tooltip.style.visibility = 'visible';
+
+  const pad = 10;
+  const width = tooltip.offsetWidth;
+  const height = tooltip.offsetHeight;
+
+  let left = anchorRect.left + window.scrollX;
+  let top = anchorRect.bottom + window.scrollY + 8;
+
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - width - pad;
+  if (left > maxLeft) left = maxLeft;
+  if (left < pad) left = pad;
+
+  const maxTop = window.scrollY + document.documentElement.clientHeight - height - pad;
+  if (top > maxTop) {
+    top = anchorRect.top + window.scrollY - height - 8;
+  }
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function hideTooltip() {
+  const tooltip = getTooltipEl();
+  if (!tooltip) return;
+  tooltip.style.display = 'none';
+  tooltip.style.visibility = 'hidden';
+  tooltip.textContent = '';
+}
+
+function buildTooltipText(task) {
+  const parts = [];
+  if (task.name) parts.push(task.name);
+  if (task.note) parts.push(task.note);
+  return parts.join('\n');
+}
+
+function attachTooltip(targetEl, task) {
+  const text = buildTooltipText(task);
+  if (!targetEl || !text) return;
+
+  targetEl.dataset.tooltipText = text;
+
+  const onEnter = () => showTooltip(text, targetEl.getBoundingClientRect());
+  const onLeave = () => hideTooltip();
+  const onMove = () => showTooltip(text, targetEl.getBoundingClientRect());
+
+  targetEl.addEventListener('mouseenter', onEnter);
+  targetEl.addEventListener('mouseleave', onLeave);
+  targetEl.addEventListener('mousemove', onMove);
+  targetEl.addEventListener('focus', onEnter);
+  targetEl.addEventListener('blur', onLeave);
 }
 
 /* -----------------------------
@@ -684,21 +791,6 @@ function cloneRowTemplate() {
 function createInlineActions(task, isCustom) {
   const wrapper = document.createElement('div');
   wrapper.className = 'activity_inline_actions';
-
-  if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
-    const cdBtn = document.createElement('button');
-    cdBtn.className = 'btn btn-warning btn-sm inline-primary cooldown-inline-btn';
-    cdBtn.type = 'button';
-    cdBtn.dataset.taskId = task.id;
-    cdBtn.dataset.cooldownMinutes = String(task.cooldownMinutes);
-    cdBtn.textContent = 'Start Cooldown';
-    cdBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startCooldown(task.id, task.cooldownMinutes);
-    });
-    wrapper.appendChild(cdBtn);
-  }
 
   if (isCustom) {
     const delBtn = document.createElement('button');
@@ -734,7 +826,7 @@ function createInlineActions(task, isCustom) {
   return wrapper.children.length ? wrapper : null;
 }
 
-function appendRowText(desc, task, sectionKey, isTimerParent = false) {
+function appendRowText(desc, task, sectionKey) {
   if (task.note) {
     const noteLine = document.createElement('span');
     noteLine.className = 'activity_note_line';
@@ -752,17 +844,6 @@ function appendRowText(desc, task, sectionKey, isTimerParent = false) {
     desc.appendChild(meta);
   }
 
-  if (sectionKey === 'rs3farming' && isTimerParent) {
-    const timers = getFarmingTimers();
-    const running = timers[task.id];
-    const line = document.createElement('span');
-    line.className = 'activity_note_line';
-    line.textContent = running
-      ? `⏳ Ready in ${formatDurationMs(running.readyAt - Date.now())}`
-      : 'Click to start timer';
-    desc.appendChild(line);
-  }
-
   if (task.profit?.item && task.profit?.qty) {
     const profit = document.createElement('span');
     profit.className = 'item_profit';
@@ -777,14 +858,14 @@ function createBaseRow(sectionKey, task, options = {}) {
   const {
     isCustom = false,
     extraClass = '',
-    isTimerParent = false,
-    customStorageId = null
+    customStorageId = null,
+    renderNameOnRight = false
   } = options;
 
   const taskId = customStorageId || task.id;
   const row = cloneRowTemplate();
   row.dataset.id = taskId;
-  row.dataset.completed = getTaskState(sectionKey, taskId);
+  row.dataset.completed = getTaskState(sectionKey, taskId, task);
 
   if (extraClass) row.classList.add(extraClass);
 
@@ -793,18 +874,36 @@ function createBaseRow(sectionKey, task, options = {}) {
   const hideBtn = nameCell.querySelector('.hide-button');
   const colorCell = row.querySelector('.activity_color');
   const desc = row.querySelector('.activity_desc');
+  const checkOff = row.querySelector('.activity_check_off');
+  const checkOn = row.querySelector('.activity_check_on');
 
-  if (task.wiki) {
-    nameLink.href = task.wiki;
-  } else {
+  attachTooltip(row, task);
+  attachTooltip(colorCell, task);
+
+  if (renderNameOnRight) {
+    nameLink.textContent = '';
     nameLink.href = '#';
     nameLink.addEventListener('click', (e) => e.preventDefault());
+
+    const nameLine = document.createElement('span');
+    nameLine.className = 'activity_note_line activity_child_name';
+    nameLine.textContent = task.name;
+    desc.appendChild(nameLine);
+
+    appendRowText(desc, task, sectionKey);
+  } else {
+    if (task.wiki) {
+      nameLink.href = task.wiki;
+    } else {
+      nameLink.href = '#';
+      nameLink.addEventListener('click', (e) => e.preventDefault());
+    }
+
+    nameLink.textContent = task.name;
+    desc.textContent = '';
+    appendRowText(desc, task, sectionKey);
+    attachTooltip(nameLink, task);
   }
-
-  nameLink.textContent = task.name;
-  desc.textContent = '';
-
-  appendRowText(desc, task, sectionKey, isTimerParent);
 
   const actions = createInlineActions(task, isCustom);
   if (actions) desc.appendChild(actions);
@@ -840,23 +939,18 @@ function createBaseRow(sectionKey, task, options = {}) {
   colorCell.addEventListener('click', (e) => {
     e.preventDefault();
 
-    const state = getTaskState(sectionKey, taskId);
+    const state = getTaskState(sectionKey, taskId, task);
     if (state === 'hide') return;
 
-    if (sectionKey === 'rs3farming' && isTimerParent) {
-      if (state === 'true') {
-        clearFarmingTimer(task.id);
-        setTaskCompleted(sectionKey, taskId, false);
-      } else {
-        startFarmingTimer(task);
-        if (task.vanishOnStart) {
-          setTaskCompleted(sectionKey, taskId, true);
-        }
-      }
-    } else {
-      setTaskCompleted(sectionKey, taskId, state !== 'true');
+    if (task.cooldownMinutes && !task.isChildRow) {
+      if (state === 'true' || state === 'hide') return;
+      startCooldown(taskId, task.cooldownMinutes);
+      setTaskCompleted(sectionKey, taskId, true);
+      renderApp();
+      return;
     }
 
+    setTaskCompleted(sectionKey, taskId, state !== 'true');
     renderApp();
   });
 
@@ -881,6 +975,11 @@ function createBaseRow(sectionKey, task, options = {}) {
     tbody.insertBefore(dragRow, insertAfter ? row.nextSibling : row);
   });
 
+  if (renderNameOnRight) {
+    checkOff.style.display = '';
+    checkOn.style.display = '';
+  }
+
   return row;
 }
 
@@ -888,29 +987,15 @@ function createRow(sectionKey, task, isCustom = false, extraClass = '') {
   return createBaseRow(sectionKey, task, {
     isCustom,
     extraClass,
-    isTimerParent: false
+    renderNameOnRight: false
   });
 }
 
-function createTimerParentRow(sectionKey, task, extraClass = '') {
+function createRightSideChildRow(sectionKey, task, parentId, extraClass = '') {
   return createBaseRow(sectionKey, task, {
     extraClass,
-    isTimerParent: true
-  });
-}
-
-function createChildRowsForTask(sectionKey, parentTask) {
-  const childRows = Array.isArray(parentTask.childRows) ? parentTask.childRows : [];
-  return childRows.map((child) => {
-    const childTask = {
-      ...child,
-      wiki: parentTask.wiki || '',
-      isChildRow: true
-    };
-    return createBaseRow(sectionKey, childTask, {
-      extraClass: 'farming-child-row',
-      customStorageId: childStorageKey(sectionKey, parentTask.id, child.id)
-    });
+    customStorageId: childStorageKey(sectionKey, parentId, task.id),
+    renderNameOnRight: true
   });
 }
 
@@ -926,13 +1011,59 @@ function persistOrderFromTable(sectionKey) {
   save(`order:${sectionKey}`, order);
 }
 
-function createGroupHeaderRow(label, className = '') {
+function makeCollapseButton(blockId) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-secondary btn-sm mini-collapse-btn';
+  btn.textContent = isCollapsedBlock(blockId) ? '▼' : '▲';
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCollapsedBlock(blockId, !isCollapsedBlock(blockId));
+    renderApp();
+  });
+  return btn;
+}
+
+function createHeaderRow(label, blockId, options = {}) {
+  const {
+    className = '',
+    rightText = '',
+    onRightClick = null
+  } = options;
+
   const row = document.createElement('tr');
   row.className = className;
-  const td = document.createElement('td');
-  td.colSpan = 2;
-  td.innerHTML = `<strong>${label}</strong>`;
-  row.appendChild(td);
+
+  const left = document.createElement('td');
+  left.className = 'activity_name header_like_name';
+  left.innerHTML = `<span class="header_like_text">${label}</span>`;
+
+  const right = document.createElement('td');
+  right.className = 'activity_color header_like_color';
+
+  const rightInner = document.createElement('div');
+  rightInner.className = 'header_like_inner';
+
+  const status = document.createElement('span');
+  status.className = 'header_like_status';
+  status.textContent = rightText || '';
+
+  const collapse = makeCollapseButton(blockId);
+
+  rightInner.appendChild(status);
+  rightInner.appendChild(collapse);
+  right.appendChild(rightInner);
+
+  if (onRightClick) {
+    right.addEventListener('click', (e) => {
+      if (e.target.closest('.mini-collapse-btn')) return;
+      onRightClick();
+    });
+  }
+
+  row.appendChild(left);
+  row.appendChild(right);
   return row;
 }
 
@@ -943,66 +1074,123 @@ function createGroupHeaderRow(label, className = '') {
 function displayFarmingLabel(label) {
   const lower = String(label || '').toLowerCase();
 
-  if (lower === 'herbs') return 'Herb Timers';
-  if (lower === 'allotments') return 'Allotment Timers';
-  if (lower === 'hops') return 'Hop Timers';
-  if (lower === 'trees') return 'Tree Timers';
-  if (lower === 'specialty') return 'Specialty Timers';
+  if (lower === 'herbs') return 'HERB';
+  if (lower === 'allotments') return 'ALLOTMENT';
+  if (lower === 'hops') return 'HOPS';
+  if (lower === 'trees') return 'TREES';
+  if (lower === 'specialty') return 'SPECIALTY';
 
-  return label;
+  return String(label || '').toUpperCase();
+}
+
+function getFarmingHeaderStatus(task) {
+  const timers = getFarmingTimers();
+  const running = timers[task.id];
+  return running ? `Ready in ${formatDurationMs(running.readyAt - Date.now())}` : 'Start timer';
 }
 
 function renderGroupedFarming(tbody, groups) {
   groups.forEach((group) => {
-    tbody.appendChild(createGroupHeaderRow(displayFarmingLabel(group.label), 'farming-group-row'));
-
+    const groupBlockId = `farm-group:${group.id}`;
     const timers = Array.isArray(group.timers) ? group.timers : [];
     const plots = Array.isArray(group.plots) ? group.plots : [];
 
     if (group.id === 'trees' || group.id === 'specialty') {
+      tbody.appendChild(createHeaderRow(displayFarmingLabel(group.label), groupBlockId, {
+        className: 'farming-group-row',
+        rightText: ''
+      }));
+
+      if (isCollapsedBlock(groupBlockId)) return;
+
       timers.forEach((timerTask) => {
-        tbody.appendChild(createGroupHeaderRow(timerTask.name, 'farming-subgroup-row'));
-        tbody.appendChild(createTimerParentRow('rs3farming', timerTask));
+        const subBlockId = `farm-sub:${group.id}:${timerTask.id}`;
+        tbody.appendChild(createHeaderRow(timerTask.name.toUpperCase(), subBlockId, {
+          className: 'farming-subgroup-row',
+          rightText: getFarmingHeaderStatus(timerTask),
+          onRightClick: () => {
+            const state = getTaskState('rs3farming', timerTask.id, { ...timerTask, isTimerParent: true });
+            if (state === 'running') {
+              clearFarmingTimer(timerTask.id);
+            } else {
+              startFarmingTimer(timerTask);
+            }
+            renderApp();
+          }
+        }));
+
+        if (isCollapsedBlock(subBlockId)) return;
 
         const timerPlots = Array.isArray(timerTask.plots) ? timerTask.plots : [];
         if (timerPlots.length) {
-          tbody.appendChild(createGroupHeaderRow('Plots / Locations', 'farming-subgroup-row'));
-          timerPlots.forEach((plotTask) => {
-            tbody.appendChild(
-              createBaseRow(
-                'rs3farming',
-                { ...plotTask, reset: 'daily', alertDaysBeforeReset: 0, isChildRow: true },
-                {
-                  extraClass: 'farming-child-row',
-                  customStorageId: childStorageKey('rs3farming', timerTask.id, plotTask.id)
-                }
-              )
-            );
-          });
+          const plotsBlockId = `farm-plots:${timerTask.id}`;
+          tbody.appendChild(createHeaderRow('PLOTS / LOCATIONS', plotsBlockId, {
+            className: 'farming-subgroup-row',
+            rightText: ''
+          }));
+
+          if (!isCollapsedBlock(plotsBlockId)) {
+            timerPlots.forEach((plotTask) => {
+              tbody.appendChild(
+                createRightSideChildRow(
+                  'rs3farming',
+                  {
+                    ...plotTask,
+                    reset: 'daily',
+                    alertDaysBeforeReset: 0,
+                    isChildRow: true
+                  },
+                  timerTask.id,
+                  'farming-child-row'
+                )
+              );
+            });
+          }
         }
       });
+
       return;
     }
 
-    if (timers.length) {
-      const parentTimer = {
-        ...timers[0],
-        name: displayFarmingLabel(group.label)
-      };
+    if (!timers.length) return;
 
-      tbody.appendChild(createTimerParentRow('rs3farming', parentTimer));
+    const timerTask = timers[0];
+    tbody.appendChild(createHeaderRow(displayFarmingLabel(group.label), groupBlockId, {
+      className: 'farming-group-row',
+      rightText: getFarmingHeaderStatus(timerTask),
+      onRightClick: () => {
+        const state = getTaskState('rs3farming', timerTask.id, { ...timerTask, isTimerParent: true });
+        if (state === 'running') {
+          clearFarmingTimer(timerTask.id);
+        } else {
+          startFarmingTimer(timerTask);
+        }
+        renderApp();
+      }
+    }));
 
-      if (plots.length) {
-        tbody.appendChild(createGroupHeaderRow('Plots / Locations', 'farming-subgroup-row'));
+    if (isCollapsedBlock(groupBlockId)) return;
+
+    if (plots.length) {
+      const plotsBlockId = `farm-plots:${group.id}`;
+      tbody.appendChild(createHeaderRow('PLOTS / LOCATIONS', plotsBlockId, {
+        className: 'farming-subgroup-row',
+        rightText: ''
+      }));
+
+      if (!isCollapsedBlock(plotsBlockId)) {
         plots.forEach((plotTask) => {
           tbody.appendChild(
-            createBaseRow(
+            createRightSideChildRow(
               'rs3farming',
-              { ...plotTask, reset: 'daily', alertDaysBeforeReset: 0, isChildRow: true },
               {
-                extraClass: 'farming-child-row',
-                customStorageId: childStorageKey('rs3farming', parentTimer.id, plotTask.id)
-              }
+                ...plotTask,
+                reset: 'daily',
+                alertDaysBeforeReset: 0,
+                isChildRow: true
+              },
+              timerTask.id,
+              'farming-child-row'
             )
           );
         });
@@ -1016,17 +1204,29 @@ function renderGroupedGathering(tbody, tasks) {
   const weekly = tasks.filter((task) => String(task.reset || '').toLowerCase() === 'weekly');
 
   if (daily.length) {
-    tbody.appendChild(createGroupHeaderRow('Daily Gathering', 'gathering-group-row'));
-    applyOrderingAndSort('gathering', daily).forEach((task) => {
-      tbody.appendChild(createRow('gathering', task, false));
-    });
+    tbody.appendChild(createHeaderRow('DAILY GATHERING', 'gathering:daily', {
+      className: 'gathering-group-row',
+      rightText: ''
+    }));
+
+    if (!isCollapsedBlock('gathering:daily')) {
+      applyOrderingAndSort('gathering', daily).forEach((task) => {
+        tbody.appendChild(createRow('gathering', task, false));
+      });
+    }
   }
 
   if (weekly.length) {
-    tbody.appendChild(createGroupHeaderRow('Weekly Gathering', 'gathering-group-row'));
-    applyOrderingAndSort('gathering', weekly).forEach((task) => {
-      tbody.appendChild(createRow('gathering', task, false));
-    });
+    tbody.appendChild(createHeaderRow('WEEKLY GATHERING', 'gathering:weekly', {
+      className: 'gathering-group-row',
+      rightText: ''
+    }));
+
+    if (!isCollapsedBlock('gathering:weekly')) {
+      applyOrderingAndSort('gathering', weekly).forEach((task) => {
+        tbody.appendChild(createRow('gathering', task, false));
+      });
+    }
   }
 }
 
@@ -1035,25 +1235,32 @@ function renderWeekliesWithChildren(tbody, tasks) {
     tbody.appendChild(createRow('rs3weekly', task, false));
 
     if (Array.isArray(task.childRows) && task.childRows.length) {
-      tbody.appendChild(createGroupHeaderRow(`${task.name} Locations`, 'gathering-group-row'));
-      task.childRows.forEach((child) => {
-        tbody.appendChild(
-          createBaseRow(
-            'rs3weekly',
-            {
-              ...child,
-              wiki: task.wiki || '',
-              reset: 'weekly',
-              alertDaysBeforeReset: 0,
-              isChildRow: true
-            },
-            {
-              extraClass: 'farming-child-row',
-              customStorageId: childStorageKey('rs3weekly', task.id, child.id)
-            }
-          )
-        );
-      });
+      const childBlockId = `weekly-children:${task.id}`;
+      const childHeaderLabel = task.id === 'penguins' ? 'PENGUINS' : task.name.toUpperCase();
+
+      tbody.appendChild(createHeaderRow(childHeaderLabel, childBlockId, {
+        className: 'gathering-group-row',
+        rightText: ''
+      }));
+
+      if (!isCollapsedBlock(childBlockId)) {
+        task.childRows.forEach((child) => {
+          tbody.appendChild(
+            createRightSideChildRow(
+              'rs3weekly',
+              {
+                ...child,
+                wiki: task.wiki || '',
+                reset: 'weekly',
+                alertDaysBeforeReset: 0,
+                isChildRow: true
+              },
+              task.id,
+              'farming-child-row'
+            )
+          );
+        });
+      }
     }
   });
 }
@@ -1094,50 +1301,8 @@ function renderStandardSection(sectionKey, tasks) {
    Overview
 ----------------------------- */
 
-function collectOverviewItems(sections) {
-  const items = [];
-
-  sections.custom.forEach((task) => {
-    if (getTaskState('custom', task.id) !== 'true') {
-      items.push({ title: task.name, meta: task.note || 'Custom task', sortTs: getTaskAlertTarget(task).getTime() });
-    }
-  });
-
-  sections.rs3daily.forEach((task) => {
-    if (getTaskState('rs3daily', task.id) !== 'true') {
-      items.push({ title: task.name, meta: task.note || 'Daily task', sortTs: getTaskAlertTarget(task).getTime() });
-    }
-  });
-
-  sections.gathering.forEach((task) => {
-    if (getTaskState('gathering', task.id) !== 'true') {
-      items.push({ title: task.name, meta: task.note || 'Gathering task', sortTs: getTaskAlertTarget(task).getTime() });
-    }
-  });
-
-  sections.rs3weekly.forEach((task) => {
-    if (getTaskState('rs3weekly', task.id) !== 'true') {
-      items.push({ title: task.name, meta: task.note || 'Weekly task', sortTs: getTaskAlertTarget(task).getTime() });
-    }
-  });
-
-  sections.rs3monthly.forEach((task) => {
-    if (getTaskState('rs3monthly', task.id) !== 'true') {
-      items.push({ title: task.name, meta: task.note || 'Monthly task', sortTs: getTaskAlertTarget(task).getTime() });
-    }
-  });
-
-  const timers = Object.values(getFarmingTimers());
-  timers.forEach((timer) => {
-    items.push({
-      title: timer.name,
-      meta: `Ready in ${formatDurationMs(timer.readyAt - Date.now())}`,
-      sortTs: timer.readyAt
-    });
-  });
-
-  items.sort((a, b) => a.sortTs - b.sortTs);
-  return items.slice(0, 12);
+function collectOverviewItems() {
+  return [];
 }
 
 function renderOverviewPanel() {
@@ -1151,29 +1316,17 @@ function renderOverviewPanel() {
   panel.dataset.view = mode;
   content.innerHTML = '';
 
-  const sections = getResolvedSections();
-  const items = collectOverviewItems(sections);
+  const items = collectOverviewItems();
 
   if (mode === 'overview') {
     tables.style.display = 'none';
 
-    if (!items.length) {
-      const empty = document.createElement('div');
-      empty.className = 'overview_empty';
-      empty.textContent = 'Nothing urgent right now.';
-      content.appendChild(empty);
-      return;
-    }
-
-    items.forEach((item) => {
-      const row = document.createElement('div');
-      row.className = 'overview_row';
-      row.innerHTML = `
-        <div class="overview_row_title">${item.title}</div>
-        <div class="overview_row_meta">${item.meta}</div>
-      `;
-      content.appendChild(row);
-    });
+    const empty = document.createElement('div');
+    empty.className = 'overview_empty';
+    empty.textContent = items.length
+      ? 'Overview items will appear here.'
+      : 'Nothing has been added to Overview yet.';
+    content.appendChild(empty);
 
     return;
   }
@@ -1181,9 +1334,7 @@ function renderOverviewPanel() {
   tables.style.display = '';
   const empty = document.createElement('div');
   empty.className = 'overview_empty';
-  empty.textContent = items.length
-    ? `Upcoming: ${items[0].title} — ${items[0].meta}`
-    : 'Overview mode will show upcoming tasks here.';
+  empty.textContent = 'Nothing has been added to Overview yet.';
   content.appendChild(empty);
 }
 
@@ -1226,6 +1377,8 @@ function setupOverviewControls() {
 
 function renderApp() {
   cleanupReadyFarmingTimers();
+  cleanupReadyCooldowns();
+  hideTooltip();
 
   const sections = getResolvedSections();
 
@@ -1630,7 +1783,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => {
     checkAutoReset();
     cleanupReadyFarmingTimers();
-    renderCooldownButtons();
+    cleanupReadyCooldowns();
     renderApp();
   }, 1000);
 

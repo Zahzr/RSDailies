@@ -8,7 +8,7 @@ body {
 .table_container {
     padding-top: 72px;
     margin-top: -72px;
-    margin-bottom: 48px;
+    margin-bottom: 44px;
 }
 
 .navbar-nav>li>.dropdown-menu {
@@ -36,7 +36,7 @@ body {
     background-color: #1f2f38;
     color: #fff;
     font-weight: 900;
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     line-height: 1rem;
     margin-left: 5px;
 }
@@ -108,12 +108,12 @@ body {
     padding: .375rem .75rem;
 }
 
-.table>:not(:first-child) {
+.table> :not(:first-child) {
     border-top: 0;
 }
 
-.table>:not(caption)>*>* {
-    padding: 0.55rem 0.7rem;
+.table> :not(caption)>*>* {
+    padding: 0.48rem 0.68rem;
 }
 
 div.table_container[data-hide="hide"] table tbody {
@@ -172,6 +172,10 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     color: #fff;
 }
 
+/* -----------------------------
+   Overview
+----------------------------- */
+
 .overview_panel {
     margin-top: 14px;
     margin-bottom: 18px;
@@ -186,8 +190,8 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 0.6rem 0.85rem;
-    background: #1b1b1b;
+    padding: 0.58rem 0.85rem;
+    background: linear-gradient(90deg, #151515, #1d232b);
     border-bottom: 1px solid #2d2d2d;
 }
 
@@ -205,14 +209,42 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 }
 
 .overview_content {
-    padding: 0.75rem 0.85rem;
-    min-height: 48px;
+    padding: 0.72rem 0.85rem;
+    min-height: 46px;
 }
 
 .overview_empty {
     color: #b9b9b9;
     font-size: 0.92rem;
 }
+
+.overview_row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #262626;
+}
+
+.overview_row:last-child {
+    border-bottom: none;
+}
+
+.overview_row_title {
+    color: #fff;
+    font-weight: 600;
+    line-height: 1.15rem;
+}
+
+.overview_row_meta {
+    color: #cfcfcf;
+    font-size: 0.9rem;
+    line-height: 1.1rem;
+}
+
+/* -----------------------------
+   Main tables
+----------------------------- */
 
 .activity_table {
     table-layout: fixed;
@@ -221,28 +253,28 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 }
 
 .activity_table th {
-    font-size: 1.2rem;
+    font-size: 1.18rem;
     vertical-align: middle;
-    width: 62%;
+    width: 66%;
     border: none;
-    padding-top: 0.6rem !important;
-    padding-bottom: 0.6rem !important;
+    padding-top: 0.56rem !important;
+    padding-bottom: 0.56rem !important;
 }
 
 .activity_table thead td {
     text-align: right;
     position: relative;
-    width: 38%;
+    width: 34%;
     vertical-align: middle;
-    padding-top: 0.45rem !important;
-    padding-bottom: 0.45rem !important;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
 }
 
 .activity_table td.activity_name {
     padding: 0;
     height: 100%;
-    width: 62%;
-    min-height: 54px;
+    width: 66%;
+    min-height: 50px;
     position: relative;
     vertical-align: middle;
 }
@@ -267,8 +299,8 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     left: 0;
     height: 100%;
     width: 100%;
-    padding: 0.7rem 4.1rem 0.7rem 0.85rem;
-    line-height: 1.05rem;
+    padding: 0.62rem 4.05rem 0.62rem 0.85rem;
+    line-height: 1.02rem;
     text-decoration: none;
     z-index: 1;
     overflow-wrap: anywhere;
@@ -282,8 +314,8 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table tr:hover a::after {
     content: '';
-    width: .6em;
-    height: .75em;
+    width: 0.6em;
+    height: 0.75em;
     display: inline-block;
     background-image: url("data:image/svg+xml;utf8;base64,PHN2ZyBoZWlnaHQ9IjEwMjQiIHdpZHRoPSI3NjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iIzQwODNDQSI+PHBhdGggZD0iTTY0MCA3NjhIMTI4VjI1Ny45MDU5OTk5OTk5OTk5NUwyNTYgMjU2VjEyOEgwdjc2OGg3NjhWNTc2SDY0MFY3Njh6TTM4NCAxMjhsMTI4IDEyOEwzMjAgNDQ4bDEyOCAxMjggMTkyLTE5MiAxMjggMTI4VjEyOEgzODR6Ii8+PC9zdmc+");
     background-size: cover;
@@ -294,14 +326,15 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table td.activity_color {
     cursor: pointer;
-    width: 38%;
-    padding: 0.55rem 0.85rem;
+    width: 34%;
+    padding: 0.48rem 0.78rem;
     vertical-align: middle;
+    position: relative;
 }
 
 .activity_table td.activity_color .activity_check_off,
 .activity_table td.activity_color .activity_check_on {
-    margin-right: 5px;
+    margin-right: 6px;
     vertical-align: top;
 }
 
@@ -343,6 +376,10 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 .activity_table td.activity_color a:hover {
     color: #4083ca;
 }
+
+/* -----------------------------
+   Hidden / complete states
+----------------------------- */
 
 div.table_container:not([data-show-hidden="true"]) .activity_table tr[data-completed="hide"] {
     display: none;
@@ -404,30 +441,45 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     background: linear-gradient(0deg, rgba(40, 130, 73, 0.25), rgba(40, 130, 73, 0.25));
 }
 
-.activity_table tr[data-completed="false"] .activity_color {
+.activity_table tr[data-completed="false"] .activity_color,
+.activity_table tr[data-completed="idle"] .activity_color,
+.activity_table tr[data-completed="running"] .activity_color {
     background-color: #590505;
     box-shadow: inset 0 0 0 9999px #590505;
 }
 
-.activity_table tr:hover[data-completed="false"] .activity_color {
+.activity_table tr:hover[data-completed="false"] .activity_color,
+.activity_table tr:hover[data-completed="idle"] .activity_color,
+.activity_table tr:hover[data-completed="running"] .activity_color {
     background-color: #3b0404;
     box-shadow: inset 0 0 0 9999px #3b0404;
 }
+
+/* -----------------------------
+   Row text
+----------------------------- */
 
 .activity_desc {
     display: inline-block;
     width: 100%;
     white-space: normal;
-    line-height: 1.2rem;
+    line-height: 1.15rem;
     vertical-align: top;
 }
 
 .activity_note_line {
     display: block;
-    margin-top: 3px;
-    color: #d4d4d4;
-    line-height: 1.2rem;
+    margin-top: 2px;
+    color: #f0f0f0;
+    line-height: 1.15rem;
     font-size: 0.92rem;
+}
+
+.activity_child_name {
+    font-weight: 600;
+    color: #fff;
+    margin-top: 0;
+    margin-bottom: 1px;
 }
 
 .item_profit {
@@ -452,39 +504,111 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
     white-space: nowrap;
 }
 
-.farming-group-row td {
-    background: #111 !important;
-    color: #fff;
-    font-size: 0.9rem;
+/* -----------------------------
+   Header-like rows inside sections
+----------------------------- */
+
+.header_like_name {
+    padding: 0 !important;
+    background: #111;
+    min-height: 38px !important;
+}
+
+.header_like_name .header_like_text {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    min-height: 38px;
+    padding: 0.32rem 0.8rem;
+    font-weight: 700;
+    font-size: 0.88rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    color: #fff;
+}
+
+.header_like_color {
+    cursor: default !important;
+    background: #111 !important;
+    box-shadow: inset 0 0 0 9999px #111 !important;
+    padding: 0.2rem 0.55rem !important;
+}
+
+.header_like_inner {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-height: 30px;
+}
+
+.header_like_status {
+    color: #d8d8d8;
+    font-size: 0.84rem;
+    line-height: 1rem;
+}
+
+.mini-collapse-btn {
+    min-width: 30px;
+    padding: 0.18rem 0.42rem;
+    line-height: 1;
+}
+
+.farming-group-row td {
+    background: linear-gradient(90deg, #141414, #1b222a) !important;
     border-top: 1px solid #555 !important;
     border-bottom: 1px solid #555 !important;
-    padding: 0.42rem 0.8rem !important;
 }
 
 .farming-subgroup-row td,
 .gathering-group-row td {
-    background: #1a1a1a !important;
-    color: #d9d9d9;
-    font-size: 0.78rem;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    background: linear-gradient(90deg, #171717, #202020) !important;
     border-top: 1px solid #333 !important;
     border-bottom: 1px solid #333 !important;
-    padding: 0.34rem 0.8rem !important;
+}
+
+/* -----------------------------
+   Child rows
+----------------------------- */
+
+.farming-child-row td.activity_name {
+    background: #0a0a0a;
+    box-shadow: inset 0 0 0 9999px #0a0a0a;
+    min-height: 40px;
 }
 
 .farming-child-row td.activity_name a,
 .farming-child-row td.activity_name a:active,
 .farming-child-row td.activity_name a:link,
 .farming-child-row td.activity_name a:visited {
-    padding-left: 1.6rem;
+    color: transparent !important;
+    text-decoration: none !important;
+    pointer-events: none;
+    padding: 0;
+}
+
+.farming-child-row td.activity_name::before {
+    background: #0a0a0a !important;
+}
+
+.farming-child-row td.activity_name button.hide-button,
+.farming-child-row td.activity_name button.delete-button {
+    display: none !important;
 }
 
 .farming-child-row td.activity_color {
     font-size: 0.92rem;
+    vertical-align: middle;
+    min-height: 40px;
 }
+
+.farming-child-row .activity_desc {
+    padding-top: 0;
+}
+
+/* -----------------------------
+   Countdown / helpers
+----------------------------- */
 
 .countdown {
     font-size: 0.92rem;
@@ -499,6 +623,83 @@ div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="
 .hidden {
     display: none !important;
 }
+
+/* -----------------------------
+   Compact mode
+----------------------------- */
+
+.compact .activity_tables {
+    column-count: 2;
+}
+
+.compact .activity_tables .table_container {
+    margin: 0 10px 18px;
+    min-width: 420px;
+    padding-top: 0;
+}
+
+.compact .activity_table thead tr {
+    display: flex;
+}
+
+.compact .activity_table tbody tr {
+    position: relative;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+}
+
+.compact .activity_table td {
+    border: none;
+}
+
+.compact .activity_table th,
+.compact .activity_table td.activity_name {
+    width: calc(100% - 20px);
+}
+
+.compact .activity_table td.activity_name {
+    min-height: 40px;
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+.compact .activity_table td.activity_name a,
+.compact .activity_table td.activity_name a:active,
+.compact .activity_table td.activity_name a:link,
+.compact .activity_table td.activity_name a:visited {
+    position: relative;
+    padding-top: 0.48rem;
+    padding-bottom: 0.48rem;
+}
+
+.compact .activity_color {
+    text-align: center;
+    min-height: 40px;
+    min-width: 40px;
+}
+
+.compact .activity_desc {
+    display: none;
+    visibility: hidden;
+}
+
+.compact .activity_table td.activity_color .activity_check_off,
+.compact .activity_table td.activity_color .activity_check_on {
+    margin-right: 0;
+}
+
+.compact .activity_table td.activity_name button.hide-button {
+    right: 10px;
+}
+
+.compact .activity_table td.activity_name button.delete-button {
+    right: 52px;
+}
+
+/* -----------------------------
+   Footer / modal
+----------------------------- */
 
 footer {
     text-align: center;
@@ -525,6 +726,19 @@ footer a img {
     margin-right: 3px;
 }
 
+.modal-content {
+    background-color: #343a40;
+    color: #fff;
+}
+
+.form-control[readonly] {
+    color: #555;
+}
+
+/* -----------------------------
+   Responsive
+----------------------------- */
+
 @media (max-width: 767px) {
 
     .activity_table th,
@@ -538,14 +752,14 @@ footer a img {
     }
 
     .activity_table td.activity_name {
-        min-height: 58px;
+        min-height: 54px;
     }
 
     .activity_table td.activity_name a,
     .activity_table td.activity_name a:active,
     .activity_table td.activity_name a:link,
     .activity_table td.activity_name a:visited {
-        padding: 0.65rem 3.6rem 0.65rem 0.7rem;
+        padding: 0.58rem 3.55rem 0.58rem 0.72rem;
         font-size: 0.95rem;
     }
 
@@ -560,6 +774,10 @@ footer a img {
     .overview_header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .header_like_inner {
+        justify-content: flex-end;
     }
 }
 
@@ -607,82 +825,4 @@ footer a img {
     .activity_table thead td {
         width: 34%;
     }
-}
-
-.compact .activity_tables {
-    column-count: 2;
-}
-
-.compact .activity_tables .table_container {
-    margin: 0 10px 20px;
-    min-width: 420px;
-    padding-top: 0;
-}
-
-.compact .activity_table thead tr {
-    display: flex;
-}
-
-.compact .activity_table tbody tr {
-    position: relative;
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: center;
-}
-
-.compact .activity_table td {
-    border: none;
-}
-
-.compact .activity_table th,
-.compact .activity_table td.activity_name {
-    width: calc(100% - 20px);
-}
-
-.compact .activity_table td.activity_name {
-    min-height: 42px;
-    display: flex;
-    flex-direction: row-reverse;
-}
-
-.compact .activity_table td.activity_name a,
-.compact .activity_table td.activity_name a:active,
-.compact .activity_table td.activity_name a:link,
-.compact .activity_table td.activity_name a:visited {
-    position: relative;
-    padding-top: 0.55rem;
-    padding-bottom: 0.55rem;
-}
-
-.compact .activity_color {
-    text-align: center;
-    min-height: 42px;
-    min-width: 42px;
-}
-
-.compact .activity_desc {
-    display: none;
-    visibility: hidden;
-}
-
-.compact .activity_table td.activity_color .activity_check_off,
-.compact .activity_table td.activity_color .activity_check_on {
-    margin-right: 0;
-}
-
-.compact .activity_table td.activity_name button.hide-button {
-    right: 10px;
-}
-
-.compact .activity_table td.activity_name button.delete-button {
-    right: 52px;
-}
-
-.modal-content {
-    background-color: #343a40;
-    color: #fff;
-}
-
-.form-control[readonly] {
-    color: #555;
 }
