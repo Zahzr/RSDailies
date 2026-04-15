@@ -4,20 +4,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>RSDailies — RS3 Dailies, Weeklies & Monthlies</title>
+    <title>RSDailies - RS3 Dailies, Weeklies &amp; Monthlies</title>
     <link rel="shortcut icon" href="./img/favicon.ico">
     <meta name="description"
-        content="Self-hosted RS3 daily task tracker. Dailies, weeklies, monthlies with auto-reset timers and GE profit data.">
+        content="Self-hosted RS3 daily task tracker. Dailies, weeklies, monthlies with auto-reset timers and local profiles.">
     <meta property="og:url" content="https://zahzr.github.io/RSDailies/">
     <meta property="og:title" content="RSDailies">
-    <meta property="og:description" content="RS3 task tracker — dailies, weeklies, monthlies">
+    <meta property="og:description" content="RS3 task tracker - dailies, weeklies, monthlies">
     <meta property="og:image" content="https://zahzr.github.io/RSDailies/img/dailyscape.png">
     <meta name="theme-color" content="#1f2f38">
     <link rel="stylesheet" href="./dailyscape.css">
 </head>
 
 <body>
-
     <nav>
         <a href="./"><img src="./img/dailyscape.png" alt="RSDailies"> RSDailies</a>
         <ul>
@@ -27,35 +26,33 @@
             <li><a href="#weekly-gathering">Weekly Gathering</a></li>
             <li><a href="#monthlies">Monthlies</a></li>
 
-            <!-- Expandable: More Resources -->
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle">More Resources ▾</a>
+                <a href="#" class="dropdown-toggle">More Resources v</a>
                 <ul class="dropdown-menu">
                     <li class="dropdown-header">Tools</li>
-                    <li><a href="https://runescape.wiki/w/Money_making_guide" target="_blank">Money Making Guide</a>
-                    </li>
-                    <li><a href="https://runescape.wiki/w/Distractions_and_Diversions" target="_blank">D&Ds</a></li>
-                    <li><a href="https://pvme.github.io" target="_blank">PVM Encyclopedia</a></li>
-                    <li><a href="https://runepixels.com/" target="_blank">Runepixels</a></li>
+                    <li><a href="https://runescape.wiki/w/Money_making_guide" target="_blank" rel="noopener">Money Making
+                            Guide</a></li>
+                    <li><a href="https://runescape.wiki/w/Distractions_and_Diversions" target="_blank"
+                            rel="noopener">D&amp;Ds</a></li>
+                    <li><a href="https://pvme.github.io" target="_blank" rel="noopener">PVM Encyclopedia</a></li>
+                    <li><a href="https://runepixels.com/" target="_blank" rel="noopener">Runepixels</a></li>
                     <li class="dropdown-header">RS3 Discords</li>
-                    <li><a href="https://discord.gg/rs" target="_blank">Official RuneScape</a></li>
-                    <li><a href="https://discord.gg/ahelp" target="_blank">Achievement Help</a></li>
+                    <li><a href="https://discord.gg/rs" target="_blank" rel="noopener">Official RuneScape</a></li>
+                    <li><a href="https://discord.gg/ahelp" target="_blank" rel="noopener">Achievement Help</a></li>
                 </ul>
             </li>
 
-            <!-- Expandable: Profiles -->
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" id="profiles-toggle">&#9416; Profiles ▾</a>
+                <a href="#" class="dropdown-toggle" id="profiles-toggle">&#9416; Profiles v</a>
                 <div class="dropdown-panel" id="profiles-panel">
                     <strong>Profiles</strong>
                     <div id="profile-list"></div>
-                    <button id="add-profile-btn">+ New Profile</button>
+                    <button id="add-profile-btn" type="button">+ New Profile</button>
                 </div>
             </li>
 
-            <!-- Expandable: Settings -->
             <li class="dropdown">
-                <a href="#" class="dropdown-toggle" id="settings-toggle">&#9881; Settings ▾</a>
+                <a href="#" class="dropdown-toggle" id="settings-toggle">&#9881; Settings v</a>
                 <div class="dropdown-panel" id="settings-panel">
                     <strong>Settings</strong>
                     <label><input type="checkbox" id="setting-split-dailies"> Split Dailies and Daily Gathering</label>
@@ -68,7 +65,7 @@
                     <label>Discord Webhook URL (optional):
                         <input type="text" id="setting-webhook-url" placeholder="https://discord.com/api/webhooks/...">
                     </label>
-                    <button id="save-settings-btn">Save Settings</button>
+                    <button id="save-settings-btn" type="button">Save Settings</button>
                 </div>
             </li>
 
@@ -77,14 +74,12 @@
         </ul>
     </nav>
 
-    <!-- Timers bar -->
     <div id="timers-bar">
         <span id="daily-timer"></span>
         <span id="weekly-timer"></span>
         <span id="monthly-timer"></span>
     </div>
 
-    <!-- Task sections — populated by dailyscape.js from tasks-config.js -->
     <main id="app">
         <section id="dailies-section">
             <table id="dailies">
@@ -146,13 +141,12 @@
             </table>
         </section>
 
-        <!-- Custom Tasks section — user-added tasks -->
         <section id="custom-section">
             <table id="custom-tasks">
                 <thead>
                     <tr>
                         <th>Custom Tasks</th>
-                        <th class="section-controls"><button id="add-custom-task-btn">+ Add Task</button></th>
+                        <th class="section-controls"><button id="add-custom-task-btn" type="button">+ Add Task</button></th>
                     </tr>
                 </thead>
                 <tbody id="custom-tasks-body"></tbody>
@@ -160,22 +154,38 @@
         </section>
     </main>
 
-    <!-- Import/Export panel -->
+    <div id="herb-panel" class="panel hidden">
+        <div class="panel-header">
+            <strong>Herb Run</strong>
+            <button id="herb-close-btn" type="button">Close</button>
+        </div>
+        <p id="herb-status" class="panel-sub"></p>
+        <div id="herb-locations" class="herb-locations"></div>
+        <div class="panel-actions">
+            <button id="herb-start-btn" type="button">Start Herb Run</button>
+            <button id="herb-reset-btn" type="button" class="danger hidden">Reset</button>
+        </div>
+        <p class="panel-hint">
+            Timer aligns to RS3 farming growth ticks (20-minute cycles, UTC). Use Settings to switch 3-tick herbs.
+        </p>
+    </div>
+
     <div id="import-export-panel" class="panel hidden">
         <strong>Import / Export</strong>
         <p>Copy your token to back up or move your data to another browser.</p>
         <textarea id="export-token" readonly></textarea>
-        <button id="copy-token-btn">Copy</button>
+        <button id="copy-token-btn" type="button">Copy</button>
         <hr>
         <textarea id="import-token" placeholder="Paste token here..."></textarea>
-        <button id="import-btn">Import</button>
-        <p id="import-error" class="error hidden">Invalid token — check and try again.</p>
+        <button id="import-btn" type="button">Import</button>
+        <p id="import-error" class="error hidden">Invalid token - check and try again.</p>
     </div>
 
     <footer>
-        <a href="https://github.com/Zahzr/RSDailies" target="_blank"><img src="./img/github.png" alt="GitHub">
-            GitHub</a>
-        <a href="https://discord.gg/Q7W4Udr47w" target="_blank"><img src="./img/discord.png" alt="Discord"> Discord</a>
+        <a href="https://github.com/Zahzr/RSDailies" target="_blank" rel="noopener"><img src="./img/github.png"
+                alt="GitHub"> GitHub</a>
+        <a href="https://discord.gg/bH85NeVv2p" target="_blank" rel="noopener"><img src="./img/discord.png"
+                alt="Discord"> Discord</a>
     </footer>
 
     <script src="./tasks-config.js"></script>
@@ -183,3 +193,4 @@
 </body>
 
 </html>
+

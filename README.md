@@ -1,108 +1,57 @@
-# Dailyscape - React Edition
+# RSDailies
 
-[![Deploy to GitHub Pages](https://github.com/Zahzr/RSDailies/actions/workflows/deploy.yml/badge.svg)](https://github.com/Zahzr/RSDailies/actions/workflows/deploy.yml)
+Static RS3 task checklist for tracking dailies, weeklies, monthlies, and your own custom tasks. Designed to run on GitHub Pages with no backend.
 
-**Live Demo:** [https://zahzr.github.io/RSDailies/](https://zahzr.github.io/RSDailies/)
+Live: `https://zahzr.github.io/RSDailies/`
 
-**Dailyscape** is a tool for RuneScape 3 players to track their daily, weekly, and monthly in-game tasks. This modernized version is built with React and TypeScript, offering a fast, reliable, and extensible experience.
+## What Works
 
-## Architecture Overview
+- RS3 reset timers (UTC): daily, weekly (Wednesday), monthly (1st)
+- Task lists: dailies, daily gathering, weeklies, weekly gathering, monthlies
+- Custom tasks (daily/weekly/monthly reset)
+- Profiles (separate localStorage namespaces per profile)
+- Import/Export token (backup/migrate local data)
+- Herb Run timer:
+  - Aligns to RS3 farming growth ticks (20-minute cycles, UTC)
+  - Supports 3-tick vs 4-tick herbs via Settings
+  - Optional checklist panel for common herb patch locations
 
-This project follows a **dual-track architecture** to ensure both a modern experience and maximum backwards compatibility.
+## Repo Layout
 
--   **React Layer (Primary):** The main application is a modern Single Page Application (SPA) built with React, TypeScript, and Tailwind CSS. It provides a rich, interactive user experience.
--   **Vanilla JS Fallback:** A lightweight, modernized vanilla JavaScript version is included. A service worker will automatically serve this fallback version if a user's browser fails to load the React application, ensuring no user is left behind.
--   **Decoupled Engine:** All core business logic (timers, calculations, storage) is isolated in a framework-agnostic `engine` layer. This pure TypeScript module is consumed by both the React app and the vanilla fallback, ensuring consistency and preventing code duplication.
+- `index.html`: page layout and panels
+- `dailyscape.css`: styling
+- `dailyscape.js`: app logic (storage, timers, profiles, rendering)
+- `tasks-config.js`: curated task content (edit this to add/remove built-in tasks)
 
-### Architecture Diagram
+## Local Development
 
-```mermaid
-graph TB
-    UI["Browser UI"]
+Serve the repo root with any static file server.
 
-    subgraph React["React Layer (Primary)"]
-        App["App.tsx"]
-        Timeline["Timeline Comp"]
-        TaskMgr["TaskManager Comp"]
-        Hooks["useStorage, useTasks, useTimer, useProfitCalculation"]
-    end
-
-    subgraph Engine["Engine Layer (Framework-Agnostic)"]
-        Storage["Storage Abstraction"]
-        Timer["Timer Logic"]
-        Calc["Calculations"]
-        Notif["Notifications"]
-    end
-
-    subgraph Adapters["Storage Adapters"]
-        LocalAdapter["LocalStorage"]
-        SupabaseAdapter["Supabase (Phase 2)"]
-    end
-
-    subgraph Vanilla["Vanilla Fallback"]
-        FallbackHTML["fallback.html"]
-        FallbackJS["fallback.js"]
-    end
-
-    UI -->|Primary| React
-    React --> Hooks
-    Hooks --> Engine
-    Engine --> Adapters
-    LocalAdapter -->|Phase 1| Browser["browser<br/>localStorage"]
-    SupabaseAdapter -->|Phase 2| Cloud["Supabase<br/>Cloud"]
-
-    UI -->|Fallback| Vanilla
-    Vanilla --> Engine
-
-    Engine --> rsdata["rsdata<br/>(RuneScape API)"]
+```bash
+python -m http.server 8080
 ```
 
-## Development Setup
+Then open `http://localhost:8080/`.
 
-To get started with development, clone the repository and install the dependencies.
+## Editing Tasks
 
-1.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
+Edit `tasks-config.js` to modify the built-in task lists. Each task supports:
 
-2.  **Run Development Server:**
-    This will start the Vite dev server for the React application, usually on `http://localhost:5173`.
-    ```bash
-    npm run dev
-    ```
+- `id`: unique string key
+- `name`: display name
+- `wiki`: optional URL
+- `note`: optional text
+- `timer: 'herb'`: shows the herb run timer button and panel
+- `cooldownMinutes`: optional per-task cooldown button (simple countdown)
 
-3.  **Run Tests:**
-    Execute the full test suite using Jest and React Testing Library.
-    ```bash
-    npm test
-    ```
+## Deployment
 
-## Build & Deployment
+GitHub Pages deploys via `.github/workflows/deploy.yml` on pushes to `main`.
 
-The application is designed for deployment on static hosting services like GitHub Pages.
+## Notes / Best Practices
 
-1.  **Build the Project:**
-    This command bundles the React app, the vanilla fallback, and all assets into the `dist/` directory.
-    ```bash
-    npm run build
-    ```
+- This is a static app. All data is stored locally in your browser via `localStorage`.
+- Discord webhooks can post messages, but they do not reliably ping users. If you want @mentions, you need a bot.
 
-2.  **Deployment:**
-    This project is automatically deployed to GitHub Pages via a GitHub Action. Pushing to the `main` branch will trigger a build and deployment. You can monitor the status of deployments under the "Actions" tab in the repository.
+RuneScape is a registered trademark of Jagex. This project is fan-made and unofficial.
 
-## Contributing
-
-We welcome contributions! Here’s a quick guide on where to make changes:
-
--   **UI Components:** If you're changing how something looks or feels in the main app, look in `src/react/components/`.
--   **Core Logic:** For changes to timers, profit calculations, or how data is stored, head to `src/engine/`.
--   **State Management:** Global state and data flow are managed in React Context (`src/react/context/`) and custom hooks (`src/react/hooks/`).
--   **Fallback App:** To modify the non-React version, see `src/vanilla/`.
-
-## Known Limitations
-
--   **Cloud Sync (Phase 2):** The current version only stores data in the browser's `localStorage`. The storage adapter for Supabase is a placeholder for future cloud sync functionality.
--   **Discord Notifications (Phase 1.5):** The hooks for Discord bot integration are in place within the notification engine, but the implementation is pending.
-
-RuneScape ® is a registered trademark of Jagex © 1999 Jagex Ltd.

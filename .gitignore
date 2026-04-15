@@ -1,21 +1,32 @@
-rsdata
-.agents/
-.idea
-.env
-.env.local
+rsdata/
+
+# Dependencies / build output
 node_modules/
 dist/
 coverage/
 *.log
-.DS_Store
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
 
-# Ignore these specific files in the root directory:
+# Local-only / planning artifacts
+convo.txt
+friends-project.txt
+Pasted text.txt
+message*.txt
+test-output.log
+timer_test.txt
+
+# Private configs (if you create them locally)
 config.json
 credentials.json
-test-output.log
-node_modules/
-.github/workflows/
-timer.test.txt

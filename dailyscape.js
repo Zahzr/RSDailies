@@ -8,6 +8,34 @@
 // Storage helpers
 // ---------------------------------------------------------------------------
 const STORAGE_KEY_PREFIX = 'rsdailies';
+const PROFILES_KEY = `${STORAGE_KEY_PREFIX}:profiles`;
+
+const FARMING_TICK_MINUTES = 20; // RS3 farming growth ticks
+const DEFAULT_HERB_LOCATIONS = [
+  'Garden of Kharid',
+  'Falador',
+  'Port Phasmatys',
+  'Catherby',
+  'Ardougne',
+  'Wilderness',
+  'Troll Stronghold',
+  'Prifddinas',
+];
+
+function loadProfiles() {
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    const arr = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(arr) && arr.length) return arr;
+  } catch {
+    // ignore
+  }
+  return ['default'];
+}
+
+function saveProfiles(profiles) {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+}
 
 function getActiveProfile() {
   return localStorage.getItem(`${STORAGE_KEY_PREFIX}:active-profile`) || 'default';
@@ -88,9 +116,27 @@ function checkAutoReset() {
     return d.getTime();
   })();
 
-  if (lastVisit < prevDaily) clearCompleted(['daily', 'gathering']);
-  if (lastVisit < prevWeekly) clearCompleted(['weekly', 'weeklyGathering']);
-  if (lastVisit < prevMonthly) clearCompleted(['monthly']);
+  const crossedDaily = lastVisit < prevDaily;
+  const crossedWeekly = lastVisit < prevWeekly;
+  const crossedMonthly = lastVisit < prevMonthly;
+
+  if (crossedDaily) {
+    clearCompleted(['dailies', 'gathering']);
+    resetCustomCompletions('daily');
+    maybeNotifyReset('daily');
+  }
+
+  if (crossedWeekly) {
+    clearCompleted(['weeklies', 'weeklyGathering']);
+    resetCustomCompletions('weekly');
+    maybeNotifyReset('weekly');
+  }
+
+  if (crossedMonthly) {
+    clearCompleted(['monthlies']);
+    resetCustomCompletions('monthly');
+    maybeNotifyReset('monthly');
+  }
 
   save('last-visit', now);
 }
@@ -101,19 +147,78 @@ function clearCompleted(types) {
   });
 }
 
+function resetCustomCompletions(resetKind) {
+  const tasks = load('custom-tasks', []);
+  const completed = load('completed-custom', {});
+  let changed = false;
+
+  tasks.forEach(t => {
+    const kind = (t.reset || 'daily').toLowerCase();
+    if (kind === resetKind && completed[t.id]) {
+      delete completed[t.id];
+      changed = true;
+    }
+  });
+
+  if (changed) save('completed-custom', completed);
+}
+
+async function maybeNotifyReset(kind) {
+  const settings = load('settings', {});
+  const shouldBrowser = !!settings.browserNotif;
+  const webhookUrl = (settings.webhookUrl || '').trim();
+
+  if (shouldBrowser && Notification.permission === 'default') {
+    try {
+      await Notification.requestPermission();
+    } catch {
+      // ignore
+    }
+  }
+
+  if (shouldBrowser && Notification.permission === 'granted') {
+    try {
+      new Notification('RSDailies', { body: `${kind[0].toUpperCase()}${kind.slice(1)} reset: tasks cleared.` });
+    } catch {
+      // ignore
+    }
+  }
+
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: `RSDailies: ${kind} reset just happened (UTC).` }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Build task rows
 // ---------------------------------------------------------------------------
 function buildRows(tasks, type) {
-  const completed = load(`completed-${type}`, {});
-  const hidden = load(`hidden-${type}`, {});
+  const completedCache = new Map();
+  const hiddenCache = new Map();
   const tbody = document.getElementById(`${type === 'weeklyGathering' ? 'weekly-gathering' : type}-body`);
   if (!tbody) return;
 
   tbody.innerHTML = '';
 
-  tasks.forEach(task => {
+  applySavedOrder(tasks, type).forEach(task => {
+    const storeType = task.storeType || type;
+
+    const hiddenKey = `hidden-${storeType}`;
+    const hidden = hiddenCache.has(hiddenKey) ? hiddenCache.get(hiddenKey) : load(hiddenKey, {});
+    hiddenCache.set(hiddenKey, hidden);
     if (hidden[task.id]) return;
+
+    const completedKey = `completed-${storeType}`;
+    const completed = completedCache.has(completedKey) ? completedCache.get(completedKey) : load(completedKey, {});
+    completedCache.set(completedKey, completed);
 
     const tr = document.createElement('tr');
     tr.dataset.id = task.id;
@@ -144,21 +249,34 @@ function buildRows(tasks, type) {
       tdName.appendChild(profitSpan);
     }
 
-    if (task.timer) {
+    if (task.timer === 'herb') {
       const timerBtn = document.createElement('button');
       timerBtn.className = 'herb-timer-btn';
+      timerBtn.type = 'button';
       timerBtn.textContent = '🌿 Start Herb Run';
       timerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        startHerbTimer(task, timerBtn);
+        onHerbTimerButton();
       });
       tdName.appendChild(timerBtn);
+    }
+
+    if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
+      const cdBtn = document.createElement('button');
+      cdBtn.className = 'cooldown-btn';
+      cdBtn.type = 'button';
+      cdBtn.textContent = 'Start cooldown';
+      cdBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startCooldown(task.id, task.cooldownMinutes);
+      });
+      tdName.appendChild(cdBtn);
     }
 
     const tdCheck = document.createElement('td');
     tdCheck.className = 'task-check';
     tdCheck.innerHTML = completed[task.id] ? '✔' : '✘';
-    tdCheck.addEventListener('click', () => toggleTask(task.id, type, tr, tdCheck));
+    tdCheck.addEventListener('click', () => toggleTask(task.id, storeType, tr, tdCheck));
 
     tr.appendChild(tdName);
     tr.appendChild(tdCheck);
@@ -166,6 +284,19 @@ function buildRows(tasks, type) {
   });
 
   enableDragDrop(tbody, type);
+}
+
+function applySavedOrder(tasks, type) {
+  const order = load(`order-${type}`, null);
+  if (!Array.isArray(order) || order.length === 0) return tasks;
+
+  const index = new Map(order.map((id, i) => [id, i]));
+  return [...tasks].sort((a, b) => {
+    const ai = index.has(a.id) ? index.get(a.id) : Number.POSITIVE_INFINITY;
+    const bi = index.has(b.id) ? index.get(b.id) : Number.POSITIVE_INFINITY;
+    if (ai !== bi) return ai - bi;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +345,284 @@ function startHerbTimer(task, btn) {
       btn.textContent = `🌿 ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} until ready`;
     }
   }, 1000);
+}
+
+// ---------------------------------------------------------------------------
+// Herb Run Timer (RS3 farming growth ticks - 20 minute cycles)
+// ---------------------------------------------------------------------------
+let herbRunIntervalId = null;
+
+function loadHerbRun() {
+  return load('herb-run', null);
+}
+
+function saveHerbRun(state) {
+  save('herb-run', state);
+}
+
+function clearHerbRun() {
+  save('herb-run', null);
+}
+
+function nextUtcTickBoundaryMs(nowMs, tickMinutes) {
+  const d = new Date(nowMs);
+  const y = d.getUTCFullYear();
+  const mo = d.getUTCMonth();
+  const da = d.getUTCDate();
+  const h = d.getUTCHours();
+  const m = d.getUTCMinutes();
+  // Strictly "next" boundary: if already on a boundary, jump forward one tick.
+  const addMinutes = tickMinutes - (m % tickMinutes || tickMinutes);
+  return Date.UTC(y, mo, da, h, m + addMinutes, 0, 0);
+}
+
+function computeHerbReadyAtMs(startMs, herbTicks) {
+  const nextBoundary = nextUtcTickBoundaryMs(startMs, FARMING_TICK_MINUTES);
+  // Matches the Tk app logic: wait until next tick boundary, then add (ticks - 1) full tick cycles.
+  const cycles = Math.max(0, (herbTicks || 4) - 1);
+  return nextBoundary + cycles * FARMING_TICK_MINUTES * 60 * 1000;
+}
+
+function startHerbRun() {
+  const settings = load('settings', {});
+  const herbTicks = settings.herbTicks === 3 ? 3 : 4;
+  const startedAt = Date.now();
+  const readyAt = computeHerbReadyAtMs(startedAt, herbTicks);
+
+  saveHerbRun({
+    startedAt,
+    readyAt,
+    herbTicks,
+    tickMinutes: FARMING_TICK_MINUTES,
+    locations: DEFAULT_HERB_LOCATIONS,
+    checked: {},
+    alerted: false,
+  });
+
+  ensureHerbRunInterval();
+  renderHerbUI();
+}
+
+function onHerbTimerButton() {
+  const state = loadHerbRun();
+  if (!state || !state.readyAt) startHerbRun();
+
+  ensureHerbRunInterval();
+  renderHerbUI();
+
+  const panel = document.getElementById('herb-panel');
+  if (panel) panel.classList.remove('hidden');
+}
+
+function ensureHerbRunInterval() {
+  if (herbRunIntervalId) return;
+  herbRunIntervalId = setInterval(renderHerbUI, 1000);
+}
+
+function stopHerbRunIntervalIfIdle() {
+  const state = loadHerbRun();
+  if (state && state.readyAt) return;
+  if (herbRunIntervalId) clearInterval(herbRunIntervalId);
+  herbRunIntervalId = null;
+}
+
+function formatMMSS(ms) {
+  const remaining = Math.max(0, ms);
+  const m = Math.floor(remaining / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function renderHerbUI() {
+  const state = loadHerbRun();
+  const now = Date.now();
+
+  // Update row buttons (there should typically be only one herb run task).
+  document.querySelectorAll('.herb-timer-btn').forEach(btn => {
+    if (!state || !state.readyAt) {
+      btn.disabled = false;
+      btn.classList.remove('ready');
+      btn.textContent = 'Start Herb Run';
+      return;
+    }
+
+    const remaining = state.readyAt - now;
+    if (remaining <= 0) {
+      btn.disabled = false;
+      btn.classList.add('ready');
+      btn.textContent = 'Herbs Ready (open checklist)';
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('ready');
+      btn.textContent = `Herbs: ${formatMMSS(remaining)} remaining`;
+    }
+  });
+
+  // Optional panel UI (only if index.html includes it).
+  const panel = document.getElementById('herb-panel');
+  if (!panel) return;
+
+  const status = document.getElementById('herb-status');
+  const locations = document.getElementById('herb-locations');
+  const startBtn = document.getElementById('herb-start-btn');
+  const resetBtn = document.getElementById('herb-reset-btn');
+  const closeBtn = document.getElementById('herb-close-btn');
+
+  if (closeBtn && !closeBtn.dataset.bound) {
+    closeBtn.dataset.bound = '1';
+    closeBtn.addEventListener('click', () => panel.classList.add('hidden'));
+  }
+
+  if (startBtn && !startBtn.dataset.bound) {
+    startBtn.dataset.bound = '1';
+    startBtn.addEventListener('click', () => startHerbRun());
+  }
+
+  if (resetBtn && !resetBtn.dataset.bound) {
+    resetBtn.dataset.bound = '1';
+    resetBtn.addEventListener('click', () => {
+      clearHerbRun();
+      renderHerbUI();
+      stopHerbRunIntervalIfIdle();
+    });
+  }
+
+  if (!state || !state.readyAt) {
+    if (status) status.textContent = 'No active herb run.';
+    if (locations) locations.innerHTML = '';
+    if (startBtn) startBtn.classList.remove('hidden');
+    if (resetBtn) resetBtn.classList.add('hidden');
+    stopHerbRunIntervalIfIdle();
+    return;
+  }
+
+  if (startBtn) startBtn.classList.add('hidden');
+  if (resetBtn) resetBtn.classList.remove('hidden');
+
+  const remaining = state.readyAt - now;
+  if (remaining > 0) {
+    if (status) status.textContent = `Growing - ready in ${formatMMSS(remaining)} (RS3 ${state.tickMinutes}-minute ticks)`;
+    if (locations) locations.innerHTML = '';
+    return;
+  }
+
+  if (status) status.textContent = 'Ready to harvest. Check off locations as you collect.';
+
+  if (!state.alerted) {
+    const settings = load('settings', {});
+    if (settings.browserNotif && Notification.permission === 'granted') {
+      try {
+        new Notification('RSDailies', { body: 'Your herb run is ready!' });
+      } catch {
+        // ignore
+      }
+    }
+    state.alerted = true;
+    saveHerbRun(state);
+  }
+
+  if (!locations) return;
+  locations.innerHTML = '';
+
+  const all = state.locations || DEFAULT_HERB_LOCATIONS;
+  const checked = state.checked || {};
+
+  all.forEach(loc => {
+    const row = document.createElement('label');
+    row.className = 'herb-location';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!checked[loc];
+    cb.addEventListener('change', () => {
+      const st = loadHerbRun();
+      if (!st) return;
+      st.checked = st.checked || {};
+      st.checked[loc] = cb.checked;
+      saveHerbRun(st);
+
+      const done = (st.locations || []).every(l => !!st.checked?.[l]);
+      if (done) clearHerbRun();
+
+      renderHerbUI();
+      stopHerbRunIntervalIfIdle();
+    });
+
+    const span = document.createElement('span');
+    span.textContent = loc;
+
+    row.appendChild(cb);
+    row.appendChild(span);
+    locations.appendChild(row);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Generic cooldown timers (simple per-task countdowns)
+// ---------------------------------------------------------------------------
+let cooldownIntervalId = null;
+
+function loadCooldowns() {
+  return load('cooldowns', {});
+}
+
+function saveCooldowns(cooldowns) {
+  save('cooldowns', cooldowns);
+}
+
+function startCooldown(taskId, cooldownMinutes) {
+  const minutes = Math.max(1, Math.floor(cooldownMinutes));
+  const readyAt = Date.now() + minutes * 60 * 1000;
+  const cooldowns = loadCooldowns();
+  cooldowns[taskId] = { readyAt, minutes };
+  saveCooldowns(cooldowns);
+  ensureCooldownInterval();
+  renderCooldownButtons();
+}
+
+function ensureCooldownInterval() {
+  if (cooldownIntervalId) return;
+  cooldownIntervalId = setInterval(renderCooldownButtons, 1000);
+}
+
+function renderCooldownButtons() {
+  const cooldowns = loadCooldowns();
+  const now = Date.now();
+  let anyActive = false;
+
+  document.querySelectorAll('.cooldown-btn').forEach(btn => {
+    const row = btn.closest('tr');
+    const id = row?.dataset?.id;
+    if (!id || !cooldowns[id]?.readyAt) {
+      btn.classList.remove('ready');
+      btn.textContent = 'Start cooldown';
+      btn.onclick = null;
+      return;
+    }
+
+    const remaining = cooldowns[id].readyAt - now;
+    if (remaining <= 0) {
+      btn.classList.add('ready');
+      btn.textContent = 'Cooldown ready (reset)';
+      btn.onclick = (e) => {
+        e?.stopPropagation?.();
+        const next = loadCooldowns();
+        delete next[id];
+        saveCooldowns(next);
+        renderCooldownButtons();
+      };
+    } else {
+      anyActive = true;
+      btn.classList.remove('ready');
+      btn.textContent = `Cooldown: ${formatMMSS(remaining)}`;
+      btn.onclick = null;
+    }
+  });
+
+  if (!anyActive && cooldownIntervalId) {
+    clearInterval(cooldownIntervalId);
+    cooldownIntervalId = null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -357,8 +766,8 @@ function showAddCustomTaskModal() {
 function loadSettings() {
   const settings = load('settings', {});
   const el = (id) => document.getElementById(id);
-  if (settings.splitDailies) el('setting-split-dailies').checked = true;
-  if (settings.splitWeeklies) el('setting-split-weeklies').checked = true;
+  el('setting-split-dailies').checked = settings.splitDailies !== false;
+  el('setting-split-weeklies').checked = settings.splitWeeklies !== false;
   if (settings.herbTicks === 3) el('setting-3tick-herbs').checked = true;
   if (settings.browserNotif) el('setting-browser-notif').checked = true;
   if (settings.webhookUrl) el('setting-webhook-url').value = settings.webhookUrl;
@@ -377,7 +786,7 @@ function saveSettings() {
   if (settings.browserNotif && Notification.permission === 'default') {
     Notification.requestPermission();
   }
-  alert('Settings saved.');
+  renderApp();
 }
 
 // ---------------------------------------------------------------------------
@@ -453,14 +862,100 @@ function setupImportExport() {
   });
 
   document.getElementById('copy-token-btn').addEventListener('click', () => {
+    const token = document.getElementById('export-token').value;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(token).catch(() => {});
+      return;
+    }
     const ta = document.getElementById('export-token');
+    ta.focus();
     ta.select();
-    document.execCommand('copy');
+    try {
+      document.execCommand('copy');
+    } catch {
+      // ignore
+    }
   });
 
   document.getElementById('import-btn').addEventListener('click', () => {
     importToken(document.getElementById('import-token').value.trim());
   });
+}
+
+// ---------------------------------------------------------------------------
+// Profiles
+// ---------------------------------------------------------------------------
+function setupProfiles() {
+  const list = document.getElementById('profile-list');
+  const addBtn = document.getElementById('add-profile-btn');
+  if (!list || !addBtn) return;
+
+  function renderProfilesUI() {
+    const profiles = loadProfiles();
+    const active = getActiveProfile();
+    list.innerHTML = '';
+
+    profiles.forEach(p => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'profile-btn';
+      btn.textContent = p === active ? `${p} (active)` : p;
+      btn.addEventListener('click', () => {
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}:active-profile`, p);
+        location.reload();
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  addBtn.addEventListener('click', () => {
+    const name = prompt('New profile name:');
+    const trimmed = (name || '').trim();
+    if (!trimmed) return;
+
+    const profiles = loadProfiles();
+    if (profiles.includes(trimmed)) return;
+    profiles.push(trimmed);
+    saveProfiles(profiles);
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}:active-profile`, trimmed);
+    location.reload();
+  });
+
+  renderProfilesUI();
+}
+
+// ---------------------------------------------------------------------------
+// Render app based on settings
+// ---------------------------------------------------------------------------
+function renderApp() {
+  const cfg = window.TASKS_CONFIG;
+  if (!cfg) return;
+
+  const settings = load('settings', {});
+  const splitDailies = settings.splitDailies !== false;
+  const splitWeeklies = settings.splitWeeklies !== false;
+
+  const dailies = splitDailies ? cfg.dailies : [...cfg.dailies, ...cfg.gathering.map(t => ({ ...t, storeType: 'gathering' }))];
+  const gathering = splitDailies ? cfg.gathering : [];
+  const weeklies = splitWeeklies ? cfg.weeklies : [...cfg.weeklies, ...cfg.weeklyGathering.map(t => ({ ...t, storeType: 'weeklyGathering' }))];
+  const weeklyGathering = splitWeeklies ? cfg.weeklyGathering : [];
+
+  const gatheringSection = document.getElementById('gathering-section');
+  if (gatheringSection) gatheringSection.classList.toggle('hidden', !splitDailies);
+
+  const weeklyGatheringSection = document.getElementById('weekly-gathering-section');
+  if (weeklyGatheringSection) weeklyGatheringSection.classList.toggle('hidden', !splitWeeklies);
+
+  buildRows(dailies, 'dailies');
+  buildRows(gathering, 'gathering');
+  buildRows(weeklies, 'weeklies');
+  buildRows(weeklyGathering, 'weeklyGathering');
+  buildRows(cfg.monthlies, 'monthlies');
+
+  loadCustomTasks();
+  fetchProfits();
+  renderHerbUI();
+  renderCooldownButtons();
 }
 
 // ---------------------------------------------------------------------------
@@ -471,18 +966,12 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTimers();
   setInterval(updateTimers, 1000);
 
-  const cfg = window.TASKS_CONFIG;
-  buildRows(cfg.dailies, 'dailies');
-  buildRows(cfg.gathering, 'gathering');
-  buildRows(cfg.weeklies, 'weeklies');
-  buildRows(cfg.weeklyGathering, 'weeklyGathering');
-  buildRows(cfg.monthlies, 'monthlies');
-  loadCustomTasks();
-  loadSettings();
-  fetchProfits();
   setupDropdowns();
   setupCompactToggle();
   setupImportExport();
+  setupProfiles();
+  loadSettings();
+  renderApp();
 
   document.getElementById('add-custom-task-btn').addEventListener('click', showAddCustomTaskModal);
   document.getElementById('save-settings-btn').addEventListener('click', saveSettings);

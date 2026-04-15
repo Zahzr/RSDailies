@@ -1,11 +1,7 @@
-PORT ?= 8000
+PORT ?= 8080
 HOST ?= 127.0.0.1
-RSDATA_DIR ?= rsdata
 
-.PHONY: setup-local serve
-
-setup-local:
-	./scripts/setup-local.sh "$(RSDATA_DIR)"
+.PHONY: serve
 
 serve:
-	PORT="$(PORT)" HOST="$(HOST)" ./scripts/dev-local.sh
+	python -m http.server "$(PORT)" --bind "$(HOST)" || python3 -m http.server "$(PORT)" --bind "$(HOST)"
