@@ -4,209 +4,472 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>RSDailies - RS3 Dailies, Weeklies &amp; Monthlies</title>
+    <title>RSDailies - RS3 Dailies, Weeklies, Monthlies Task Checklist for RuneScape</title>
     <link rel="shortcut icon" href="./img/favicon.ico">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="dailyscape.css?v=3">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <meta name="description"
-        content="Self-hosted RS3 daily task tracker. Dailies, weeklies, monthlies with auto-reset timers and local profiles.">
+        content="Self-hosted RS3 daily task tracker. Dailies, gathering, farming, weeklies, monthlies, custom tasks, auto-reset timers, and local profiles.">
     <meta property="og:url" content="https://zahzr.github.io/RSDailies/">
     <meta property="og:title" content="RSDailies">
-    <meta property="og:description" content="RS3 task tracker - dailies, weeklies, monthlies">
+    <meta property="og:description" content="RS3 Dailies, Gathering, Farming, Weeklies, Monthlies">
     <meta property="og:image" content="https://zahzr.github.io/RSDailies/img/dailyscape.png">
     <meta name="theme-color" content="#1f2f38">
-    <link rel="stylesheet" href="./dailyscape.css">
 </head>
 
 <body>
-    <nav>
-        <a href="./"><img src="./img/dailyscape.png" alt="RSDailies"> RSDailies</a>
-        <ul>
-            <li><a href="#dailies">Dailies</a></li>
-            <li><a href="#gathering">Gathering</a></li>
-            <li><a href="#weeklies">Weeklies</a></li>
-            <li><a href="#weekly-gathering">Weekly Gathering</a></li>
-            <li><a href="#monthlies">Monthlies</a></li>
 
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle">More Resources v</a>
-                <ul class="dropdown-menu">
-                    <li class="dropdown-header">Tools</li>
-                    <li><a href="https://runescape.wiki/w/Money_making_guide" target="_blank" rel="noopener">Money Making
-                            Guide</a></li>
-                    <li><a href="https://runescape.wiki/w/Distractions_and_Diversions" target="_blank"
-                            rel="noopener">D&amp;Ds</a></li>
-                    <li><a href="https://pvme.github.io" target="_blank" rel="noopener">PVM Encyclopedia</a></li>
-                    <li><a href="https://runepixels.com/" target="_blank" rel="noopener">Runepixels</a></li>
-                    <li class="dropdown-header">RS3 Discords</li>
-                    <li><a href="https://discord.gg/rs" target="_blank" rel="noopener">Official RuneScape</a></li>
-                    <li><a href="https://discord.gg/ahelp" target="_blank" rel="noopener">Achievement Help</a></li>
+    <nav class="navbar nav-pills fixed-top navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href=".">
+                <img src="./img/dailyscape.png" alt="RSDailies" width="24" height="24"
+                    class="d-inline-block align-text-top">
+                RSDailies
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a href="#dailies" class="nav-link" id="rs3daily_nav">Dailies</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="#gathering" class="nav-link" id="rs3dailyshops_nav">Gathering</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="#farming" class="nav-link" id="rs3farming_nav">Farming</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#weeklies" class="nav-link" id="rs3weekly_nav">Weeklies</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#weekly-gathering" class="nav-link" id="rs3weeklyshops_nav">Weekly Gathering</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#monthlies" class="nav-link" id="rs3monthly_nav">Monthlies</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#custom-tasks" class="nav-link" id="custom_nav">Custom Tasks</a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            More Resources
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="https://runescape.wiki/w/Money_making_guide" target="_blank"
+                                rel="noreferrer noopener">Money Making Guide</a>
+                            <a class="dropdown-item" href="https://runescape.wiki/w/Distractions_and_Diversions"
+                                target="_blank" rel="noreferrer noopener">Distractions and Diversions</a>
+                            <a class="dropdown-item" href="https://pvme.github.io" target="_blank"
+                                rel="noreferrer noopener">PVM Encyclopedia</a>
+                            <a class="dropdown-item" href="https://runepixels.com/" target="_blank"
+                                rel="noreferrer noopener">Runepixels</a>
+                            <div class="dropdown-divider"></div>
+                            <h6 class="dropdown-header">RS3 Discords</h6>
+                            <a class="dropdown-item" href="https://discord.gg/rs" target="_blank"
+                                rel="noreferrer noopener">Official RuneScape</a>
+                            <a class="dropdown-item" href="https://discord.gg/ahelp" target="_blank"
+                                rel="noreferrer noopener">Achievement Help</a>
+                            <a class="dropdown-item" href="https://discord.gg/whirlpooldnd" target="_blank"
+                                rel="noreferrer noopener">Deep Sea Fishing</a>
+                            <a class="dropdown-item" href="https://discord.gg/nnrmtTU" target="_blank"
+                                rel="noreferrer noopener">Player Owned Farms</a>
+                        </div>
+                    </li>
                 </ul>
-            </li>
 
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" id="profiles-toggle">&#9416; Profiles v</a>
-                <div class="dropdown-panel" id="profiles-panel">
-                    <strong>Profiles</strong>
-                    <div id="profile-list"></div>
-                    <button id="add-profile-btn" type="button">+ New Profile</button>
-                </div>
-            </li>
+                <ul class="navbar-nav nav-pills ms-auto nav-right">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link expanding_button" href="#" id="profile-button" title="Profiles">
+                            <span id="profile-name" style="display:none; visibility:hidden;"></span>㉾<span
+                                class="expanding_text">&nbsp;Profiles</span>
+                        </a>
+                        <div id="profile-control" style="display:none; visibility:hidden;" data-display="none">
+                            <strong>Profiles</strong>
+                            <ul id="profile-list"></ul>
+                            <form id="profile-form" autocomplete="off">
+                                <div class="row g-3 align-items-right">
+                                    <div class="col-auto form-check" style="padding: 0 0 0 5px;">
+                                        <input type="text" class="form-control" id="profileName" name="profileName"
+                                            placeholder="New Profile Name" maxlength="25" required>
+                                        <div class="invalid-feedback">Enter a profile name.</div>
+                                    </div>
+                                    <div class="col-auto" style="padding: 0 5px 0 0;">
+                                        <button type="submit" class="btn btn-primary">+</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </li>
 
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" id="settings-toggle">&#9881; Settings v</a>
-                <div class="dropdown-panel" id="settings-panel">
-                    <strong>Settings</strong>
-                    <label><input type="checkbox" id="setting-split-dailies"> Split Dailies and Daily Gathering</label>
-                    <label><input type="checkbox" id="setting-split-weeklies"> Split Weeklies and Weekly
-                        Gathering</label>
-                    <label><input type="checkbox" id="setting-3tick-herbs"> 3-tick herb patches (vs 4-tick)</label>
-                    <label>Farming tick offset (minutes, optional):
-                        <input type="number" id="setting-growth-offset" placeholder="0" min="-60" max="60" step="1">
-                    </label>
-                    <hr>
-                    <strong>Notifications</strong>
-                    <label><input type="checkbox" id="setting-browser-notif"> Browser notifications on reset</label>
-                    <label>Discord Webhook URL (optional):
-                        <input type="text" id="setting-webhook-url" placeholder="https://discord.com/api/webhooks/...">
-                    </label>
-                    <button id="save-settings-btn" type="button">Save Settings</button>
-                </div>
-            </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link expanding_button" href="#" id="settings-button" title="Settings">
+                            ⚙<span class="expanding_text">&nbsp;Settings</span>
+                        </a>
+                        <div id="settings-control" style="display:none; visibility:hidden;" data-display="none">
+                            <strong>Settings</strong>
 
-            <li><a href="#" id="compact-toggle">&#8863; Compact</a></li>
-            <li><a href="#" id="farming-toggle">Farming Timers</a></li>
-            <li><a href="#" id="import-export-toggle">&#128428; Import/Export</a></li>
-        </ul>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="setting-split-daily-tables" checked>
+                                <label class="form-check-label" for="setting-split-daily-tables">
+                                    Split Dailies and Daily Gathering
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="setting-split-weekly-tables"
+                                    checked>
+                                <label class="form-check-label" for="setting-split-weekly-tables">
+                                    Split Weeklies and Weekly Gathering
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="setting-3tick-herbs">
+                                <label class="form-check-label" for="setting-3tick-herbs">
+                                    3-tick herb patches
+                                </label>
+                            </div>
+
+                            <div class="form-group settings-block">
+                                <label for="setting-growth-offset">Farming tick offset (minutes)</label>
+                                <input type="number" class="form-control" id="setting-growth-offset" min="-60" max="60"
+                                    step="1" placeholder="0">
+                            </div>
+
+                            <div class="form-check settings-block">
+                                <input class="form-check-input" type="checkbox" id="setting-browser-notif">
+                                <label class="form-check-label" for="setting-browser-notif">
+                                    Browser notifications on reset / ready timers
+                                </label>
+                            </div>
+
+                            <div class="form-group settings-block">
+                                <label for="setting-webhook-url">Discord Webhook URL (optional)</label>
+                                <input type="text" class="form-control" id="setting-webhook-url"
+                                    placeholder="https://discord.com/api/webhooks/...">
+                            </div>
+
+                            <div class="settings-actions">
+                                <button id="save-settings-btn" type="button" class="btn btn-primary btn-sm">Save
+                                    Settings</button>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link expanding_button" href="#" id="layout-button" title="Toggle Layout">
+                            ⊟ <span class="expanding_text"> Compact Mode</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link expanding_button" href="#" id="token-button" title="Import / Export"
+                            data-bs-toggle="modal" data-bs-target="#token-modal">
+                            🖪 <span class="expanding_text">&nbsp;Import / Export</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
     </nav>
 
-    <div id="timers-bar">
-        <span id="daily-timer"></span>
-        <span id="weekly-timer"></span>
-        <span id="monthly-timer"></span>
-    </div>
-
-    <main id="app">
-        <section id="dailies-section">
-            <table id="dailies">
+    <div class="container-xl activity_tables">
+        <div id="dailies" class="table_container rs3daily_table">
+            <table id="rs3daily_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3daily">
                 <thead>
                     <tr>
-                        <th>Dailies</th>
-                        <th class="section-controls"></th>
+                        <th>Dailies <span id="countdown-rs3daily" class="countdown"></span></th>
+                        <td>
+                            <span id="rs3daily_totalprofit"></span>
+                            <span class="text-nowrap">
+                                <button id="rs3daily_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3daily_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3daily_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3daily_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="dailies-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </div>
 
-        <section id="gathering-section">
-            <table id="gathering">
+        <div id="gathering" class="table_container rs3dailyshops_table">
+            <table id="rs3dailyshops_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3dailyshops" data-sort="default">
                 <thead>
                     <tr>
-                        <th>Daily Gathering</th>
-                        <th class="section-controls"></th>
+                        <th>Daily Gathering <span id="countdown-rs3dailyshops" class="countdown"></span></th>
+                        <td>
+                            <span id="rs3dailyshops_totalprofit"></span>
+                            <span class="text-nowrap">
+                                <button id="rs3dailyshops_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3dailyshops_sort_button"
+                                    class="sort_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Sort by alpha/default">⇅<span class="expanding_text">Sort</span></button>
+                                <button id="rs3dailyshops_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3dailyshops_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3dailyshops_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="gathering-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </div>
 
-        <section id="weeklies-section">
-            <table id="weeklies">
+        <div id="farming" class="table_container rs3farming_table">
+            <table id="rs3farming_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3farming">
                 <thead>
                     <tr>
-                        <th>Weeklies</th>
-                        <th class="section-controls"></th>
+                        <th>Farming Timers</th>
+                        <td>
+                            <span class="text-nowrap">
+                                <button id="rs3farming_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding, order, and running timers">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3farming_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3farming_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3farming_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="weeklies-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </div>
 
-        <section id="weekly-gathering-section">
-            <table id="weekly-gathering">
+        <div id="weeklies" class="table_container rs3weekly_table">
+            <table id="rs3weekly_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3weekly">
                 <thead>
                     <tr>
-                        <th>Weekly Gathering</th>
-                        <th class="section-controls"></th>
+                        <th>Weeklies <span id="countdown-rs3weekly" class="countdown"></span></th>
+                        <td>
+                            <span id="rs3weekly_totalprofit"></span>
+                            <span class="text-nowrap">
+                                <button id="rs3weekly_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3weekly_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3weekly_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3weekly_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="weekly-gathering-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </div>
 
-        <section id="monthlies-section">
-            <table id="monthlies">
+        <div id="weekly-gathering" class="table_container rs3weeklyshops_table">
+            <table id="rs3weeklyshops_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3weeklyshops" data-sort="default">
                 <thead>
                     <tr>
-                        <th>Monthlies</th>
-                        <th class="section-controls"></th>
+                        <th>Weekly Gathering <span id="countdown-rs3weeklyshops" class="countdown"></span></th>
+                        <td>
+                            <span id="rs3weeklyshops_totalprofit"></span>
+                            <span class="text-nowrap">
+                                <button id="rs3weeklyshops_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3weeklyshops_sort_button"
+                                    class="sort_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Sort by alpha/default">⇅<span class="expanding_text">Sort</span></button>
+                                <button id="rs3weeklyshops_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3weeklyshops_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3weeklyshops_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="monthlies-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
+        </div>
 
-        <section id="custom-section">
-            <table id="custom-tasks">
+        <div id="monthlies" class="table_container rs3monthly_table">
+            <table id="rs3monthly_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="rs3monthly">
+                <thead>
+                    <tr>
+                        <th>Monthlies <span id="countdown-rs3monthly" class="countdown"></span></th>
+                        <td>
+                            <span class="text-nowrap">
+                                <button id="rs3monthly_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="rs3monthly_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="rs3monthly_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="rs3monthly_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="custom-tasks" class="table_container custom_table">
+            <table id="custom_table" class="activity_table table table-dark table-striped table-hover"
+                data-timeframe="custom">
                 <thead>
                     <tr>
                         <th>Custom Tasks</th>
-                        <th class="section-controls"><button id="add-custom-task-btn" type="button">+ Add Task</button></th>
+                        <td>
+                            <span class="text-nowrap">
+                                <button id="custom_add_button" class="btn btn-primary btn-sm active"
+                                    title="Add custom task">+ Add</button>
+                                <button id="custom_reset_button"
+                                    class="reset_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Reset hiding and order to default">↺<span
+                                        class="expanding_text">Reset</span></button>
+                                <button id="custom_show_hidden_button"
+                                    class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
+                                <button id="custom_hide_button"
+                                    class="hide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Hide section">▲<span class="expanding_text">Hide</span></button>
+                                <button id="custom_unhide_button"
+                                    class="unhide_button expanding_button btn btn-secondary btn-sm active"
+                                    title="Unhide section">▼<span class="expanding_text">Unhide</span></button>
+                            </span>
+                        </td>
                     </tr>
                 </thead>
-                <tbody id="custom-tasks-body"></tbody>
+                <tbody></tbody>
             </table>
-        </section>
-    </main>
-
-    <div id="herb-panel" class="panel hidden">
-        <div class="panel-header">
-            <strong>Herb Run</strong>
-            <button id="herb-close-btn" type="button">Close</button>
         </div>
-        <p id="herb-status" class="panel-sub"></p>
-        <div id="herb-locations" class="herb-locations"></div>
-        <div class="panel-actions">
-            <button id="herb-start-btn" type="button">Start Herb Run</button>
-            <button id="herb-reset-btn" type="button" class="danger hidden">Reset</button>
-        </div>
-        <p class="panel-hint">
-            Timer aligns to RS3 farming growth ticks (20-minute cycles, UTC). Use Settings to switch 3-tick herbs.
-        </p>
     </div>
 
-    <div id="farming-panel" class="panel hidden">
-        <div class="panel-header">
-            <strong>Farming Timers</strong>
-            <button id="farming-close-btn" type="button">Close</button>
-        </div>
-        <p class="panel-sub">
-            Timers are tick-window aligned (UTC). This is a best-effort approximation; actual growth can vary slightly
-            based on your growth tick offset and world/login behavior.
-        </p>
-        <div id="farming-timers"></div>
-    </div>
+    <template id="sample_row">
+        <tr draggable="true">
+            <td class="activity_name" draggable="false">
+                <a target="_blank" rel="noopener noreferrer" draggable="false">Name</a>
+                <button class="hide-button btn btn-danger btn-sm active" title="Hide row">⊘</button>
+            </td>
+            <td class="activity_color">
+                <span class="activity_check_off">☐</span>
+                <span class="activity_check_on">☑</span>
+                <span class="activity_desc">&nbsp;</span>
+            </td>
+        </tr>
+    </template>
 
-    <div id="import-export-panel" class="panel hidden">
-        <strong>Import / Export</strong>
-        <p>Copy your token to back up or move your data to another browser.</p>
-        <textarea id="export-token" readonly></textarea>
-        <button id="copy-token-btn" type="button">Copy</button>
-        <hr>
-        <textarea id="import-token" placeholder="Paste token here..."></textarea>
-        <button id="import-btn" type="button">Import</button>
-        <p id="import-error" class="error hidden">Invalid token - check and try again.</p>
+    <div id="tooltip" style="display:none; visibility:hidden;"></div>
+
+    <div id="token-modal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import / Export Token</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="token-output">This is your token. Copy it, and then import it on another
+                                computer.</label>
+                            <div class="row pb-3">
+                                <div class="col-sm-8">
+                                    <input id="token-output" class="form-control" type="text" value="" readonly>
+                                </div>
+                                <div class="col-sm-2">
+                                    <span class="d-inline-block" tabindex="0">
+                                        <button id="token-copy" type="button" class="btn btn-primary">Copy</button>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <label for="token-input">Import your token below. This operation will overwrite your
+                                    current profile data.</label>
+                                <div class="col-sm-12">
+                                    <input class="form-control" type="text" id="token-input"
+                                        aria-describedby="validation-token-input" required>
+                                    <div id="validation-token-input" class="invalid-feedback">
+                                        That doesn't look right. Check your token and try again.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="token-import" type="button" class="btn btn-primary">Import</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <footer>
-        <a href="https://github.com/Zahzr/RSDailies" target="_blank" rel="noopener"><img src="./img/github.png"
-                alt="GitHub"> GitHub</a>
-        <a href="https://discord.gg/bH85NeVv2p" target="_blank" rel="noopener"><img src="./img/discord.png"
-                alt="Discord"> Discord</a>
+        <a href="https://github.com/Zahzr/RSDailies" target="_blank" rel="noopener noreferrer"><img
+                src="./img/github.png" alt="">Github</a>
+        <a href="https://discord.gg/bH85NeVv2p" target="_blank" rel="noopener noreferrer"><img src="./img/discord.png"
+                alt="">Discord</a>
     </footer>
 
-    <script src="./tasks-config.js"></script>
-    <script src="./farming-config.js"></script>
-    <script src="./dailyscape.js"></script>
+    <script src="tasks-config.js"></script>
+    <script src="farming-config.js"></script>
+    <script src="dailyscape.js?v=3"></script>
 </body>
 
 </html>

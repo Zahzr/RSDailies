@@ -1,1218 +1,1083 @@
-// =============================================================================
-// dailyscape.js — Core logic. Edit tasks-config.js for task content.
-// =============================================================================
-
 'use strict';
 
-// ---------------------------------------------------------------------------
-// Storage helpers
-// ---------------------------------------------------------------------------
-const STORAGE_KEY_PREFIX = 'rsdailies';
-const PROFILES_KEY = `${STORAGE_KEY_PREFIX}:profiles`;
+const STORAGE_ROOT = 'rsdailies';
+const GLOBAL_PROFILES_KEY = `${STORAGE_ROOT}:profiles`;
+const ACTIVE_PROFILE_KEY = `${STORAGE_ROOT}:active-profile`;
 
-const FARMING_TICK_MINUTES = 20; // RS3 farming growth ticks
-const DEFAULT_HERB_LOCATIONS = [
-  'Garden of Kharid',
-  'Falador',
-  'Port Phasmatys',
-  'Catherby',
-  'Ardougne',
-  'Wilderness',
-  'Troll Stronghold',
-  'Prifddinas',
-];
+let currentProfile = 'default';
+let profilePrefix = `${STORAGE_ROOT}:default:`;
+let dragRow = null;
+
+function setProfile(name) {
+  currentProfile = name || 'default';
+  profilePrefix = `${STORAGE_ROOT}:${currentProfile}:`;
+  localStorage.setItem(ACTIVE_PROFILE_KEY, currentProfile);
+}
+
+function initProfileContext() {
+  setProfile(localStorage.getItem(ACTIVE_PROFILE_KEY) || 'default');
+}
 
 function loadProfiles() {
   try {
-    const raw = localStorage.getItem(PROFILES_KEY);
-    const arr = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(arr) && arr.length) return arr;
+    const raw = localStorage.getItem(GLOBAL_PROFILES_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : ['default'];
   } catch {
-    // ignore
+    return ['default'];
   }
-  return ['default'];
 }
 
 function saveProfiles(profiles) {
-  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  localStorage.setItem(GLOBAL_PROFILES_KEY, JSON.stringify(profiles));
 }
 
-function getActiveProfile() {
-  return localStorage.getItem(`${STORAGE_KEY_PREFIX}:active-profile`) || 'default';
-}
-
-function storageKey(key) {
-  return `${STORAGE_KEY_PREFIX}:${getActiveProfile()}:${key}`;
+function profileKey(key) {
+  return `${profilePrefix}${key}`;
 }
 
 function load(key, fallback = null) {
   try {
-    const val = localStorage.getItem(storageKey(key));
-    return val !== null ? JSON.parse(val) : fallback;
-  } catch { return fallback; }
+    const raw = localStorage.getItem(profileKey(key));
+    return raw !== null ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function save(key, value) {
-  localStorage.setItem(storageKey(key), JSON.stringify(value));
+  localStorage.setItem(profileKey(key), JSON.stringify(value));
 }
 
-// ---------------------------------------------------------------------------
-// Reset time helpers (UTC)
-// Daily = 00:00 UTC, Weekly = Wednesday 00:00 UTC, Monthly = 1st 00:00 UTC
-// ---------------------------------------------------------------------------
-function getNextDaily() {
-  const now = new Date();
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-  return next;
+function removeKey(key) {
+  localStorage.removeItem(profileKey(key));
 }
 
-function getNextWeekly() {
-  const now = new Date();
-  const day = now.getUTCDay(); // 0=Sun, 3=Wed
-  const daysUntilWed = (3 - day + 7) % 7 || 7;
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed));
-  return next;
+function slugify(input) {
+  return String(input || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || `custom-${Date.now()}`;
 }
 
-function getNextMonthly() {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+function nextDailyBoundary(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
 }
 
-function formatCountdown(target) {
-  const diff = target - Date.now();
+function nextWeeklyBoundary(now = new Date()) {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const day = d.getUTCDay();
+  let daysUntilWed = (3 - day + 7) % 7;
+  if (daysUntilWed === 0) daysUntilWed = 7;
+  d.setUTCDate(d.getUTCDate() + daysUntilWed);
+  return d;
+}
+
+function nextMonthlyBoundary(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+}
+
+function formatCountdown(targetDate) {
+  const diff = targetDate.getTime() - Date.now();
   if (diff <= 0) return '00:00:00';
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// ---------------------------------------------------------------------------
-// Timer bar
-// ---------------------------------------------------------------------------
-function updateTimers() {
-  document.getElementById('daily-timer').textContent = `Daily reset: ${formatCountdown(getNextDaily())}`;
-  document.getElementById('weekly-timer').textContent = `Weekly reset: ${formatCountdown(getNextWeekly())}`;
-  document.getElementById('monthly-timer').textContent = `Monthly reset: ${formatCountdown(getNextMonthly())}`;
+function formatDurationMs(ms) {
+  const clamped = Math.max(0, ms);
+  const hours = Math.floor(clamped / 3600000);
+  const minutes = Math.floor((clamped % 3600000) / 60000);
+  const seconds = Math.floor((clamped % 60000) / 1000);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-// ---------------------------------------------------------------------------
-// Auto-reset: check if tasks need resetting after a reset boundary
-// ---------------------------------------------------------------------------
-function checkAutoReset() {
-  const now = Date.now();
-  const lastVisit = load('last-visit', 0);
-
-  const prevDaily = new Date(getNextDaily() - 86400000).getTime();
-  const prevWeekly = (() => {
-    const d = getNextWeekly();
-    d.setUTCDate(d.getUTCDate() - 7);
-    return d.getTime();
-  })();
-  const prevMonthly = (() => {
-    const d = getNextMonthly();
-    d.setUTCMonth(d.getUTCMonth() - 1);
-    return d.getTime();
-  })();
-
-  const crossedDaily = lastVisit < prevDaily;
-  const crossedWeekly = lastVisit < prevWeekly;
-  const crossedMonthly = lastVisit < prevMonthly;
-
-  if (crossedDaily) {
-    clearCompleted(['dailies', 'gathering']);
-    resetCustomCompletions('daily');
-    maybeNotifyReset('daily');
-  }
-
-  if (crossedWeekly) {
-    clearCompleted(['weeklies', 'weeklyGathering']);
-    resetCustomCompletions('weekly');
-    maybeNotifyReset('weekly');
-  }
-
-  if (crossedMonthly) {
-    clearCompleted(['monthlies']);
-    resetCustomCompletions('monthly');
-    maybeNotifyReset('monthly');
-  }
-
-  save('last-visit', now);
-}
-
-function clearCompleted(types) {
-  types.forEach(type => {
-    save(`completed-${type}`, {});
-  });
-}
-
-function resetCustomCompletions(resetKind) {
-  const tasks = load('custom-tasks', []);
-  const completed = load('completed-custom', {});
-  let changed = false;
-
-  tasks.forEach(t => {
-    const kind = (t.reset || 'daily').toLowerCase();
-    if (kind === resetKind && completed[t.id]) {
-      delete completed[t.id];
-      changed = true;
-    }
-  });
-
-  if (changed) save('completed-custom', completed);
-}
-
-async function maybeNotifyReset(kind) {
-  const settings = load('settings', {});
-  const shouldBrowser = !!settings.browserNotif;
-  const webhookUrl = (settings.webhookUrl || '').trim();
-
-  if (shouldBrowser && Notification.permission === 'default') {
-    try {
-      await Notification.requestPermission();
-    } catch {
-      // ignore
-    }
-  }
-
-  if (shouldBrowser && Notification.permission === 'granted') {
-    try {
-      new Notification('RSDailies', { body: `${kind[0].toUpperCase()}${kind.slice(1)} reset: tasks cleared.` });
-    } catch {
-      // ignore
-    }
-  }
-
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: `RSDailies: ${kind} reset just happened (UTC).` }),
-      });
-    } catch {
-      // ignore
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Build task rows
-// ---------------------------------------------------------------------------
-function buildRows(tasks, type) {
-  const completedCache = new Map();
-  const hiddenCache = new Map();
-  const tbody = document.getElementById(`${type === 'weeklyGathering' ? 'weekly-gathering' : type}-body`);
-  if (!tbody) return;
-
-  tbody.innerHTML = '';
-
-  applySavedOrder(tasks, type).forEach(task => {
-    const storeType = task.storeType || type;
-
-    const hiddenKey = `hidden-${storeType}`;
-    const hidden = hiddenCache.has(hiddenKey) ? hiddenCache.get(hiddenKey) : load(hiddenKey, {});
-    hiddenCache.set(hiddenKey, hidden);
-    if (hidden[task.id]) return;
-
-    const completedKey = `completed-${storeType}`;
-    const completed = completedCache.has(completedKey) ? completedCache.get(completedKey) : load(completedKey, {});
-    completedCache.set(completedKey, completed);
-
-    const tr = document.createElement('tr');
-    tr.dataset.id = task.id;
-    tr.draggable = true;
-    if (completed[task.id]) tr.classList.add('completed');
-
-    const tdName = document.createElement('td');
-    tdName.className = 'task-name';
-
-    const nameLink = task.wiki
-      ? `<a href="${task.wiki}" target="_blank" rel="noopener">${task.name}</a>`
-      : task.name;
-    tdName.innerHTML = nameLink;
-
-    if (task.note) {
-      const noteSpan = document.createElement('span');
-      noteSpan.className = 'task-note';
-      noteSpan.textContent = task.note;
-      tdName.appendChild(noteSpan);
-    }
-
-    if (task.profit) {
-      const profitSpan = document.createElement('span');
-      profitSpan.className = 'task-profit';
-      profitSpan.dataset.item = task.profit.item;
-      profitSpan.dataset.qty = task.profit.qty;
-      profitSpan.textContent = 'Loading price...';
-      tdName.appendChild(profitSpan);
-    }
-
-    if (task.timer === 'herb') {
-      const timerBtn = document.createElement('button');
-      timerBtn.className = 'herb-timer-btn';
-      timerBtn.type = 'button';
-      timerBtn.textContent = '🌿 Start Herb Run';
-      timerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        onHerbTimerButton();
-      });
-      tdName.appendChild(timerBtn);
-    }
-
-    if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
-      const cdBtn = document.createElement('button');
-      cdBtn.className = 'cooldown-btn';
-      cdBtn.type = 'button';
-      cdBtn.textContent = 'Start cooldown';
-      cdBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startCooldown(task.id, task.cooldownMinutes);
-      });
-      tdName.appendChild(cdBtn);
-    }
-
-    const tdCheck = document.createElement('td');
-    tdCheck.className = 'task-check';
-    tdCheck.innerHTML = completed[task.id] ? '✔' : '✘';
-    tdCheck.addEventListener('click', () => toggleTask(task.id, storeType, tr, tdCheck));
-
-    tr.appendChild(tdName);
-    tr.appendChild(tdCheck);
-    tbody.appendChild(tr);
-  });
-
-  enableDragDrop(tbody, type);
-}
-
-function applySavedOrder(tasks, type) {
-  const order = load(`order-${type}`, null);
-  if (!Array.isArray(order) || order.length === 0) return tasks;
-
-  const index = new Map(order.map((id, i) => [id, i]));
-  return [...tasks].sort((a, b) => {
-    const ai = index.has(a.id) ? index.get(a.id) : Number.POSITIVE_INFINITY;
-    const bi = index.has(b.id) ? index.get(b.id) : Number.POSITIVE_INFINITY;
-    if (ai !== bi) return ai - bi;
-    return a.name.localeCompare(b.name);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Toggle task completion
-// ---------------------------------------------------------------------------
-function toggleTask(id, type, tr, tdCheck) {
-  const completed = load(`completed-${type}`, {});
-  completed[id] = !completed[id];
-  save(`completed-${type}`, completed);
-  tr.classList.toggle('completed', !!completed[id]);
-  tdCheck.textContent = completed[id] ? '✔' : '✘';
-}
-
-// ---------------------------------------------------------------------------
-// Herb Run Timer
-// ---------------------------------------------------------------------------
-function startHerbTimer(task, btn) {
-  const settings = load('settings', {});
-  const ticks = settings.herbTicks || task.growthTicks || 4;
-  const growthMs = ticks * 5 * 60 * 1000; // each tick = 5 min
-  const readyAt = Date.now() + growthMs;
-  save(`herb-timer`, readyAt);
-
-  btn.disabled = true;
-
-  const interval = setInterval(() => {
-    const remaining = readyAt - Date.now();
-    if (remaining <= 0) {
-      clearInterval(interval);
-      btn.textContent = '🌿 Herbs Ready! Click to reset';
-      btn.disabled = false;
-      btn.classList.add('ready');
-      if (Notification.permission === 'granted') {
-        new Notification('RSDailies', { body: 'Your herb run is ready!' });
-      }
-      btn.onclick = () => {
-        btn.textContent = '🌿 Start Herb Run';
-        btn.classList.remove('ready');
-        btn.disabled = false;
-        btn.onclick = null;
-        btn.addEventListener('click', (e) => { e.stopPropagation(); startHerbTimer(task, btn); });
-      };
-    } else {
-      const m = Math.floor(remaining / 60000);
-      const s = Math.floor((remaining % 60000) / 1000);
-      btn.textContent = `🌿 ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} until ready`;
-    }
-  }, 1000);
-}
-
-// ---------------------------------------------------------------------------
-// Herb Run Timer (RS3 farming growth ticks - 20 minute cycles)
-// ---------------------------------------------------------------------------
-let herbRunIntervalId = null;
-
-function loadHerbRun() {
-  return load('herb-run', null);
-}
-
-function saveHerbRun(state) {
-  save('herb-run', state);
-}
-
-function clearHerbRun() {
-  save('herb-run', null);
-}
-
-function nextUtcTickBoundaryMs(nowMs, tickMinutes) {
-  const d = new Date(nowMs);
-  const y = d.getUTCFullYear();
-  const mo = d.getUTCMonth();
-  const da = d.getUTCDate();
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  // Strictly "next" boundary: if already on a boundary, jump forward one tick.
-  const addMinutes = tickMinutes - (m % tickMinutes || tickMinutes);
-  return Date.UTC(y, mo, da, h, m + addMinutes, 0, 0);
-}
-
-function computeHerbReadyAtMs(startMs, herbTicks) {
-  const nextBoundary = nextUtcTickBoundaryMs(startMs, FARMING_TICK_MINUTES);
-  // Matches the Tk app logic: wait until next tick boundary, then add (ticks - 1) full tick cycles.
-  const cycles = Math.max(0, (herbTicks || 4) - 1);
-  return nextBoundary + cycles * FARMING_TICK_MINUTES * 60 * 1000;
-}
-
-function startHerbRun() {
-  const settings = load('settings', {});
-  const herbTicks = settings.herbTicks === 3 ? 3 : 4;
-  const startedAt = Date.now();
-  const readyAt = computeHerbReadyAtMs(startedAt, herbTicks);
-
-  saveHerbRun({
-    startedAt,
-    readyAt,
-    herbTicks,
-    tickMinutes: FARMING_TICK_MINUTES,
-    locations: DEFAULT_HERB_LOCATIONS,
-    checked: {},
-    alerted: false,
-  });
-
-  ensureHerbRunInterval();
-  renderHerbUI();
-}
-
-function onHerbTimerButton() {
-  const state = loadHerbRun();
-  if (!state || !state.readyAt) startHerbRun();
-
-  ensureHerbRunInterval();
-  renderHerbUI();
-
-  const panel = document.getElementById('herb-panel');
-  if (panel) panel.classList.remove('hidden');
-}
-
-function ensureHerbRunInterval() {
-  if (herbRunIntervalId) return;
-  herbRunIntervalId = setInterval(renderHerbUI, 1000);
-}
-
-function stopHerbRunIntervalIfIdle() {
-  const state = loadHerbRun();
-  if (state && state.readyAt) return;
-  if (herbRunIntervalId) clearInterval(herbRunIntervalId);
-  herbRunIntervalId = null;
-}
-
-function formatMMSS(ms) {
-  const remaining = Math.max(0, ms);
-  const m = Math.floor(remaining / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-function renderHerbUI() {
-  const state = loadHerbRun();
-  const now = Date.now();
-
-  // Update row buttons (there should typically be only one herb run task).
-  document.querySelectorAll('.herb-timer-btn').forEach(btn => {
-    if (!state || !state.readyAt) {
-      btn.disabled = false;
-      btn.classList.remove('ready');
-      btn.textContent = 'Start Herb Run';
-      return;
-    }
-
-    const remaining = state.readyAt - now;
-    if (remaining <= 0) {
-      btn.disabled = false;
-      btn.classList.add('ready');
-      btn.textContent = 'Herbs Ready (open checklist)';
-    } else {
-      btn.disabled = false;
-      btn.classList.remove('ready');
-      btn.textContent = `Herbs: ${formatMMSS(remaining)} remaining`;
-    }
-  });
-
-  // Optional panel UI (only if index.html includes it).
-  const panel = document.getElementById('herb-panel');
-  if (!panel) return;
-
-  const status = document.getElementById('herb-status');
-  const locations = document.getElementById('herb-locations');
-  const startBtn = document.getElementById('herb-start-btn');
-  const resetBtn = document.getElementById('herb-reset-btn');
-  const closeBtn = document.getElementById('herb-close-btn');
-
-  if (closeBtn && !closeBtn.dataset.bound) {
-    closeBtn.dataset.bound = '1';
-    closeBtn.addEventListener('click', () => panel.classList.add('hidden'));
-  }
-
-  if (startBtn && !startBtn.dataset.bound) {
-    startBtn.dataset.bound = '1';
-    startBtn.addEventListener('click', () => startHerbRun());
-  }
-
-  if (resetBtn && !resetBtn.dataset.bound) {
-    resetBtn.dataset.bound = '1';
-    resetBtn.addEventListener('click', () => {
-      clearHerbRun();
-      renderHerbUI();
-      stopHerbRunIntervalIfIdle();
-    });
-  }
-
-  if (!state || !state.readyAt) {
-    if (status) status.textContent = 'No active herb run.';
-    if (locations) locations.innerHTML = '';
-    if (startBtn) startBtn.classList.remove('hidden');
-    if (resetBtn) resetBtn.classList.add('hidden');
-    stopHerbRunIntervalIfIdle();
-    return;
-  }
-
-  if (startBtn) startBtn.classList.add('hidden');
-  if (resetBtn) resetBtn.classList.remove('hidden');
-
-  const remaining = state.readyAt - now;
-  if (remaining > 0) {
-    if (status) status.textContent = `Growing - ready in ${formatMMSS(remaining)} (RS3 ${state.tickMinutes}-minute ticks)`;
-    if (locations) locations.innerHTML = '';
-    return;
-  }
-
-  if (status) status.textContent = 'Ready to harvest. Check off locations as you collect.';
-
-  if (!state.alerted) {
-    const settings = load('settings', {});
-    if (settings.browserNotif && Notification.permission === 'granted') {
-      try {
-        new Notification('RSDailies', { body: 'Your herb run is ready!' });
-      } catch {
-        // ignore
-      }
-    }
-    state.alerted = true;
-    saveHerbRun(state);
-  }
-
-  if (!locations) return;
-  locations.innerHTML = '';
-
-  const all = state.locations || DEFAULT_HERB_LOCATIONS;
-  const checked = state.checked || {};
-
-  all.forEach(loc => {
-    const row = document.createElement('label');
-    row.className = 'herb-location';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = !!checked[loc];
-    cb.addEventListener('change', () => {
-      const st = loadHerbRun();
-      if (!st) return;
-      st.checked = st.checked || {};
-      st.checked[loc] = cb.checked;
-      saveHerbRun(st);
-
-      const done = (st.locations || []).every(l => !!st.checked?.[l]);
-      if (done) clearHerbRun();
-
-      renderHerbUI();
-      stopHerbRunIntervalIfIdle();
-    });
-
-    const span = document.createElement('span');
-    span.textContent = loc;
-
-    row.appendChild(cb);
-    row.appendChild(span);
-    locations.appendChild(row);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Generic cooldown timers (simple per-task countdowns)
-// ---------------------------------------------------------------------------
-let cooldownIntervalId = null;
-
-function loadCooldowns() {
-  return load('cooldowns', {});
-}
-
-function saveCooldowns(cooldowns) {
-  save('cooldowns', cooldowns);
-}
-
-function startCooldown(taskId, cooldownMinutes) {
-  const minutes = Math.max(1, Math.floor(cooldownMinutes));
-  const readyAt = Date.now() + minutes * 60 * 1000;
-  const cooldowns = loadCooldowns();
-  cooldowns[taskId] = { readyAt, minutes };
-  saveCooldowns(cooldowns);
-  ensureCooldownInterval();
-  renderCooldownButtons();
-}
-
-function ensureCooldownInterval() {
-  if (cooldownIntervalId) return;
-  cooldownIntervalId = setInterval(renderCooldownButtons, 1000);
-}
-
-function renderCooldownButtons() {
-  const cooldowns = loadCooldowns();
-  const now = Date.now();
-  let anyActive = false;
-
-  document.querySelectorAll('.cooldown-btn').forEach(btn => {
-    const row = btn.closest('tr');
-    const id = row?.dataset?.id;
-    if (!id || !cooldowns[id]?.readyAt) {
-      btn.classList.remove('ready');
-      btn.textContent = 'Start cooldown';
-      btn.onclick = null;
-      return;
-    }
-
-    const remaining = cooldowns[id].readyAt - now;
-    if (remaining <= 0) {
-      btn.classList.add('ready');
-      btn.textContent = 'Cooldown ready (reset)';
-      btn.onclick = (e) => {
-        e?.stopPropagation?.();
-        const next = loadCooldowns();
-        delete next[id];
-        saveCooldowns(next);
-        renderCooldownButtons();
-      };
-    } else {
-      anyActive = true;
-      btn.classList.remove('ready');
-      btn.textContent = `Cooldown: ${formatMMSS(remaining)}`;
-      btn.onclick = null;
-    }
-  });
-
-  if (!anyActive && cooldownIntervalId) {
-    clearInterval(cooldownIntervalId);
-    cooldownIntervalId = null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Drag and drop reordering
-// ---------------------------------------------------------------------------
-function enableDragDrop(tbody, type) {
-  let dragRow = null;
-
-  tbody.addEventListener('dragstart', e => {
-    dragRow = e.target.closest('tr');
-    dragRow.classList.add('dragging');
-  });
-  tbody.addEventListener('dragover', e => {
-    e.preventDefault();
-    const target = e.target.closest('tr');
-    if (target && target !== dragRow) {
-      const rect = target.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      tbody.insertBefore(dragRow, e.clientY < mid ? target : target.nextSibling);
-    }
-  });
-  tbody.addEventListener('dragend', () => {
-    dragRow.classList.remove('dragging');
-    const order = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
-    save(`order-${type}`, order);
-    dragRow = null;
-  });
-}
-
-// ---------------------------------------------------------------------------
-// GE Profit fetching
-// ---------------------------------------------------------------------------
-async function fetchProfits() {
-  const spans = document.querySelectorAll('.task-profit');
-  if (!spans.length) return;
-
-  const items = [...new Set([...spans].map(s => s.dataset.item))];
-  const url = `https://runescape.wiki/api.php?action=ask&query=[[Exchange:${items.join('||Exchange:')}]]|?Exchange:Price&format=json&origin=*`;
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const results = data?.query?.results || {};
-
-    spans.forEach(span => {
-      const item = span.dataset.item;
-      const qty = parseInt(span.dataset.qty, 10);
-      const priceData = results[`Exchange:${item}`];
-      const price = priceData?.printouts?.['Exchange:Price']?.[0]?.num;
-      if (price) {
-        const total = Math.round(price * qty);
-        span.textContent = `~${total.toLocaleString()} gp`;
-      } else {
-        span.textContent = '';
-      }
-    });
-  } catch {
-    spans.forEach(s => s.textContent = '');
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Custom tasks
-// ---------------------------------------------------------------------------
-function loadCustomTasks() {
-  const tasks = load('custom-tasks', []);
-  const tbody = document.getElementById('custom-tasks-body');
-  tbody.innerHTML = '';
-
-  tasks.forEach((task, i) => {
-    const completed = load('completed-custom', {});
-    const tr = document.createElement('tr');
-    if (completed[task.id]) tr.classList.add('completed');
-
-    const tdName = document.createElement('td');
-    tdName.className = 'task-name';
-    tdName.innerHTML = `<strong>${task.name}</strong>`;
-    if (task.note) {
-      const n = document.createElement('span');
-      n.className = 'task-note';
-      n.textContent = task.note;
-      tdName.appendChild(n);
-    }
-
-    // Reset type badge
-    const badge = document.createElement('span');
-    badge.className = `reset-badge reset-${task.reset || 'daily'}`;
-    badge.textContent = task.reset || 'daily';
-    tdName.appendChild(badge);
-
-    // Delete button
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-task-btn';
-    delBtn.textContent = '✕';
-    delBtn.title = 'Delete task';
-    delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteCustomTask(task.id);
-    });
-    tdName.appendChild(delBtn);
-
-    const tdCheck = document.createElement('td');
-    tdCheck.className = 'task-check';
-    tdCheck.textContent = completed[task.id] ? '✔' : '✘';
-    tdCheck.addEventListener('click', () => toggleTask(task.id, 'custom', tr, tdCheck));
-
-    tr.appendChild(tdName);
-    tr.appendChild(tdCheck);
-    tbody.appendChild(tr);
-  });
-}
-
-function deleteCustomTask(id) {
-  const tasks = load('custom-tasks', []).filter(t => t.id !== id);
-  save('custom-tasks', tasks);
-  loadCustomTasks();
-}
-
-function showAddCustomTaskModal() {
-  const name = prompt('Task name:');
-  if (!name?.trim()) return;
-  const note = prompt('Note (optional):') || '';
-  const reset = prompt('Reset type (daily / weekly / monthly):') || 'daily';
-
-  const task = {
-    id: `custom-${Date.now()}`,
-    name: name.trim(),
-    note: note.trim(),
-    reset: ['daily', 'weekly', 'monthly'].includes(reset.toLowerCase()) ? reset.toLowerCase() : 'daily'
+function updateCountdowns() {
+  const daily = formatCountdown(nextDailyBoundary());
+  const weekly = formatCountdown(nextWeeklyBoundary());
+  const monthly = formatCountdown(nextMonthlyBoundary());
+
+  const map = {
+    'countdown-rs3daily': daily,
+    'countdown-rs3dailyshops': daily,
+    'countdown-rs3weekly': weekly,
+    'countdown-rs3weeklyshops': weekly,
+    'countdown-rs3monthly': monthly
   };
 
-  const tasks = load('custom-tasks', []);
-  tasks.push(task);
-  save('custom-tasks', tasks);
-  loadCustomTasks();
+  Object.entries(map).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Settings
-// ---------------------------------------------------------------------------
-function loadSettings() {
-  const settings = load('settings', {});
-  const el = (id) => document.getElementById(id);
-  el('setting-split-dailies').checked = settings.splitDailies !== false;
-  el('setting-split-weeklies').checked = settings.splitWeeklies !== false;
-  if (settings.herbTicks === 3) el('setting-3tick-herbs').checked = true;
-  if (settings.browserNotif) el('setting-browser-notif').checked = true;
-  if (settings.webhookUrl) el('setting-webhook-url').value = settings.webhookUrl;
-  if (typeof settings.growthOffsetMinutes === 'number') el('setting-growth-offset').value = String(settings.growthOffsetMinutes);
+function getSettings() {
+  return load('settings', {
+    splitDailyTables: true,
+    splitWeeklyTables: true,
+    herbTicks: 4,
+    growthOffsetMinutes: 0,
+    browserNotif: false,
+    webhookUrl: ''
+  });
 }
 
-function saveSettings() {
-  const growthOffsetRaw = document.getElementById('setting-growth-offset')?.value;
-  const parsedGrowthOffset = Number.isFinite(parseInt(growthOffsetRaw, 10)) ? parseInt(growthOffsetRaw, 10) : 0;
-  const growthOffsetMinutes = Math.max(-60, Math.min(60, parsedGrowthOffset));
-
-  const settings = {
-    splitDailies: document.getElementById('setting-split-dailies').checked,
-    splitWeeklies: document.getElementById('setting-split-weeklies').checked,
-    herbTicks: document.getElementById('setting-3tick-herbs').checked ? 3 : 4,
-    growthOffsetMinutes,
-    browserNotif: document.getElementById('setting-browser-notif').checked,
-    webhookUrl: document.getElementById('setting-webhook-url').value.trim()
-  };
+function saveSettings(settings) {
   save('settings', settings);
-
-  if (settings.browserNotif && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-  renderApp();
 }
 
-// ---------------------------------------------------------------------------
-// Import / Export
-// ---------------------------------------------------------------------------
-function buildExportToken() {
-  const profile = getActiveProfile();
-  const data = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith(`${STORAGE_KEY_PREFIX}:${profile}:`)) {
-      data[key] = localStorage.getItem(key);
-    }
-  }
-  return btoa(JSON.stringify(data));
+function applySettingsToDom() {
+  const settings = getSettings();
+
+  const splitDaily = document.getElementById('setting-split-daily-tables');
+  const splitWeekly = document.getElementById('setting-split-weekly-tables');
+  const herbs3 = document.getElementById('setting-3tick-herbs');
+  const growthOffset = document.getElementById('setting-growth-offset');
+  const browserNotif = document.getElementById('setting-browser-notif');
+  const webhook = document.getElementById('setting-webhook-url');
+
+  if (splitDaily) splitDaily.checked = settings.splitDailyTables !== false;
+  if (splitWeekly) splitWeekly.checked = settings.splitWeeklyTables !== false;
+  if (herbs3) herbs3.checked = settings.herbTicks === 3;
+  if (growthOffset) growthOffset.value = String(settings.growthOffsetMinutes || 0);
+  if (browserNotif) browserNotif.checked = !!settings.browserNotif;
+  if (webhook) webhook.value = settings.webhookUrl || '';
 }
 
-function importToken(token) {
-  try {
-    const data = JSON.parse(atob(token));
-    Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
-    location.reload();
-  } catch {
-    document.getElementById('import-error').classList.remove('hidden');
-  }
+function collectSettingsFromDom() {
+  const growthOffsetRaw = document.getElementById('setting-growth-offset')?.value || '0';
+  let growthOffsetMinutes = parseInt(growthOffsetRaw, 10);
+  if (!Number.isFinite(growthOffsetMinutes)) growthOffsetMinutes = 0;
+  growthOffsetMinutes = Math.max(-60, Math.min(60, growthOffsetMinutes));
+
+  return {
+    splitDailyTables: !!document.getElementById('setting-split-daily-tables')?.checked,
+    splitWeeklyTables: !!document.getElementById('setting-split-weekly-tables')?.checked,
+    herbTicks: document.getElementById('setting-3tick-herbs')?.checked ? 3 : 4,
+    growthOffsetMinutes,
+    browserNotif: !!document.getElementById('setting-browser-notif')?.checked,
+    webhookUrl: (document.getElementById('setting-webhook-url')?.value || '').trim()
+  };
 }
 
-// ---------------------------------------------------------------------------
-// Dropdowns and panels
-// ---------------------------------------------------------------------------
-function setupDropdowns() {
-  document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
-    toggle.addEventListener('click', e => {
-      e.preventDefault();
-      const parent = toggle.closest('.dropdown');
-      parent.classList.toggle('open');
-    });
-  });
-
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.dropdown')) {
-      document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
-    }
-  });
+function getSectionState(sectionKey) {
+  return {
+    completed: load(`completed:${sectionKey}`, {}),
+    hiddenRows: load(`hiddenRows:${sectionKey}`, {}),
+    order: load(`order:${sectionKey}`, []),
+    sort: load(`sort:${sectionKey}`, 'default'),
+    hideSection: load(`hideSection:${sectionKey}`, false),
+    showHidden: load(`showHidden:${sectionKey}`, false)
+  };
 }
 
-// ---------------------------------------------------------------------------
-// Compact mode
-// ---------------------------------------------------------------------------
-function setupCompactToggle() {
-  const isCompact = load('compact', false);
-  if (isCompact) document.body.classList.add('compact');
-
-  document.getElementById('compact-toggle').addEventListener('click', e => {
-    e.preventDefault();
-    document.body.classList.toggle('compact');
-    save('compact', document.body.classList.contains('compact'));
-  });
+function getCustomTasks() {
+  return load('customTasks', []);
 }
 
-// ---------------------------------------------------------------------------
-// Import/Export panel toggle
-// ---------------------------------------------------------------------------
-function setupImportExport() {
-  const panel = document.getElementById('import-export-panel');
-  document.getElementById('import-export-toggle').addEventListener('click', e => {
-    e.preventDefault();
-    panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) {
-      document.getElementById('export-token').value = buildExportToken();
-    }
-  });
-
-  document.getElementById('copy-token-btn').addEventListener('click', () => {
-    const token = document.getElementById('export-token').value;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(token).catch(() => {});
-      return;
-    }
-    const ta = document.getElementById('export-token');
-    ta.focus();
-    ta.select();
-    try {
-      document.execCommand('copy');
-    } catch {
-      // ignore
-    }
-  });
-
-  document.getElementById('import-btn').addEventListener('click', () => {
-    importToken(document.getElementById('import-token').value.trim());
-  });
+function saveCustomTasks(tasks) {
+  save('customTasks', tasks);
 }
 
-// ---------------------------------------------------------------------------
-// Farming Timers (config-driven, multiple concurrent)
-// ---------------------------------------------------------------------------
-let farmingIntervalId = null;
-
-function loadFarmingTimers() {
-  return load('farming-timers', {});
+function getFarmingTimers() {
+  return load('farmingTimers', {});
 }
 
 function saveFarmingTimers(timers) {
-  save('farming-timers', timers);
+  save('farmingTimers', timers);
 }
 
-function ensureFarmingInterval() {
-  if (farmingIntervalId) return;
-  farmingIntervalId = setInterval(renderFarmingPanel, 1000);
+function getResolvedSections() {
+  const cfg = window.TASKS_CONFIG || {};
+  const settings = getSettings();
+
+  const dailies = Array.isArray(cfg.dailies) ? cfg.dailies : [];
+  const gathering = Array.isArray(cfg.gathering) ? cfg.gathering : [];
+  const weeklies = Array.isArray(cfg.weeklies) ? cfg.weeklies : [];
+  const weeklyGathering = Array.isArray(cfg.weeklyGathering) ? cfg.weeklyGathering : [];
+  const monthlies = Array.isArray(cfg.monthlies) ? cfg.monthlies : [];
+  const custom = getCustomTasks();
+  const farming = Array.isArray(window.FARMING_CONFIG?.tasks) ? window.FARMING_CONFIG.tasks : [];
+
+  return {
+    rs3daily: settings.splitDailyTables ? dailies : dailies.concat(gathering.map(x => ({ ...x, _sourceSection: 'rs3dailyshops' }))),
+    rs3dailyshops: settings.splitDailyTables ? gathering : [],
+    rs3farming: farming,
+    rs3weekly: settings.splitWeeklyTables ? weeklies : weeklies.concat(weeklyGathering.map(x => ({ ...x, _sourceSection: 'rs3weeklyshops' }))),
+    rs3weeklyshops: settings.splitWeeklyTables ? weeklyGathering : [],
+    rs3monthly: monthlies,
+    custom
+  };
 }
 
-function stopFarmingIntervalIfIdle() {
-  const timers = loadFarmingTimers();
-  const anyActive = Object.values(timers).some(t => t && t.readyAt);
-  if (anyActive) return;
-  if (farmingIntervalId) clearInterval(farmingIntervalId);
-  farmingIntervalId = null;
+function getContainerId(sectionKey) {
+  return {
+    rs3daily: 'dailies',
+    rs3dailyshops: 'gathering',
+    rs3farming: 'farming',
+    rs3weekly: 'weeklies',
+    rs3weeklyshops: 'weekly-gathering',
+    rs3monthly: 'monthlies',
+    custom: 'custom-tasks'
+  }[sectionKey];
 }
 
-function nextWindowStartMs(nowMs, cycleMinutes, offsetMinutes) {
-  const cycleMs = Math.max(1, cycleMinutes) * 60 * 1000;
-  const offsetMs = (offsetMinutes || 0) * 60 * 1000;
+function getTableId(sectionKey) {
+  return {
+    rs3daily: 'rs3daily_table',
+    rs3dailyshops: 'rs3dailyshops_table',
+    rs3farming: 'rs3farming_table',
+    rs3weekly: 'rs3weekly_table',
+    rs3weeklyshops: 'rs3weeklyshops_table',
+    rs3monthly: 'rs3monthly_table',
+    custom: 'custom_table'
+  }[sectionKey];
+}
+
+function getTaskState(sectionKey, taskId) {
+  const state = getSectionState(sectionKey);
+  if (state.hiddenRows[taskId]) return 'hide';
+
+  if (sectionKey === 'rs3farming') {
+    const timers = getFarmingTimers();
+    return timers[taskId] ? 'true' : 'false';
+  }
+
+  return state.completed[taskId] ? 'true' : 'false';
+}
+
+function setTaskCompleted(sectionKey, taskId, completed) {
+  const state = getSectionState(sectionKey);
+  if (state.hiddenRows[taskId]) return;
+
+  if (completed) state.completed[taskId] = true;
+  else delete state.completed[taskId];
+
+  save(`completed:${sectionKey}`, state.completed);
+}
+
+function hideTask(sectionKey, taskId) {
+  const state = getSectionState(sectionKey);
+  state.hiddenRows[taskId] = true;
+
+  if (sectionKey !== 'rs3farming') {
+    delete state.completed[taskId];
+    save(`completed:${sectionKey}`, state.completed);
+  }
+
+  save(`hiddenRows:${sectionKey}`, state.hiddenRows);
+}
+
+function resetSectionView(sectionKey) {
+  removeKey(`hiddenRows:${sectionKey}`);
+  removeKey(`order:${sectionKey}`);
+  removeKey(`sort:${sectionKey}`);
+  removeKey(`showHidden:${sectionKey}`);
+  removeKey(`hideSection:${sectionKey}`);
+
+  if (sectionKey === 'rs3farming') {
+    saveFarmingTimers({});
+  }
+}
+
+function applyOrderingAndSort(sectionKey, tasks) {
+  const state = getSectionState(sectionKey);
+  let result = [...tasks];
+
+  if (state.sort === 'alpha') {
+    result.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    return result;
+  }
+
+  const order = Array.isArray(state.order) ? state.order : [];
+  if (!order.length) return result;
+
+  const index = new Map(order.map((id, i) => [id, i]));
+  result.sort((a, b) => {
+    const ai = index.has(a.id) ? index.get(a.id) : Number.MAX_SAFE_INTEGER;
+    const bi = index.has(b.id) ? index.get(b.id) : Number.MAX_SAFE_INTEGER;
+    if (ai !== bi) return ai - bi;
+    return String(a.name).localeCompare(String(b.name));
+  });
+
+  return result;
+}
+
+function cloneRowTemplate() {
+  return document.getElementById('sample_row').content.firstElementChild.cloneNode(true);
+}
+
+function startFarmingTimer(task) {
+  const timers = getFarmingTimers();
+  const settings = getSettings();
+
+  const herbTicks = settings.herbTicks === 3 ? 3 : 4;
+  const stages = task.useHerbSetting ? herbTicks : (task.stages || 1);
+  const cycleMinutes = task.cycleMinutes || 20;
+  const offset = settings.growthOffsetMinutes || 0;
+
+  const startedAt = Date.now();
+  const readyAt = computeReadyAtMs(startedAt, cycleMinutes, stages, offset);
+
+  timers[task.id] = {
+    id: task.id,
+    startedAt,
+    readyAt,
+    cycleMinutes,
+    stages,
+    alerted: false
+  };
+
+  saveFarmingTimers(timers);
+}
+
+function clearFarmingTimer(taskId) {
+  const timers = getFarmingTimers();
+  delete timers[taskId];
+  saveFarmingTimers(timers);
+}
+
+function computeReadyAtMs(nowMs, cycleMinutes, stages, offsetMinutes = 0) {
+  const cycleMs = Math.max(1, cycleMinutes) * 60000;
+  const offsetMs = (offsetMinutes || 0) * 60000;
   const anchorMs = Date.UTC(1970, 0, 1, 0, 0, 0, 0) + offsetMs;
-
   const elapsed = nowMs - anchorMs;
   const steps = Math.floor(elapsed / cycleMs);
   const currentStart = anchorMs + steps * cycleMs;
   const nextStart = currentStart <= nowMs ? currentStart + cycleMs : currentStart;
-  return nextStart;
+  return nextStart + Math.max(0, (stages || 1) - 1) * cycleMs;
 }
 
-function computeReadyAtMs(nowMs, cycleMinutes, stages, offsetMinutes) {
-  const cycleMs = Math.max(1, cycleMinutes) * 60 * 1000;
-  const nextStart = nextWindowStartMs(nowMs, cycleMinutes, offsetMinutes);
-  const remainingStages = Math.max(0, (stages || 1) - 1);
-  return nextStart + remainingStages * cycleMs;
+function maybeBrowserNotify(title, body) {
+  const settings = getSettings();
+  if (!settings.browserNotif) return;
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    new Notification(title, { body });
+  } catch {
+    // ignore
+  }
 }
 
-function setupFarmingPanel() {
-  const toggle = document.getElementById('farming-toggle');
-  const panel = document.getElementById('farming-panel');
-  const closeBtn = document.getElementById('farming-close-btn');
-  if (!toggle || !panel || !closeBtn) return;
+async function maybeWebhookNotify(body) {
+  const settings = getSettings();
+  if (!settings.webhookUrl) return;
 
-  toggle.addEventListener('click', (e) => {
+  try {
+    await fetch(settings.webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: body })
+    });
+  } catch {
+    // ignore
+  }
+}
+
+function cleanupReadyFarmingTimers() {
+  const timers = getFarmingTimers();
+  const tasks = window.FARMING_CONFIG?.tasks || [];
+  const taskMap = new Map(tasks.map(t => [t.id, t]));
+  let changed = false;
+
+  Object.values(timers).forEach(timer => {
+    if (!timer) return;
+    if (timer.readyAt > Date.now()) return;
+
+    const task = taskMap.get(timer.id);
+    if (task?.alertOnReady && !timer.alerted) {
+      maybeBrowserNotify('RSDailies', `${task.name} is ready.`);
+      maybeWebhookNotify(`RSDailies: ${task.name} is ready.`);
+    }
+
+    delete timers[timer.id];
+    changed = true;
+  });
+
+  if (changed) saveFarmingTimers(timers);
+}
+
+function createRow(sectionKey, task, isCustom = false) {
+  const row = cloneRowTemplate();
+  row.dataset.id = task.id;
+  row.dataset.completed = getTaskState(sectionKey, task.id);
+
+  const nameCell = row.querySelector('.activity_name');
+  const nameLink = nameCell.querySelector('a');
+  const hideBtn = nameCell.querySelector('.hide-button');
+  const colorCell = row.querySelector('.activity_color');
+  const desc = row.querySelector('.activity_desc');
+
+  if (task.wiki) {
+    nameLink.href = task.wiki;
+  } else {
+    nameLink.href = '#';
+    nameLink.addEventListener('click', (e) => e.preventDefault());
+  }
+  nameLink.textContent = task.name;
+
+  desc.textContent = '';
+
+  if (task.note) {
+    const noteLine = document.createElement('span');
+    noteLine.className = 'activity_note_line';
+    noteLine.textContent = task.note;
+    desc.appendChild(noteLine);
+  }
+
+  if (task.profit && task.profit.item && task.profit.qty) {
+    const profit = document.createElement('span');
+    profit.className = 'item_profit';
+    profit.dataset.item = task.profit.item;
+    profit.dataset.qty = String(task.profit.qty);
+    profit.textContent = '…';
+    desc.appendChild(profit);
+  }
+
+  if (sectionKey === 'rs3farming') {
+    const timers = getFarmingTimers();
+    const state = timers[task.id];
+    const statusLine = document.createElement('span');
+    statusLine.className = 'activity_note_line';
+
+    if (state) {
+      statusLine.textContent = `Timer running — ready in ${formatDurationMs(state.readyAt - Date.now())}`;
+    } else {
+      statusLine.textContent = `Click the right column to start this timer.`;
+    }
+
+    desc.appendChild(statusLine);
+  }
+
+  if (typeof task.cooldownMinutes === 'number' && task.cooldownMinutes > 0) {
+    const cdBtn = document.createElement('button');
+    cdBtn.className = 'btn btn-warning btn-sm ms-2 cooldown-inline-btn';
+    cdBtn.type = 'button';
+    cdBtn.dataset.taskId = task.id;
+    cdBtn.dataset.cooldownMinutes = String(task.cooldownMinutes);
+    cdBtn.textContent = 'Start Cooldown';
+    cdBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startCooldown(task.id, task.cooldownMinutes);
+    });
+    desc.appendChild(cdBtn);
+  }
+
+  hideBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) {
-      ensureFarmingInterval();
-      renderFarmingPanel();
+    e.stopPropagation();
+
+    if (isCustom) {
+      const remove = confirm(`Delete custom task "${task.name}"?`);
+      if (!remove) return;
+      const next = getCustomTasks().filter(t => t.id !== task.id);
+      saveCustomTasks(next);
+
+      const completed = load('completed:custom', {});
+      const hiddenRows = load('hiddenRows:custom', {});
+      delete completed[task.id];
+      delete hiddenRows[task.id];
+      save('completed:custom', completed);
+      save('hiddenRows:custom', hiddenRows);
     } else {
-      stopFarmingIntervalIfIdle();
+      hideTask(sectionKey, task.id);
     }
+
+    renderApp();
   });
 
-  closeBtn.addEventListener('click', () => {
-    panel.classList.add('hidden');
-    stopFarmingIntervalIfIdle();
-  });
-}
+  colorCell.addEventListener('click', (e) => {
+    e.preventDefault();
 
-function startFarmingTimer(timerId, variantId) {
-  const cfg = window.FARMING_CONFIG?.timers?.find(t => t.id === timerId);
-  if (!cfg) return;
+    const state = getTaskState(sectionKey, task.id);
+    if (state === 'hide') return;
 
-  const settings = load('settings', {});
-  const offsetMinutes = settings.growthOffsetMinutes || 0;
-
-  const variant = (cfg.variants || []).find(v => v.id === variantId) || null;
-  const stages = variant?.stages || cfg.stages || 1;
-  const cycleMinutes = cfg.cycleMinutes || FARMING_TICK_MINUTES;
-
-  const startedAt = Date.now();
-  const readyAt = computeReadyAtMs(startedAt, cycleMinutes, stages, offsetMinutes);
-
-  const timers = loadFarmingTimers();
-  timers[timerId] = {
-    id: timerId,
-    name: cfg.name,
-    variantId: variant?.id || null,
-    variantName: variant?.name || null,
-    cycleMinutes,
-    stages,
-    startedAt,
-    readyAt,
-    alerted: false,
-  };
-  saveFarmingTimers(timers);
-  ensureFarmingInterval();
-  renderFarmingPanel();
-}
-
-function clearFarmingTimer(timerId) {
-  const timers = loadFarmingTimers();
-  delete timers[timerId];
-  saveFarmingTimers(timers);
-  renderFarmingPanel();
-  stopFarmingIntervalIfIdle();
-}
-
-function renderFarmingPanel() {
-  const panel = document.getElementById('farming-panel');
-  const container = document.getElementById('farming-timers');
-  if (!panel || !container) return;
-
-  const cfgTimers = window.FARMING_CONFIG?.timers || [];
-  const timers = loadFarmingTimers();
-  const now = Date.now();
-  const settings = load('settings', {});
-  const offsetMinutes = settings.growthOffsetMinutes || 0;
-
-  container.innerHTML = '';
-
-  cfgTimers.forEach(cfg => {
-    const state = timers[cfg.id] || null;
-
-    const row = document.createElement('div');
-    row.className = 'farming-row';
-
-    const left = document.createElement('div');
-    left.className = 'farming-left';
-
-    const title = document.createElement('div');
-    title.className = 'farming-title';
-    title.textContent = cfg.name;
-    left.appendChild(title);
-
-    if (cfg.sourceUrl) {
-      const src = document.createElement('a');
-      src.className = 'farming-source';
-      src.href = cfg.sourceUrl;
-      src.target = '_blank';
-      src.rel = 'noopener';
-      src.textContent = 'wiki';
-      left.appendChild(src);
-    }
-
-    const meta = document.createElement('div');
-    meta.className = 'farming-meta';
-    const cycle = cfg.cycleMinutes || FARMING_TICK_MINUTES;
-    meta.textContent = `Cycle: ${cycle}m | Offset: ${offsetMinutes}m`;
-    left.appendChild(meta);
-
-    const right = document.createElement('div');
-    right.className = 'farming-right';
-
-    let variantId = state?.variantId || (cfg.variants?.[0]?.id ?? null);
-    if (Array.isArray(cfg.variants) && cfg.variants.length > 1) {
-      const select = document.createElement('select');
-      select.className = 'farming-select';
-      cfg.variants.forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v.id;
-        opt.textContent = v.name;
-        select.appendChild(opt);
-      });
-      select.value = variantId || cfg.variants[0].id;
-      select.addEventListener('change', () => {
-        // only updates selection for the next start; does not mutate running timer
-        const nextTimers = loadFarmingTimers();
-        if (nextTimers[cfg.id]) {
-          nextTimers[cfg.id].variantId = select.value;
-          const v = cfg.variants.find(x => x.id === select.value);
-          nextTimers[cfg.id].variantName = v?.name || null;
-          nextTimers[cfg.id].stages = v?.stages || nextTimers[cfg.id].stages;
-          saveFarmingTimers(nextTimers);
-        }
-        renderFarmingPanel();
-      });
-      right.appendChild(select);
-      variantId = select.value;
-    }
-
-    const status = document.createElement('div');
-    status.className = 'farming-status';
-    if (!state || !state.readyAt) {
-      status.textContent = 'Not running';
+    if (sectionKey === 'rs3farming') {
+      if (state === 'true') clearFarmingTimer(task.id);
+      else startFarmingTimer(task);
     } else {
-      const remaining = state.readyAt - now;
-      status.textContent = remaining <= 0 ? 'Ready' : `Ready in ${formatMMSS(remaining)}`;
+      setTaskCompleted(sectionKey, task.id, state !== 'true');
     }
-    right.appendChild(status);
 
-    const actions = document.createElement('div');
-    actions.className = 'farming-actions';
-
-    const startBtn = document.createElement('button');
-    startBtn.type = 'button';
-    startBtn.textContent = state?.readyAt ? 'Restart' : 'Start';
-    startBtn.addEventListener('click', () => startFarmingTimer(cfg.id, variantId));
-    actions.appendChild(startBtn);
-
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'danger';
-    clearBtn.textContent = 'Clear';
-    clearBtn.disabled = !state;
-    clearBtn.addEventListener('click', () => clearFarmingTimer(cfg.id));
-    actions.appendChild(clearBtn);
-
-    right.appendChild(actions);
-
-    row.appendChild(left);
-    row.appendChild(right);
-    container.appendChild(row);
-
-    // Ready notifications (best-effort) - reuse browserNotif setting.
-    if (state && state.readyAt && state.readyAt <= now && !state.alerted) {
-      if (settings.browserNotif && Notification.permission === 'granted') {
-        try {
-          new Notification('RSDailies', { body: `${cfg.name} is ready.` });
-        } catch {
-          // ignore
-        }
-      }
-      const nextTimers = loadFarmingTimers();
-      if (nextTimers[cfg.id]) {
-        nextTimers[cfg.id].alerted = true;
-        saveFarmingTimers(nextTimers);
-      }
-    }
+    renderApp();
   });
 
-  stopFarmingIntervalIfIdle();
+  row.addEventListener('dragstart', () => {
+    dragRow = row;
+    row.classList.add('dragging');
+  });
+
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    dragRow = null;
+    persistOrderFromTable(sectionKey);
+  });
+
+  row.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = row;
+    if (!dragRow || dragRow === target) return;
+
+    const tbody = target.parentElement;
+    const rect = target.getBoundingClientRect();
+    const next = (e.clientY - rect.top) > rect.height / 2;
+    tbody.insertBefore(dragRow, next ? target.nextSibling : target);
+  });
+
+  return row;
 }
 
-// ---------------------------------------------------------------------------
-// Profiles
-// ---------------------------------------------------------------------------
-function setupProfiles() {
-  const list = document.getElementById('profile-list');
-  const addBtn = document.getElementById('add-profile-btn');
-  if (!list || !addBtn) return;
+function persistOrderFromTable(sectionKey) {
+  const table = document.getElementById(getTableId(sectionKey));
+  const tbody = table?.querySelector('tbody');
+  if (!tbody) return;
+  const order = [...tbody.querySelectorAll('tr')].map(tr => tr.dataset.id).filter(Boolean);
+  save(`order:${sectionKey}`, order);
+}
 
-  function renderProfilesUI() {
-    const profiles = loadProfiles();
-    const active = getActiveProfile();
-    list.innerHTML = '';
+function renderSection(sectionKey, tasks) {
+  const container = document.getElementById(getContainerId(sectionKey));
+  const table = document.getElementById(getTableId(sectionKey));
+  const tbody = table?.querySelector('tbody');
+  if (!container || !table || !tbody) return;
 
-    profiles.forEach(p => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'profile-btn';
-      btn.textContent = p === active ? `${p} (active)` : p;
-      btn.addEventListener('click', () => {
-        localStorage.setItem(`${STORAGE_KEY_PREFIX}:active-profile`, p);
-        location.reload();
-      });
-      list.appendChild(btn);
+  const state = getSectionState(sectionKey);
+  container.dataset.hide = state.hideSection ? 'hide' : 'show';
+  container.dataset.showHidden = state.showHidden ? 'true' : 'false';
+
+  tbody.innerHTML = '';
+
+  const finalTasks = applyOrderingAndSort(sectionKey, tasks);
+  finalTasks.forEach(task => {
+    const row = createRow(sectionKey, task, sectionKey === 'custom');
+    tbody.appendChild(row);
+  });
+}
+
+function renderApp() {
+  cleanupReadyFarmingTimers();
+
+  const settings = getSettings();
+  const sections = getResolvedSections();
+
+  document.body.classList.toggle('combine-daily-sections', !settings.splitDailyTables);
+  document.body.classList.toggle('combine-weekly-sections', !settings.splitWeeklyTables);
+
+  renderSection('rs3daily', sections.rs3daily);
+  renderSection('rs3dailyshops', sections.rs3dailyshops);
+  renderSection('rs3farming', sections.rs3farming);
+  renderSection('rs3weekly', sections.rs3weekly);
+  renderSection('rs3weeklyshops', sections.rs3weeklyshops);
+  renderSection('rs3monthly', sections.rs3monthly);
+  renderSection('custom', sections.custom);
+
+  document.getElementById('rs3dailyshops_nav').style.display = settings.splitDailyTables ? '' : 'none';
+  document.getElementById('rs3weeklyshops_nav').style.display = settings.splitWeeklyTables ? '' : 'none';
+
+  fetchProfits();
+  renderCooldownButtons();
+  updateProfileHeader();
+}
+
+function bindSectionControls(sectionKey, opts = { sortable: false }) {
+  const resetBtn = document.getElementById(`${sectionKey}_reset_button`);
+  const showHiddenBtn = document.getElementById(`${sectionKey}_show_hidden_button`);
+  const hideBtn = document.getElementById(`${sectionKey}_hide_button`);
+  const unhideBtn = document.getElementById(`${sectionKey}_unhide_button`);
+  const sortBtn = document.getElementById(`${sectionKey}_sort_button`);
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      resetSectionView(sectionKey);
+      renderApp();
     });
   }
 
-  addBtn.addEventListener('click', () => {
-    const name = prompt('New profile name:');
-    const trimmed = (name || '').trim();
-    if (!trimmed) return;
+  if (showHiddenBtn) {
+    showHiddenBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = !getSectionState(sectionKey).showHidden;
+      save(`showHidden:${sectionKey}`, next);
+      renderApp();
+    });
+  }
 
-    const profiles = loadProfiles();
-    if (profiles.includes(trimmed)) return;
-    profiles.push(trimmed);
-    saveProfiles(profiles);
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}:active-profile`, trimmed);
-    location.reload();
-  });
+  if (hideBtn) {
+    hideBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      save(`hideSection:${sectionKey}`, true);
+      renderApp();
+    });
+  }
 
-  renderProfilesUI();
+  if (unhideBtn) {
+    unhideBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      save(`hideSection:${sectionKey}`, false);
+      renderApp();
+    });
+  }
+
+  if (sortBtn && opts.sortable) {
+    sortBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const current = getSectionState(sectionKey).sort;
+      const next = current === 'default' ? 'alpha' : 'default';
+      save(`sort:${sectionKey}`, next);
+      renderApp();
+    });
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Render app based on settings
-// ---------------------------------------------------------------------------
-function renderApp() {
-  const cfg = window.TASKS_CONFIG;
-  if (!cfg) return;
+function updateProfileHeader() {
+  const profileName = document.getElementById('profile-name');
+  if (!profileName) return;
+  profileName.style.display = '';
+  profileName.style.visibility = 'visible';
+  profileName.textContent = currentProfile;
+}
 
-  const settings = load('settings', {});
-  const splitDailies = settings.splitDailies !== false;
-  const splitWeeklies = settings.splitWeeklies !== false;
+function setupProfileControl() {
+  const button = document.getElementById('profile-button');
+  const panel = document.getElementById('profile-control');
+  const list = document.getElementById('profile-list');
+  const form = document.getElementById('profile-form');
 
-  const dailies = splitDailies ? cfg.dailies : [...cfg.dailies, ...cfg.gathering.map(t => ({ ...t, storeType: 'gathering' }))];
-  const gathering = splitDailies ? cfg.gathering : [];
-  const weeklies = splitWeeklies ? cfg.weeklies : [...cfg.weeklies, ...cfg.weeklyGathering.map(t => ({ ...t, storeType: 'weeklyGathering' }))];
-  const weeklyGathering = splitWeeklies ? cfg.weeklyGathering : [];
+  function renderProfiles() {
+    const profiles = loadProfiles();
+    list.innerHTML = '';
 
-  const gatheringSection = document.getElementById('gathering-section');
-  if (gatheringSection) gatheringSection.classList.toggle('hidden', !splitDailies);
+    profiles.forEach(name => {
+      const li = document.createElement('li');
+      li.className = 'profile-row';
 
-  const weeklyGatheringSection = document.getElementById('weekly-gathering-section');
-  if (weeklyGatheringSection) weeklyGatheringSection.classList.toggle('hidden', !splitWeeklies);
+      const link = document.createElement('a');
+      link.href = '#';
+      link.className = 'profile-link';
+      link.textContent = name === currentProfile ? `${name} (active)` : name;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        setProfile(name);
+        renderApp();
+        renderProfiles();
+      });
 
-  buildRows(dailies, 'dailies');
-  buildRows(gathering, 'gathering');
-  buildRows(weeklies, 'weeklies');
-  buildRows(weeklyGathering, 'weeklyGathering');
-  buildRows(cfg.monthlies, 'monthlies');
+      li.appendChild(link);
 
-  loadCustomTasks();
-  fetchProfits();
-  renderHerbUI();
+      if (name !== 'default') {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'btn btn-danger btn-sm profile-delete';
+        del.textContent = '×';
+        del.addEventListener('click', () => {
+          if (!confirm(`Delete profile "${name}"? This removes stored data for that profile from this browser.`)) return;
+
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`${STORAGE_ROOT}:${name}:`)) {
+              localStorage.removeItem(key);
+            }
+          }
+
+          const next = loadProfiles().filter(p => p !== name);
+          saveProfiles(next);
+
+          if (currentProfile === name) {
+            setProfile('default');
+          }
+
+          renderProfiles();
+          renderApp();
+        });
+        li.appendChild(del);
+      }
+
+      list.appendChild(li);
+    });
+  }
+
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    const visible = panel.dataset.display === 'block';
+    closeFloatingControls();
+    if (!visible) {
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.dataset.display = 'block';
+    }
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('profileName');
+    const name = (input.value || '').trim();
+    if (!name) return;
+
+    const profiles = loadProfiles();
+    if (!profiles.includes(name)) {
+      profiles.push(name);
+      saveProfiles(profiles);
+    }
+
+    setProfile(name);
+    input.value = '';
+    renderProfiles();
+    renderApp();
+  });
+
+  renderProfiles();
+}
+
+function setupSettingsControl() {
+  const button = document.getElementById('settings-button');
+  const panel = document.getElementById('settings-control');
+  const saveBtn = document.getElementById('save-settings-btn');
+
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    const visible = panel.dataset.display === 'block';
+    closeFloatingControls();
+    if (!visible) {
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.dataset.display = 'block';
+    }
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const settings = collectSettingsFromDom();
+    saveSettings(settings);
+
+    if (settings.browserNotif && 'Notification' in window && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch {
+        // ignore
+      }
+    }
+
+    renderApp();
+  });
+}
+
+function closeFloatingControls() {
+  ['profile-control', 'settings-control'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+    el.style.visibility = 'hidden';
+    el.dataset.display = 'none';
+  });
+}
+
+function setupGlobalClickCloser() {
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (
+      target.closest('#profile-button') ||
+      target.closest('#profile-control') ||
+      target.closest('#settings-button') ||
+      target.closest('#settings-control')
+    ) {
+      return;
+    }
+    closeFloatingControls();
+  });
+}
+
+function setupCompactMode() {
+  const button = document.getElementById('layout-button');
+  const compact = load('compactMode', false);
+  document.body.classList.toggle('compact', compact);
+
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    const next = !document.body.classList.contains('compact');
+    document.body.classList.toggle('compact', next);
+    save('compactMode', next);
+  });
+}
+
+function buildExportToken() {
+  const payload = {
+    profile: currentProfile,
+    globals: {
+      profiles: loadProfiles(),
+      activeProfile: currentProfile
+    },
+    profileData: {}
+  };
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(profilePrefix)) {
+      payload.profileData[key] = localStorage.getItem(key);
+    }
+  }
+
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function importToken(rawToken) {
+  try {
+    const decoded = decodeURIComponent(escape(atob(rawToken)));
+    const data = JSON.parse(decoded);
+
+    if (data?.globals?.profiles && Array.isArray(data.globals.profiles)) {
+      saveProfiles(data.globals.profiles);
+    }
+
+    if (data?.profileData && typeof data.profileData === 'object') {
+      Object.entries(data.profileData).forEach(([key, value]) => {
+        localStorage.setItem(key, value);
+      });
+    }
+
+    if (data?.profile) {
+      setProfile(data.profile);
+    }
+
+    location.reload();
+  } catch {
+    const input = document.getElementById('token-input');
+    if (input) input.classList.add('is-invalid');
+  }
+}
+
+function setupImportExport() {
+  const tokenButton = document.getElementById('token-button');
+  const tokenOutput = document.getElementById('token-output');
+  const tokenInput = document.getElementById('token-input');
+  const tokenCopy = document.getElementById('token-copy');
+  const tokenImport = document.getElementById('token-import');
+
+  tokenButton.addEventListener('click', () => {
+    tokenOutput.value = buildExportToken();
+    tokenInput.classList.remove('is-invalid');
+  });
+
+  tokenCopy.addEventListener('click', async () => {
+    const text = tokenOutput.value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      tokenOutput.focus();
+      tokenOutput.select();
+      document.execCommand('copy');
+    }
+  });
+
+  tokenImport.addEventListener('click', () => {
+    tokenInput.classList.remove('is-invalid');
+    importToken(tokenInput.value.trim());
+  });
+}
+
+function getCooldowns() {
+  return load('cooldowns', {});
+}
+
+function saveCooldowns(data) {
+  save('cooldowns', data);
+}
+
+function startCooldown(taskId, minutes) {
+  const cooldowns = getCooldowns();
+  cooldowns[taskId] = {
+    readyAt: Date.now() + Math.max(1, Math.floor(minutes)) * 60000,
+    minutes: Math.max(1, Math.floor(minutes))
+  };
+  saveCooldowns(cooldowns);
   renderCooldownButtons();
 }
 
-// ---------------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  checkAutoReset();
-  updateTimers();
-  setInterval(updateTimers, 1000);
+function renderCooldownButtons() {
+  const cooldowns = getCooldowns();
+  const now = Date.now();
 
-  setupDropdowns();
-  setupCompactToggle();
-  setupImportExport();
-  setupFarmingPanel();
-  setupProfiles();
-  loadSettings();
+  document.querySelectorAll('.cooldown-inline-btn').forEach(btn => {
+    const taskId = btn.dataset.taskId;
+    const state = cooldowns[taskId];
+
+    if (!state) {
+      btn.textContent = 'Start Cooldown';
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-warning');
+      return;
+    }
+
+    const ms = state.readyAt - now;
+    if (ms <= 0) {
+      btn.textContent = 'Ready';
+      btn.classList.remove('btn-warning');
+      btn.classList.add('btn-success');
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = getCooldowns();
+        delete next[taskId];
+        saveCooldowns(next);
+        renderApp();
+      };
+    } else {
+      btn.textContent = `Cooldown ${formatDurationMs(ms)}`;
+    }
+  });
+}
+
+function clearCompletionFor(sectionKey) {
+  save(`completed:${sectionKey}`, {});
+}
+
+function resetCustomCompletions(kind) {
+  const tasks = getCustomTasks();
+  const completed = load('completed:custom', {});
+  let changed = false;
+
+  tasks.forEach(task => {
+    const resetKind = String(task.reset || 'daily').toLowerCase();
+    if (resetKind === kind && completed[task.id]) {
+      delete completed[task.id];
+      changed = true;
+    }
+  });
+
+  if (changed) save('completed:custom', completed);
+}
+
+function checkAutoReset() {
+  const now = Date.now();
+  const lastVisit = load('lastVisit', 0);
+
+  const prevDaily = nextDailyBoundary(new Date(now - 86400000)).getTime();
+  const prevWeekly = nextWeeklyBoundary(new Date(now - 7 * 86400000)).getTime();
+  const prevMonthly = nextMonthlyBoundary(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 1, 1))).getTime();
+
+  if (lastVisit < prevDaily) {
+    clearCompletionFor('rs3daily');
+    clearCompletionFor('rs3dailyshops');
+    resetCustomCompletions('daily');
+    maybeBrowserNotify('RSDailies', 'Daily reset happened.');
+    maybeWebhookNotify('RSDailies: daily reset happened (UTC).');
+  }
+
+  if (lastVisit < prevWeekly) {
+    clearCompletionFor('rs3weekly');
+    clearCompletionFor('rs3weeklyshops');
+    resetCustomCompletions('weekly');
+    maybeBrowserNotify('RSDailies', 'Weekly reset happened.');
+    maybeWebhookNotify('RSDailies: weekly reset happened (UTC).');
+  }
+
+  if (lastVisit < prevMonthly) {
+    clearCompletionFor('rs3monthly');
+    resetCustomCompletions('monthly');
+    maybeBrowserNotify('RSDailies', 'Monthly reset happened.');
+    maybeWebhookNotify('RSDailies: monthly reset happened (UTC).');
+  }
+
+  save('lastVisit', now);
+}
+
+async function fetchProfits() {
+  const nodes = [...document.querySelectorAll('.item_profit[data-item][data-qty]')];
+  if (!nodes.length) return;
+
+  const items = [...new Set(nodes.map(n => n.dataset.item).filter(Boolean))];
+  if (!items.length) return;
+
+  const query = `https://runescape.wiki/api.php?action=ask&query=[[Exchange:${items.join('||Exchange:')}]]|?Exchange:Price&format=json&origin=*`;
+
+  try {
+    const res = await fetch(query);
+    const data = await res.json();
+    const results = data?.query?.results || {};
+
+    nodes.forEach(node => {
+      const item = node.dataset.item;
+      const qty = parseInt(node.dataset.qty || '0', 10);
+      const row = results[`Exchange:${item}`];
+      const price = row?.printouts?.['Exchange:Price']?.[0]?.num;
+      if (!price || !qty) {
+        node.textContent = '';
+        return;
+      }
+      node.textContent = ` ~${Math.round(price * qty).toLocaleString()} gp`;
+    });
+  } catch {
+    nodes.forEach(node => {
+      node.textContent = '';
+    });
+  }
+}
+
+function promptAddCustomTask() {
+  const name = prompt('Task name:');
+  if (!name || !name.trim()) return;
+
+  const note = prompt('Task note (optional):') || '';
+  const wiki = prompt('Wiki / URL (optional):') || '';
+  const reset = (prompt('Reset type? daily / weekly / monthly', 'daily') || 'daily').trim().toLowerCase();
+
+  const allowed = ['daily', 'weekly', 'monthly'];
+  const task = {
+    id: `custom-${slugify(name)}-${Date.now()}`,
+    name: name.trim(),
+    note: note.trim(),
+    wiki: wiki.trim(),
+    reset: allowed.includes(reset) ? reset : 'daily'
+  };
+
+  const tasks = getCustomTasks();
+  tasks.push(task);
+  saveCustomTasks(tasks);
   renderApp();
+}
 
-  document.getElementById('add-custom-task-btn').addEventListener('click', showAddCustomTaskModal);
-  document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+function setupCustomAdd() {
+  document.getElementById('custom_add_button')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    promptAddCustomTask();
+  });
+}
+
+function setupSectionBindings() {
+  bindSectionControls('rs3daily');
+  bindSectionControls('rs3dailyshops', { sortable: true });
+  bindSectionControls('rs3farming');
+  bindSectionControls('rs3weekly');
+  bindSectionControls('rs3weeklyshops', { sortable: true });
+  bindSectionControls('rs3monthly');
+  bindSectionControls('custom');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initProfileContext();
+  applySettingsToDom();
+  checkAutoReset();
+  updateCountdowns();
+  setInterval(updateCountdowns, 1000);
+  setInterval(() => {
+    checkAutoReset();
+    cleanupReadyFarmingTimers();
+    renderCooldownButtons();
+    renderApp();
+  }, 1000);
+
+  setupSectionBindings();
+  setupProfileControl();
+  setupSettingsControl();
+  setupGlobalClickCloser();
+  setupCompactMode();
+  setupImportExport();
+  setupCustomAdd();
+
+  renderApp();
 });
