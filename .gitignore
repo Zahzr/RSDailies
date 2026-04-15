@@ -1,4 +1,5 @@
 rsdata
+.agents/
 .idea
 .env
 .env.local

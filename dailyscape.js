@@ -683,7 +683,7 @@ const populateTable = function(timeFrame) {
                     let itemInputData = !!item.inputs ? ' data-inputs="' + encodeURIComponent(JSON.stringify(item.inputs)) + '"' : '';
 
                     newRowColor.innerHTML += '<div class="item_output" data-item_id="' + item.id + '" data-shop_price="' + item.shop_price + '"' + itemInputData + '>'
-                                            + '<img class="item_icon" src="/rsdata/images/' + item.id + '.gif">'
+                                            + '<img class="item_icon" src="rsdata/images/' + item.id + '.gif">'
                                             + (!!item.label_override ? item.label_override : itemApiData.name) + ' x' + item.quantity.toLocaleString() + ' (' + item.profit.toLocaleString() + ')'
                                             + '</div>';
                 }
@@ -693,7 +693,7 @@ const populateTable = function(timeFrame) {
                     for (let item of skipItems) {
                         let itemApiData = rsapidata[item.id] ?? {name: 'Unknown item #' + item.id};
                         newRowColor.innerHTML += '<div class="item_output" data-item_id="' + item.id + '" data-shop_price="' + item.shop_price + '">'
-                                                + '<img class="item_icon" src="/rsdata/images/' + item.id + '.gif">'
+                                                + '<img class="item_icon" src="rsdata/images/' + item.id + '.gif">'
                                                 + (!!item.label_override ? item.label_override : itemApiData.name) + ' x' + item.quantity.toLocaleString() + ' (' + item.profit.toLocaleString() + ')'
                                                 + '</div>';
                     }
@@ -706,7 +706,7 @@ const populateTable = function(timeFrame) {
                     let itemInputData = !!item.inputs ? ' data-inputs="' + encodeURIComponent(JSON.stringify(item.inputs)) + '"' : '';
 
                     newRowColor.innerHTML += '<div class="item_output" data-item_id="' + item.id + '" data-shop_price="' + item.shop_price + '"' + itemInputData + '>'
-                                            + '<img class="item_icon" src="/rsdata/images/' + item.id + '.gif">'
+                                            + '<img class="item_icon" src="rsdata/images/' + item.id + '.gif">'
                                             + (!!item.label_override ? item.label_override : itemApiData.name) + ' x' + item.quantity.toLocaleString()
                                             + '</div>';
                 }
@@ -1484,7 +1484,7 @@ const itemStatsTooltip = function() {
 
             item.after(tooltip);
 
-            tooltip.innerHTML = '<img src="/rsdata/images/' + this.dataset.item_id + '.gif" class="item_icon"> ' + itemdata.name + '<br>'
+            tooltip.innerHTML = '<img src="rsdata/images/' + this.dataset.item_id + '.gif" class="item_icon"> ' + itemdata.name + '<br>'
                                 + 'GE: ' + itemdata.price.toLocaleString() + '<span class="coin">●</span>' + (parseInt(this.dataset.shop_price) > 0 ? ' Shop: ' + parseInt(this.dataset.shop_price).toLocaleString() + '<span class="coin">●</span>' : '');
             tooltip.innerHTML += '<br>Change: ' + (itemdata.price > itemdata.last ? '+' : '') + (itemdata.last != itemdata.price ? (itemdata.price - itemdata.last).toLocaleString() : '-') + (itemdata.price > itemdata.last ? '<span class="trend_positive">▲</span>' : itemdata.price < itemdata.last ? '<span class="trend_negative">▼</span>' : '<span class="trend_neutral">-</span>');
 
@@ -1495,7 +1495,7 @@ const itemStatsTooltip = function() {
 
                 for (let itemkey in inputItems) {
                     let inputItemData = rsapidata[itemkey];
-                    tooltip.innerHTML += ' <img src="/rsdata/images/' + itemkey + '.gif" class="item_icon"> ' + inputItemData.name + ' x' + inputItems[itemkey] + ' (-' + parseInt(inputItemData.price * inputItems[itemkey]).toLocaleString() + ')<br>';
+                    tooltip.innerHTML += ' <img src="rsdata/images/' + itemkey + '.gif" class="item_icon"> ' + inputItemData.name + ' x' + inputItems[itemkey] + ' (-' + parseInt(inputItemData.price * inputItems[itemkey]).toLocaleString() + ')<br>';
                 }
 
             }
@@ -1546,7 +1546,7 @@ const dataUpdatedCheck = function() {
         }
     };
 
-    xmlhttp.open("GET", "/rsdata/rsapiupdated.json", true);
+    xmlhttp.open("GET", "rsdata/rsapiupdated.json", true);
     xmlhttp.send();
 }
 

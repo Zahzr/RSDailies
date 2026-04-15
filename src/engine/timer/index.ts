@@ -95,6 +95,32 @@ export function calculateCountdown(resetType: ResetType): CountdownResult {
 }
 
 /**
+ * Get the previous reset time for a given reset type.
+ * @param type - 'daily', 'weekly', or 'monthly'
+ * @returns Date at 00:00 UTC of the previous reset
+ */
+export function getPreviousReset(type: ResetType): Date {
+  const now = new Date();
+  if (type === 'daily') {
+    // Today at 00:00 UTC
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+  if (type === 'weekly') {
+    const todayDay = now.getUTCDay(); // Sunday = 0, Wednesday = 3
+    const wednesdayDay = 3;
+    const daysSinceWednesday = (todayDay - wednesdayDay + 7) % 7;
+    const previousWednesday = new Date(now.getTime());
+    previousWednesday.setUTCDate(now.getUTCDate() - daysSinceWednesday);
+    return new Date(Date.UTC(previousWednesday.getUTCFullYear(), previousWednesday.getUTCMonth(), previousWednesday.getUTCDate()));
+  }
+  if (type === 'monthly') {
+    // First day of the current month at 00:00 UTC
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  }
+  throw new Error(`Unhandled reset type: ${type}`);
+}
+
+/**
  * Check if a task has been completed in the current period.
  * @param lastCompletedTime - Timestamp (ms) when task was last marked complete
  * @param resetType - When the task resets
@@ -104,9 +130,7 @@ export function isTaskStillCompleteThisPeriod(
   lastCompletedTime: number,
   resetType: ResetType
 ): boolean {
-  const lastCompleted = new Date(lastCompletedTime)
-  const nextReset = getNextReset(resetType)
-
-  // If next reset is > lastCompleted, then lastCompleted is in current period
-  return nextReset.getTime() - 7 * 24 * 60 * 60 * 1000 >= lastCompleted.getTime()
+  const previousReset = getPreviousReset(resetType);
+  // A task is "still complete" if it was completed after the most recent reset.
+  return lastCompletedTime >= previousReset.getTime();
 }

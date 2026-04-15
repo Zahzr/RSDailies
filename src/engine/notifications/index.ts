@@ -102,7 +102,7 @@ export class WebNotificationAdapter implements INotificationAdapter {
    */
   private getIconUrl(): string {
     // Return path to app icon (placeholder)
-    return '/assets/icon-192x192.png'
+    return 'assets/icon-192x192.png'
   }
 }
 

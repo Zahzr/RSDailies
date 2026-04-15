@@ -1,5 +1,9 @@
 # Dailyscape - React Edition
 
+[![Deploy to GitHub Pages](https://github.com/rsdailies/rsdailies.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/rsdailies/rsdailies.github.io/actions/workflows/deploy.yml)
+
+**Live Demo:** [https://rsdailies.github.io/](https://rsdailies.github.io/)
+
 **Dailyscape** is a tool for RuneScape 3 players to track their daily, weekly, and monthly in-game tasks. This modernized version is built with React and TypeScript, offering a fast, reliable, and extensible experience.
 
 ## Architecture Overview
@@ -85,7 +89,7 @@ The application is designed for deployment on static hosting services like GitHu
     ```
 
 2.  **Deployment:**
-    The project is configured to deploy the contents of the `dist/` directory. For GitHub Pages, this is now automated via a GitHub Action. Pushing to the `main` branch will trigger a new deployment.
+    This project is automatically deployed to GitHub Pages via a GitHub Action. Pushing to the `main` branch will trigger a build and deployment. You can monitor the status of deployments under the "Actions" tab in the repository.
 
 ## Contributing
 

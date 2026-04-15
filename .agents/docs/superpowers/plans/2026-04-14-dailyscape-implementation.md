@@ -650,8 +650,8 @@ index.html (→ public/index.html)
 - [ ] `npm run build` produces optimized dist/ directory
 - [ ] dist/index.html contains React app
 - [ ] All assets (CSS, JS, images) included
-- [ ] Deployed to GitHub Pages: dailyscape.github.io
-- [ ] App loads and functions at https://dailyscape.github.io/
+- [ ] Deployed to GitHub Pages: zahzr.github.io/RSDailies
+- [ ] App loads and functions at https://zahzr.github.io/RSDailies/
 - [ ] localStorage persists across page reload
 **Estimated time:** ~20 min  
 **Commit message:** `build: deploy react version to github pages`
@@ -697,7 +697,7 @@ Upon completion, verify:
 
 - ✅ All 32 tasks completed and committed
 - ✅ All tests passing (`npm test`)
-- ✅ React version deployed to https://dailyscape.github.io/
+- ✅ React version deployed to https://zahzr.github.io/RSDailies/
 - ✅ Vanilla fallback functional at /fallback.html
 - ✅ Service worker detects React failure and serves fallback
 - ✅ All existing features preserved:
@@ -744,4 +744,3 @@ Upon completion, verify:
 **END OF IMPLEMENTATION PLAN**
 
 Ready to execute: Start with Task 1.
-
