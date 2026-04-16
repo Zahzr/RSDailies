@@ -1,15 +1,21 @@
-import { tasksConfig as TASKS_CONFIG } from '../config/tasks/index.js';
-import { farmingConfig as FARMING_CONFIG } from '../config/farming/index.js';
-import { settingsDefaults as DEFAULT_SETTINGS } from '../config/settings-defaults.js';
-import { theme as THEME_TOKENS } from '../config/theme.js';
+import { createScheduler } from './scheduler.js';
+import { createLegacyApp } from './legacy-app.js';
 
-export function initializeCompositionRoot() {
+export function createCompositionRoot({ rootElement }) {
+  const scheduler = createScheduler();
+  const legacyApp = createLegacyApp({
+    rootElement,
+    scheduler,
+  });
+
   return {
-    tasks: TASKS_CONFIG,
-    farming: FARMING_CONFIG,
-    settings: DEFAULT_SETTINGS,
-    theme: THEME_TOKENS
+    start() {
+      legacyApp.start();
+    },
+
+    stop() {
+      legacyApp.stop?.();
+      scheduler.stop();
+    },
   };
 }
-
-export { TASKS_CONFIG, FARMING_CONFIG, DEFAULT_SETTINGS, THEME_TOKENS };

@@ -1,17 +1,14 @@
 {
   "name": "rsdailies",
-  "version": "2.0.0",
-  "description": "RS3 dailies/weeklies/monthlies tracker (static GitHub Pages site).",
+  "private": true,
+  "version": "1.0.0",
   "type": "module",
-  "homepage": "https://rsdailies.github.io/RSDailies/",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 8080",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4173",
-    "serve": "vite preview --host 127.0.0.1 --port 8080"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^4.5.14"
-  },
-  "license": "MIT"
+    "vite": "^5.4.19"
+  }
 }
