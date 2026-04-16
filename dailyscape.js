@@ -1282,10 +1282,13 @@ function renderGroupedGathering(tbody, tasks) {
   const daily = tasks.filter((task) => String(task.reset || '').toLowerCase() === 'daily');
   const weekly = tasks.filter((task) => String(task.reset || '').toLowerCase() === 'weekly');
 
+  const dailyCountdown = formatCountdown(nextDailyBoundary());
+  const weeklyCountdown = formatCountdown(nextWeeklyBoundary());
+
   if (daily.length) {
     tbody.appendChild(createHeaderRow('DAILY GATHERING', 'gathering:daily', {
       className: 'gathering-group-row',
-      rightText: ''
+      rightText: dailyCountdown
     }));
 
     if (!isCollapsedBlock('gathering:daily')) {
@@ -1298,7 +1301,7 @@ function renderGroupedGathering(tbody, tasks) {
   if (weekly.length) {
     tbody.appendChild(createHeaderRow('WEEKLY GATHERING', 'gathering:weekly', {
       className: 'gathering-group-row',
-      rightText: ''
+      rightText: weeklyCountdown
     }));
 
     if (!isCollapsedBlock('gathering:weekly')) {
@@ -1482,13 +1485,6 @@ function applyPageModeVisibility(mode) {
 
   panel.dataset.view = mode;
 
-  if (mode === 'overview') {
-    tables.style.display = 'none';
-    return;
-  }
-
-  tables.style.display = '';
-
   const modeToSectionKey = {
     custom: 'custom',
     rs3farming: 'rs3farming',
@@ -1504,8 +1500,17 @@ function applyPageModeVisibility(mode) {
     const container = document.getElementById(getContainerId(sectionKey));
     if (!container) return;
 
-    const visible = mode === 'all' || !activeSectionKey || activeSectionKey === sectionKey;
-    container.style.display = visible ? '' : 'none';
+    if (mode === 'overview') {
+      container.style.display = 'none';
+      return;
+    }
+
+    if (mode === 'all') {
+      container.style.display = '';
+      return;
+    }
+
+    container.style.display = activeSectionKey === sectionKey ? '' : 'none';
   });
 }
 
@@ -1958,20 +1963,6 @@ function setupGlobalClickCloser() {
   });
 }
 
-function setupCompactMode() {
-  const button = document.getElementById('layout-button');
-  const compact = load('compactMode', false);
-
-  document.body.classList.toggle('compact', compact);
-
-  button?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const next = !document.body.classList.contains('compact');
-    document.body.classList.toggle('compact', next);
-    save('compactMode', next);
-  });
-}
-
 /* -----------------------------
    Import / export
 ----------------------------- */
@@ -2245,7 +2236,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSettingsControl();
   setupViewsControl();
   setupGlobalClickCloser();
-  setupCompactMode();
   setupImportExport();
   setupCustomAdd();
 
