@@ -1,0 +1,128 @@
+.header_like_name {
+    padding: 0 !important;
+    background: #111;
+    min-height: 38px !important;
+}
+
+.header_like_name .header_like_text {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    min-height: 38px;
+    padding: 0.32rem 0.8rem;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+/* Right side of group header rows inherits the same background, preventing black bleed. */
+.header_like_color {
+    cursor: default !important;
+    background: inherit !important;
+    box-shadow: none !important;
+    padding: 0.2rem 0.55rem !important;
+}
+
+.header_like_click {
+    cursor: pointer !important;
+}
+
+.header_like_click:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    box-shadow: inset 0 0 0 9999px rgba(255, 255, 255, 0.03) !important;
+}
+
+.header_like_inner {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-height: 30px;
+}
+
+.header_like_status {
+    color: #d8d8d8;
+    font-size: 0.84rem;
+    line-height: 1rem;
+}
+
+.mini-collapse-btn {
+    min-width: 30px;
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.farming-group-row td {
+    background: linear-gradient(90deg, #141414, #1b222a) !important;
+    border-top: 1px solid #555 !important;
+    border-bottom: 1px solid #555 !important;
+}
+
+.farming-subgroup-row td,
+.gathering-group-row td {
+    background: linear-gradient(90deg, #171717, #202020) !important;
+    border-top: 1px solid #333 !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+.farming-subheader-row .header_like_text {
+    padding-left: 1.35rem;
+}
+
+.farming-location-row .activity_desc {
+    font-weight: 600;
+    margin-top: 0;
+}
+
+.farming-location-row .activity_note_line {
+    margin-top: 0;
+}
+
+.farming-child-row td.activity_name {
+    background: #0a0a0a;
+    box-shadow: inset 0 0 0 9999px #0a0a0a;
+    min-height: 40px;
+}
+
+.farming-child-row td.activity_name a,
+.farming-child-row td.activity_name a:active,
+.farming-child-row td.activity_name a:link,
+.farming-child-row td.activity_name a:visited {
+    color: transparent !important;
+    text-decoration: none !important;
+    pointer-events: none;
+    padding: 0;
+}
+
+.farming-child-row td.activity_name::before {
+    background: #0a0a0a !important;
+}
+
+.farming-child-row td.activity_name button.pin-button,
+.farming-child-row td.activity_name button.hide-button,
+.farming-child-row td.activity_name button.delete-button {
+    display: none !important;
+}
+
+.farming-child-row td.activity_notes,
+.farming-child-row td.activity_status {
+    font-size: 0.92rem;
+    vertical-align: middle;
+    min-height: 40px;
+}
+
+.farming-child-row td.activity_status .activity_check_off,
+.farming-child-row td.activity_status .activity_check_on {
+    min-height: 40px;
+}
+
+.farming-child-row .activity_desc {
+    padding-top: 0;
+}

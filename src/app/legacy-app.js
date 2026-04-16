@@ -1,11 +1,54 @@
-'use strict';
+import { tasksConfig as TASKS_CONFIG } from '../config/tasks/index.js';
+import { farmingConfig as FARMING_CONFIG } from '../config/farming/index.js';
+import {
+  initProfileContext as initProfileContextFeature,
+  setProfile as setProfileFeature,
+  loadProfiles as loadProfilesFeature,
+  saveProfiles as saveProfilesFeature,
+  profileKey as profileKeyFeature,
+  loadProfileValue,
+  saveProfileValue,
+  removeProfileValue,
+  saveSectionValue as saveSectionValueFeature
+} from '../features/profiles/index.js';
+import {
+  buildExportToken as buildExportTokenFeature,
+  importProfileToken,
+  updateProfileHeader as updateProfileHeaderFeature,
+  setupProfileControl as setupProfileControlFeature
+} from '../features/profiles/index.js';
+import {
+  getSettings as getSettingsFeature,
+  saveSettings as saveSettingsFeature,
+  applySettingsToDom as applySettingsToDomFeature,
+  collectSettingsFromDom as collectSettingsFromDomFeature,
+  setupSettingsControl as setupSettingsControlFeature
+} from '../features/settings/index.js';
+import {
+  getResolvedSections as getResolvedSectionsFeature,
+  getContainerId as getContainerIdFeature,
+  getTableId as getTableIdFeature
+} from '../features/tasks/index.js';
+import {
+  migrateLegacyViewModeToPageMode as migrateLegacyViewModeToPageModeFeature,
+  getPageMode as getPageModeFeature,
+  setPageMode as setPageModeFeature,
+  closeFloatingControls as closeFloatingControlsFeature,
+  setupViewsControl as setupViewsControlFeature
+} from '../features/views/index.js';
+import {
+  nextDailyBoundary as nextDailyBoundaryCore,
+  nextWeeklyBoundary as nextWeeklyBoundaryCore,
+  nextMonthlyBoundary as nextMonthlyBoundaryCore
+} from '../core/time/boundaries.js';
+import { formatCountdown as formatCountdownCore } from '../core/time/countdowns.js';
+import {
+  formatMinutesCountdown as formatMinutesCountdownCore,
+  formatDurationMs as formatDurationMsCore,
+  formatDateTimeLocal as formatDateTimeLocalCore
+} from '../core/time/formatters.js';
+import { slugify as slugifyCore } from '../core/utils/strings.js';
 
-const STORAGE_ROOT = 'rsdailies';
-const GLOBAL_PROFILES_KEY = `${STORAGE_ROOT}:profiles`;
-const ACTIVE_PROFILE_KEY = `${STORAGE_ROOT}:active-profile`;
-
-let currentProfile = 'default';
-let profilePrefix = `${STORAGE_ROOT}:default:`;
 let dragRow = null;
 
 /* -----------------------------
@@ -13,60 +56,43 @@ let dragRow = null;
 ----------------------------- */
 
 function setProfile(name) {
-  currentProfile = name || 'default';
-  profilePrefix = `${STORAGE_ROOT}:${currentProfile}:`;
-  localStorage.setItem(ACTIVE_PROFILE_KEY, currentProfile);
+  setProfileFeature(name);
 }
 
 function initProfileContext() {
-  setProfile(localStorage.getItem(ACTIVE_PROFILE_KEY) || 'default');
+  initProfileContextFeature();
 }
 
 function loadProfiles() {
-  try {
-    const raw = localStorage.getItem(GLOBAL_PROFILES_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) && parsed.length ? parsed : ['default'];
-  } catch {
-    return ['default'];
-  }
+  return loadProfilesFeature();
 }
 
 function saveProfiles(profiles) {
-  localStorage.setItem(GLOBAL_PROFILES_KEY, JSON.stringify(profiles));
+  saveProfilesFeature(profiles);
 }
 
 function profileKey(key) {
-  return `${profilePrefix}${key}`;
+  return profileKeyFeature(key);
 }
 
 function load(key, fallback = null) {
-  try {
-    const raw = localStorage.getItem(profileKey(key));
-    return raw !== null ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
+  return loadProfileValue(key, fallback);
 }
 
 function save(key, value) {
-  localStorage.setItem(profileKey(key), JSON.stringify(value));
+  saveProfileValue(key, value);
 }
 
 function removeKey(key) {
-  localStorage.removeItem(profileKey(key));
+  removeProfileValue(key);
 }
 
 function saveSectionValue(sectionKey, field, value) {
-  save(`${field}:${sectionKey}`, value);
+  saveSectionValueFeature(sectionKey, field, value);
 }
 
 function slugify(input) {
-  return String(input || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '') || `custom-${Date.now()}`;
+  return slugifyCore(input);
 }
 
 /* -----------------------------
@@ -74,60 +100,31 @@ function slugify(input) {
 ----------------------------- */
 
 function nextDailyBoundary(now = new Date()) {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+  return nextDailyBoundaryCore(now);
 }
 
 function nextWeeklyBoundary(now = new Date()) {
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-  const day = d.getUTCDay();
-  let daysUntilWed = (3 - day + 7) % 7;
-  if (daysUntilWed === 0) daysUntilWed = 7;
-  d.setUTCDate(d.getUTCDate() + daysUntilWed);
-  return d;
+  return nextWeeklyBoundaryCore(now);
 }
 
 function nextMonthlyBoundary(now = new Date()) {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+  return nextMonthlyBoundaryCore(now);
 }
 
 function formatCountdown(targetDate) {
-  const diff = Math.max(0, targetDate.getTime() - Date.now());
-  return formatMinutesCountdown(Math.floor(diff / 60000));
+  return formatCountdownCore(targetDate);
 }
 
 function formatMinutesCountdown(totalMinutes) {
-  const safeMinutes = Math.max(0, totalMinutes);
-
-  if (safeMinutes < 60) {
-    return `${safeMinutes}`;
-  }
-
-  const days = Math.floor(safeMinutes / 1440);
-  const hours = Math.floor((safeMinutes % 1440) / 60);
-  const minutes = safeMinutes % 60;
-
-  if (days > 0) {
-    return `${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  }
-
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  return formatMinutesCountdownCore(totalMinutes);
 }
 
 function formatDurationMs(ms) {
-  const clamped = Math.max(0, ms);
-  return formatMinutesCountdown(Math.floor(clamped / 60000));
+  return formatDurationMsCore(ms);
 }
 
 function formatDateTimeLocal(ts) {
-  const d = new Date(ts);
-  return d.toLocaleString([], {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
+  return formatDateTimeLocalCore(ts);
 }
 
 function updateCountdowns() {
@@ -154,55 +151,19 @@ function updateCountdowns() {
 ----------------------------- */
 
 function getSettings() {
-  return load('settings', {
-    splitDailyTables: true,
-    splitWeeklyTables: true,
-    herbTicks: 4,
-    growthOffsetMinutes: 0,
-    browserNotif: false,
-    webhookUrl: '',
-    overviewVisible: true
-  });
+  return getSettingsFeature();
 }
 
 function saveSettings(settings) {
-  save('settings', settings);
+  saveSettingsFeature(settings);
 }
 
 function applySettingsToDom() {
-  const settings = getSettings();
-
-  const splitDaily = document.getElementById('setting-split-daily-tables');
-  const splitWeekly = document.getElementById('setting-split-weekly-tables');
-  const herbs3 = document.getElementById('setting-3tick-herbs');
-  const growthOffset = document.getElementById('setting-growth-offset');
-  const browserNotif = document.getElementById('setting-browser-notif');
-  const webhook = document.getElementById('setting-webhook-url');
-
-  if (splitDaily) splitDaily.checked = settings.splitDailyTables !== false;
-  if (splitWeekly) splitWeekly.checked = settings.splitWeeklyTables !== false;
-  if (herbs3) herbs3.checked = settings.herbTicks === 3;
-  if (growthOffset) growthOffset.value = String(settings.growthOffsetMinutes || 0);
-  if (browserNotif) browserNotif.checked = !!settings.browserNotif;
-  if (webhook) webhook.value = settings.webhookUrl || '';
+  applySettingsToDomFeature(document, getSettings());
 }
 
 function collectSettingsFromDom() {
-  const growthOffsetRaw = document.getElementById('setting-growth-offset')?.value || '0';
-  let growthOffsetMinutes = parseInt(growthOffsetRaw, 10);
-
-  if (!Number.isFinite(growthOffsetMinutes)) growthOffsetMinutes = 0;
-  growthOffsetMinutes = Math.max(-60, Math.min(60, growthOffsetMinutes));
-
-  return {
-    splitDailyTables: !!document.getElementById('setting-split-daily-tables')?.checked,
-    splitWeeklyTables: !!document.getElementById('setting-split-weekly-tables')?.checked,
-    herbTicks: document.getElementById('setting-3tick-herbs')?.checked ? 3 : 4,
-    growthOffsetMinutes,
-    browserNotif: !!document.getElementById('setting-browser-notif')?.checked,
-    webhookUrl: (document.getElementById('setting-webhook-url')?.value || '').trim(),
-    overviewVisible: true
-  };
+  return collectSettingsFromDomFeature(document);
 }
 
 /* -----------------------------
@@ -263,26 +224,16 @@ function saveCooldowns(data) {
   save('cooldowns', data);
 }
 
-const PAGE_MODES = ['overview', 'all', 'custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'];
-
 function migrateLegacyViewModeToPageMode() {
-  const existing = load('pageMode', null);
-  if (typeof existing === 'string' && PAGE_MODES.includes(existing)) return;
-
-  const legacy = load('viewMode', null);
-  save('pageMode', legacy === 'overview' ? 'overview' : 'all');
+  migrateLegacyViewModeToPageModeFeature();
 }
 
 function getPageMode() {
-  const mode = load('pageMode', null);
-  if (typeof mode === 'string' && PAGE_MODES.includes(mode)) return mode;
-
-  const legacy = load('viewMode', 'all');
-  return legacy === 'overview' ? 'overview' : 'all';
+  return getPageModeFeature();
 }
 
 function setPageMode(mode) {
-  save('pageMode', PAGE_MODES.includes(mode) ? mode : 'all');
+  setPageModeFeature(mode);
 }
 
 function getOverviewPins() {
@@ -327,48 +278,20 @@ function mergePenguinChildRows(task) {
 ----------------------------- */
 
 function getResolvedSections() {
-  const cfg = window.TASKS_CONFIG || {};
-
-  const dailies = Array.isArray(cfg.dailies) ? cfg.dailies : [];
-  const gatheringDaily = Array.isArray(cfg.gathering) ? cfg.gathering : [];
-  const weeklies = Array.isArray(cfg.weeklies) ? cfg.weeklies : [];
-  const gatheringWeekly = Array.isArray(cfg.weeklyGathering) ? cfg.weeklyGathering : [];
-  const monthlies = Array.isArray(cfg.monthlies) ? cfg.monthlies : [];
-  const custom = getCustomTasks();
-
-  const farmingGroups = Array.isArray(window.FARMING_CONFIG?.groups) ? window.FARMING_CONFIG.groups : [];
-  const resolvedWeeklies = weeklies.map((task) => mergePenguinChildRows(task));
-
-  return {
-    custom,
-    rs3daily: dailies,
-    gathering: gatheringDaily.concat(gatheringWeekly),
-    rs3weekly: resolvedWeeklies,
-    rs3monthly: monthlies,
-    rs3farming: farmingGroups
-  };
+  return getResolvedSectionsFeature({
+    tasksConfig: TASKS_CONFIG,
+    farmingConfig: FARMING_CONFIG,
+    getCustomTasks,
+    getPenguinWeeklyData
+  });
 }
 
 function getContainerId(sectionKey) {
-  return {
-    custom: 'custom-tasks',
-    rs3farming: 'farming',
-    rs3daily: 'dailies',
-    gathering: 'gathering',
-    rs3weekly: 'weeklies',
-    rs3monthly: 'monthlies'
-  }[sectionKey];
+  return getContainerIdFeature(sectionKey);
 }
 
 function getTableId(sectionKey) {
-  return {
-    custom: 'custom_table',
-    rs3farming: 'rs3farming_table',
-    rs3daily: 'rs3daily_table',
-    gathering: 'gathering_table',
-    rs3weekly: 'rs3weekly_table',
-    rs3monthly: 'rs3monthly_table'
-  }[sectionKey];
+  return getTableIdFeature(sectionKey);
 }
 
 function childStorageKey(sectionKey, parentId, childId) {
@@ -1627,107 +1550,11 @@ function renderOverviewPanel(sections) {
 }
 
 function setupViewsControl() {
-  const navbarButton = document.getElementById('views-button');
-  const panelButton = document.getElementById('views-button-panel');
-  const panel = document.getElementById('views-control');
-  const list = document.getElementById('views-list');
-
-  navbarButton?.closest('li')?.setAttribute('style', 'display:none; visibility:hidden;');
-
-  const buttons = [panelButton].filter(Boolean);
-  if (!buttons.length || !panel || !list) return;
-
-  const views = [
-    { mode: 'overview', label: 'Overview' },
-    { mode: 'all', label: 'All' },
-    { mode: 'custom', label: 'Custom Tasks' },
-    { mode: 'rs3farming', label: 'Farming' },
-    { mode: 'rs3daily', label: 'Dailies' },
-    { mode: 'gathering', label: 'Gathering' },
-    { mode: 'rs3weekly', label: 'Weeklies' },
-    { mode: 'rs3monthly', label: 'Monthlies' }
-  ];
-
-  function renderViews() {
-    const current = getPageMode();
-    list.innerHTML = '';
-
-    views.forEach((view) => {
-      const li = document.createElement('li');
-      li.className = 'profile-row';
-
-      const link = document.createElement('a');
-      link.href = '#';
-      link.className = 'profile-link';
-      link.textContent = view.label;
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        setPageMode(view.mode);
-        closeFloatingControls();
-        renderApp();
-      });
-
-      li.appendChild(link);
-      list.appendChild(li);
-    });
-  }
-
-  function positionPanel(anchor) {
-    const rect = anchor.getBoundingClientRect();
-    const margin = 6;
-    const minWidth = 320;
-    const viewportPadding = 10;
-
-    // Panel may be display:none before showing, so avoid relying on offsetWidth.
-    const width = Math.max(minWidth, panel.getBoundingClientRect().width || 0);
-
-    const desiredTop = rect.bottom + margin;
-    const desiredLeft = rect.left;
-
-    const top = Math.max(viewportPadding, Math.min(desiredTop, window.innerHeight - viewportPadding - 40));
-    const left = Math.max(
-      viewportPadding,
-      Math.min(desiredLeft, window.innerWidth - viewportPadding - width)
-    );
-
-    panel.style.position = 'fixed';
-    panel.style.top = `${top}px`;
-    panel.style.left = `${left}px`;
-    panel.style.right = 'auto';
-  }
-
-  function openFrom(button) {
-    closeFloatingControls();
-    panel.style.display = 'block';
-    panel.style.visibility = 'visible';
-    panel.dataset.display = 'block';
-    panel.dataset.anchor = button.id || '';
-    renderViews();
-    positionPanel(button);
-  }
-
-  buttons.forEach((button) => {
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const visible = panel.dataset.display === 'block';
-      const sameAnchor = (panel.dataset.anchor || '') === (button.id || '');
-      if (visible && sameAnchor) {
-        closeFloatingControls();
-        return;
-      }
-
-      openFrom(button);
-    });
-  });
-
-  window.addEventListener('resize', () => {
-    if (panel.dataset.display !== 'block') return;
-    const anchorId = panel.dataset.anchor || '';
-    if (!anchorId) return;
-    const anchor = document.getElementById(anchorId);
-    if (!anchor) return;
-    positionPanel(anchor);
+  setupViewsControlFeature({
+    renderApp,
+    documentRef: document,
+    windowRef: window,
+    closeAllFloatingControls: closeFloatingControls
   });
 }
 
@@ -1839,145 +1666,27 @@ function bindSectionControls(sectionKey, opts = { sortable: false }) {
 }
 
 function updateProfileHeader() {
-  const profileName = document.getElementById('profile-name');
-  if (!profileName) return;
-
-  profileName.style.display = '';
-  profileName.style.visibility = 'visible';
-  profileName.textContent = currentProfile;
+  updateProfileHeaderFeature(document.getElementById('profile-name'));
 }
 
 function setupProfileControl() {
-  const button = document.getElementById('profile-button');
-  const panel = document.getElementById('profile-control');
-  const list = document.getElementById('profile-list');
-  const form = document.getElementById('profile-form');
-
-  function renderProfiles() {
-    const profiles = loadProfiles();
-    list.innerHTML = '';
-
-    profiles.forEach((name) => {
-      const li = document.createElement('li');
-      li.className = 'profile-row';
-
-      const link = document.createElement('a');
-      link.href = '#';
-      link.className = 'profile-link';
-      link.textContent = name === currentProfile ? `${name} (active)` : name;
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        setProfile(name);
-        renderProfiles();
-        renderApp();
-      });
-
-      li.appendChild(link);
-
-      if (name !== 'default') {
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'btn btn-danger btn-sm profile-delete';
-        del.textContent = '×';
-        del.addEventListener('click', () => {
-          if (!confirm(`Delete profile "${name}"? This removes that profile's browser data.`)) return;
-
-          for (let i = localStorage.length - 1; i >= 0; i--) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(`${STORAGE_ROOT}:${name}:`)) {
-              localStorage.removeItem(key);
-            }
-          }
-
-          const next = loadProfiles().filter((p) => p !== name);
-          saveProfiles(next);
-
-          if (currentProfile === name) setProfile('default');
-
-          renderProfiles();
-          renderApp();
-        });
-        li.appendChild(del);
-      }
-
-      list.appendChild(li);
-    });
-  }
-
-  button?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const visible = panel.dataset.display === 'block';
-    closeFloatingControls();
-    if (!visible) {
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.dataset.display = 'block';
-    }
+  setupProfileControlFeature({
+    renderApp,
+    closeFloatingControls,
+    documentRef: document
   });
-
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const input = document.getElementById('profileName');
-    const name = (input.value || '').trim();
-    if (!name) return;
-
-    const profiles = loadProfiles();
-    if (!profiles.includes(name)) {
-      profiles.push(name);
-      saveProfiles(profiles);
-    }
-
-    setProfile(name);
-    input.value = '';
-
-    renderProfiles();
-    renderApp();
-  });
-
-  renderProfiles();
 }
 
 function setupSettingsControl() {
-  const button = document.getElementById('settings-button');
-  const panel = document.getElementById('settings-control');
-  const saveBtn = document.getElementById('save-settings-btn');
-
-  button?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const visible = panel.dataset.display === 'block';
-    closeFloatingControls();
-    if (!visible) {
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.dataset.display = 'block';
-    }
-  });
-
-  saveBtn?.addEventListener('click', async () => {
-    const settings = collectSettingsFromDom();
-    saveSettings(settings);
-
-    if (settings.browserNotif && 'Notification' in window && Notification.permission === 'default') {
-      try {
-        await Notification.requestPermission();
-      } catch {
-        // noop
-      }
-    }
-
-    renderApp();
+  setupSettingsControlFeature({
+    renderApp,
+    closeFloatingControls,
+    documentRef: document
   });
 }
 
 function closeFloatingControls() {
-  ['profile-control', 'settings-control', 'views-control'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = 'none';
-    el.style.visibility = 'hidden';
-    el.dataset.display = 'none';
-  });
+  closeFloatingControlsFeature(document);
 }
 
 function setupGlobalClickCloser() {
@@ -2004,42 +1713,12 @@ function setupGlobalClickCloser() {
 ----------------------------- */
 
 function buildExportToken() {
-  const payload = {
-    profile: currentProfile,
-    globals: {
-      profiles: loadProfiles(),
-      activeProfile: currentProfile
-    },
-    profileData: {}
-  };
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith(profilePrefix)) {
-      payload.profileData[key] = localStorage.getItem(key);
-    }
-  }
-
-  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  return buildExportTokenFeature(localStorage);
 }
 
 function importToken(rawToken) {
   try {
-    const decoded = decodeURIComponent(escape(atob(rawToken)));
-    const data = JSON.parse(decoded);
-
-    if (Array.isArray(data?.globals?.profiles)) {
-      saveProfiles(data.globals.profiles);
-    }
-
-    if (data?.profileData && typeof data.profileData === 'object') {
-      Object.entries(data.profileData).forEach(([key, value]) => {
-        localStorage.setItem(key, value);
-      });
-    }
-
-    if (data?.profile) setProfile(data.profile);
-
+    importProfileToken(rawToken, localStorage);
     location.reload();
   } catch {
     const input = document.getElementById('token-input');
@@ -2277,3 +1956,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderApp();
 });
+

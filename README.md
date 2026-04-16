@@ -17,30 +17,34 @@ Live: `https://rsdailies.github.io/RSDailies/`
   - Optional checklist panel for common herb patch locations
 - Farming Timers panel:
   - Multiple concurrent timers (per patch type)
-  - Driven by `farming-config.js` (edit data without touching logic)
+  - Driven by `src/config/farming/` modules (edit data without touching runtime logic)
   - Optional growth tick offset setting (minutes)
 
 ## Repo Layout
 
-- `index.html`: page layout and panels
-- `dailyscape.css`: styling
-- `dailyscape.js`: app logic (storage, timers, profiles, rendering)
-- `tasks-config.js`: curated task content (edit this to add/remove built-in tasks)
-- `farming-config.js`: farming timers data (cycle minutes + stages)
+- `index.html`: app shell and Vite entry
+- `src/app`: module entrypoint, bootstrap, and legacy bridge during migration
+- `src/config`: novice-safe task, farming, settings, and theme modules
+- `src/core`: shared storage, time, DOM, ID, and utility helpers
+- `src/features`: feature boundaries for profiles, settings, sections, farming, overview, and more
+- `src/ui`: table, panel, control, and render modules
+- `src/styles`: split CSS system imported through `src/styles/index.css`
+- `public/img`: static images copied into the built site
 
 ## Local Development
 
-Serve the repo root with any static file server.
+Run the Vite dev server.
 
 ```bash
-python -m http.server 8080
+npm install
+npm run dev
 ```
 
-Then open `http://localhost:8080/`.
+Then open `http://127.0.0.1:8080/`.
 
 ## Editing Tasks
 
-Edit `tasks-config.js` to modify the built-in task lists. Each task supports:
+Edit `src/config/tasks/` to modify built-in task lists and `src/config/farming/` for farming timers. Each task supports:
 
 - `id`: unique string key
 - `name`: display name
@@ -51,7 +55,7 @@ Edit `tasks-config.js` to modify the built-in task lists. Each task supports:
 
 ## Deployment
 
-GitHub Pages deploys via `.github/workflows/deploy.yml` on pushes to `main`.
+GitHub Pages builds the site with Vite and deploys the generated `dist/` output via `.github/workflows/deploy.yml` on pushes to `main`.
 
 ## Notes / Best Practices
 

@@ -1,0 +1,197 @@
+.activity_table {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.activity_table col.activity_col_name {
+    width: 40%;
+}
+
+.activity_table col.activity_col_notes {
+    width: auto;
+}
+
+.activity_table col.activity_col_status {
+    width: 56px;
+}
+
+.activity_table th {
+    font-size: 1.18rem;
+    vertical-align: middle;
+    border: none;
+    padding-top: 0.56rem !important;
+    padding-bottom: 0.56rem !important;
+}
+
+.activity_table thead td {
+    text-align: right;
+    position: relative;
+    vertical-align: middle;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+}
+
+.activity_table thead td span.text-nowrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    white-space: normal !important;
+}
+
+.activity_table td.activity_name {
+    padding: 0;
+    height: 100%;
+    min-height: 50px;
+    position: relative;
+    vertical-align: middle;
+}
+
+.activity_table td.activity_name::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.activity_table td.activity_name a,
+.activity_table td.activity_name a:active,
+.activity_table td.activity_name a:link,
+.activity_table td.activity_name a:visited {
+    color: #fff;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    padding: 0.62rem 4.9rem 0.62rem 0.85rem;
+    line-height: 1.02rem;
+    text-decoration: none;
+    z-index: 1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.activity_table td.activity_name a:hover {
+    text-decoration: underline;
+    color: #4083ca;
+}
+
+.activity_table tr:hover a::after {
+    content: '';
+    width: 0.6em;
+    height: 0.75em;
+    display: inline-block;
+    background-image: url("data:image/svg+xml;utf8;base64,PHN2ZyBoZWlnaHQ9IjEwMjQiIHdpZHRoPSI3NjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0iIzQwODNDQSI+PHBhdGggZD0iTTY0MCA3NjhIMTI4VjI1Ny45MDU5OTk5OTk5OTk5NUwyNTYgMjU2VjEyOEgwdjc2OGg3NjhWNTc2SDY0MFY3Njh6TTM4NCAxMjhsMTI4IDEyOEwzMjAgNDQ4bDEyOCAxMjggMTkyLTE5MiAxMjggMTI4VjEyOEgzODR6Ii8+PC9zdmc+");
+    background-size: cover;
+    position: relative;
+    top: 1px;
+    left: 5px;
+}
+
+.activity_table td.activity_notes {
+    padding: 0.48rem 0.78rem;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.activity_table td.activity_status {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    border-left: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.activity_table td.activity_status .activity_check_on {
+    display: none;
+    visibility: hidden;
+}
+
+.activity_table td.activity_notes a,
+.activity_table td.activity_notes a:active,
+.activity_table td.activity_notes a:link,
+.activity_table td.activity_notes a:visited {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.activity_table td.activity_notes a:hover {
+    color: #4083ca;
+}
+
+.activity_desc {
+    width: 100%;
+    min-height: 40px;
+    white-space: normal;
+    line-height: 1.15rem;
+}
+
+.activity_note_line {
+    display: block;
+    margin-top: 2px;
+    color: #f0f0f0;
+    line-height: 1.15rem;
+    font-size: 0.92rem;
+}
+
+.activity_child_name {
+    font-weight: 600;
+    color: #fff;
+    margin-top: 0;
+    margin-bottom: 1px;
+}
+
+.activity_duration_note {
+    display: block;
+    margin-top: 2px;
+    color: #aad4ff;
+    font-size: 0.85rem;
+    line-height: 1.1rem;
+}
+
+.activity_location_note {
+    display: block;
+    margin-top: 1px;
+    color: #b8d8b0;
+    font-size: 0.85rem;
+    line-height: 1.1rem;
+}
+
+.activity_status .activity_check_off,
+.activity_status .activity_check_on {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    width: 100%;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.item_profit {
+    display: inline-block;
+    margin-left: 0;
+    margin-top: 5px;
+    white-space: nowrap;
+    font-weight: 700;
+    color: #c1991c;
+    font-size: 0.9rem;
+}
+
+.activity_inline_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.activity_inline_actions .btn {
+    white-space: nowrap;
+}

@@ -2,10 +2,16 @@
   "name": "rsdailies",
   "version": "2.0.0",
   "description": "RS3 dailies/weeklies/monthlies tracker (static GitHub Pages site).",
+  "type": "module",
   "homepage": "https://rsdailies.github.io/RSDailies/",
   "scripts": {
-    "dev": "python -m http.server 8080 || python3 -m http.server 8080",
-    "serve": "python -m http.server 8080 || python3 -m http.server 8080"
+    "dev": "vite --host 127.0.0.1 --port 8080",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "serve": "vite preview --host 127.0.0.1 --port 8080"
+  },
+  "devDependencies": {
+    "vite": "^4.5.14"
   },
   "license": "MIT"
 }
