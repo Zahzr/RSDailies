@@ -1,21 +1,22 @@
 import { createScheduler } from './scheduler.js';
-import { createLegacyApp } from './legacy-app.js';
+import './legacy-app.js';
 
 export function createCompositionRoot({ rootElement }) {
   const scheduler = createScheduler();
-  const legacyApp = createLegacyApp({
-    rootElement,
-    scheduler,
-  });
 
   return {
     start() {
-      legacyApp.start();
+      if (rootElement) {
+        rootElement.dataset.app = 'rsdailies';
+      }
     },
 
     stop() {
-      legacyApp.stop?.();
       scheduler.stop();
+
+      if (rootElement) {
+        rootElement.removeAttribute('data-app');
+      }
     },
   };
 }
