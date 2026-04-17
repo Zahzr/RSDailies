@@ -14,6 +14,11 @@ coverage/
 # Editor / OS
 .vscode/
 .idea/
+# Agent State
+/antigravity/
+
+# Logs
+*.log
 .DS_Store
 Thumbs.db
 *.swp
@@ -24,8 +29,12 @@ convo.txt
 friends-project.txt
 Pasted text.txt
 message*.txt
-test-output.log
-timer_test.txt
+/src/test/*.log
+/src/test/*.txt
+
+# Verification files
+googlec7c393bb3b6c202e.html
+**/googlec7c393bb3b6c202e.html
 
 # Private configs (if you create them locally)
 config.json

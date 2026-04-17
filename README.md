@@ -1,65 +1,132 @@
-# RSDailies
+# RSDailies: Modular RS3 Task Tracking
 
-Static RS3 task checklist for tracking dailies, weeklies, monthlies, and your own custom tasks. Designed to run on GitHub Pages with no backend.
+A high-rigor, modular task tracker for RuneScape 3, designed for tracking dailies, weeklies, monthlies, and farming cycles. Built with a **Nested Capability** architecture to ensure ultra-modular logic and granular maintainability.
 
 Live: `https://rsdailies.github.io/RSDailies/`
 
-## What Works
+---
 
-- RS3 reset timers (UTC): daily, weekly (Wednesday), monthly (1st)
-- Task lists: dailies, daily gathering, weeklies, weekly gathering, monthlies
-- Custom tasks (daily/weekly/monthly reset)
-- Profiles (separate localStorage namespaces per profile)
-- Import/Export token (backup/migrate local data)
-- Herb Run timer:
-  - Aligns to RS3 farming growth ticks (20-minute cycles, UTC)
-  - Supports Speedy Growth upgrade timing via Settings
-  - Optional checklist panel for common herb patch locations
-- Farming Timers panel:
-  - Multiple concurrent timers (per patch type)
-  - Driven by `src/config/farming/` modules (edit data without touching runtime logic)
-  - Optional growth tick offset setting (minutes)
+## 📑 Table of Contents
+- [Architecture Overview](#-architecture-overview)
+- [Project Structure](#-project-structure)
+- [Core Features](#-core-features)
+- [Configuration Guide](#-configuration-guide)
+- [📊 Reference Hub](#-reference-hub)
+- [Local Development](#-local-development)
+- [Governance & Agent Rules](#-governance--agent-rules)
+- [Credits & Legal](#-credits--legal)
 
-## Repo Layout
+---
 
-- `index.html`: app shell and Vite entry
-- `src/app`: module entrypoint, bootstrap, and legacy bridge during migration
-- `src/config`: novice-safe task, farming, settings, and theme modules
-- `src/core`: shared storage, time, DOM, ID, and utility helpers
-- `src/features`: feature boundaries for profiles, settings, sections, farming, overview, and more
-- `src/ui`: table, panel, control, and render modules
-- `src/styles`: split CSS system imported through `src/styles/index.css`
-- `public/img`: static images copied into the built site
+## 🏛 Architecture Overview
 
-## Local Development
+The project has transitioned from a monolithic legacy script to a **Nested Capability** model. This architecture enforces:
+- **Separation of Concerns**: HTML structure, CSS styling, and JS logic are strictly decoupled.
+- **Service Orchestration**: `legacy-app.js` acts as a service provider, injecting dependencies into modular features.
+- **Component Injection**: The `LayoutLoader` dynamically populates the app shell from modular HTML partials.
+- **Single Source of Truth**: Data configurations (tasks, timers) are isolated from runtime execution.
 
-Run the Vite dev server.
+---
 
-```bash
-npm install
-npm run dev
+## 📂 Project Structure
+
+```text
+Dailyscape/
+├── .agents/                # Mirrored agent governance (Antigravity)
+├── antigravity/            # Master agent framework (Git ignored)
+├── src/
+│   ├── app/                # Application initialization & Service Orchestration
+│   │   ├── legacy-app.js   # Main Service Orchestrator (<300 lines)
+│   │   ├── core/           # Low-level storage bridges
+│   │   └── ui/             # High-level render orchestrators
+│   ├── config/             # Domain Data &Novice-Safe Configs
+│   │   ├── farming/        # Farming patch & timer definitions
+│   │   └── tasks/          # Built-in task lists
+│   ├── core/               # Pure logic & cross-cutting concerns (Time, Storage)
+│   ├── features/           # Domain-specific feature modules (Profiles, Settings, Timers)
+│   ├── index/              # NEW: Application root & Modular HTML Partial
+│   │   ├── index.html      # Lightweight app shell
+│   │   ├── components/     # Modular HTML components (Navbar, Modals, Footer)
+│   │   └── templates/      # Reusable HTML snippets (Row templates)
+│   ├── public/             # Static assets (Images, Favicon)
+│   ├── styles/             # Modular CSS architecture
+│   ├── test/               # Diagnostic logs & Test outputs
+│   └── ui/                 # Reusable UI primitives (Controls, Rows, Tables)
+└── vite.config.js          # Project configuration (Scoped to src/index)
 ```
 
-Then open `http://127.0.0.1:8080/`.
+---
 
-## Editing Tasks
+## ✨ Core Features
 
-Edit `src/config/tasks/` to modify built-in task lists and `src/config/farming/` for farming timers. Each task supports:
+### 🕒 Smart Reset Timers
+- **UTC Alignment**: Automatic calculation for Daily, Weekly (Wednesday), and Monthly (1st) resets.
+- **Context-Aware Countdowns**: Real-time updates for each reset boundary.
 
-- `id`: unique string key
-- `name`: display name
-- `wiki`: optional URL
-- `note`: optional text
-- `timer: 'herb'`: shows the herb run timer button and panel
-- `cooldownMinutes`: optional per-task cooldown button (simple countdown)
+### 🚜 Farming & Cooldowns
+- **Growth Ticks**: Aligned to RS3 20-minute farming cycles.
+- **Concurrent Timers**: Track multiple independent patch types.
+- **Alert System**: Browser notifications and Discord Webhook integration for reset alerts.
 
-## Deployment
+### 👤 Profiles & Persistence
+- **Namespace Isolation**: Switch between different accounts/characters with local storage separation.
+- **Import/Export**: Cryptographic-style tokens for backup and cross-device migration.
 
-GitHub Pages builds the site with Vite and deploys the generated `dist/` output via `.github/workflows/deploy.yml` on pushes to `main`.
+---
 
-## Notes / Best Practices
+## ⚙️ Configuration Guide
 
-- This is a static app. All data is stored locally in your browser via `localStorage`.
-- Discord webhooks can post messages, but they do not reliably ping users. If you want @mentions, you need a bot.
+### Adding Built-in Tasks
+Modify the files in `src/config/tasks/` (e.g., `rs3daily.js`). Tasks support specialized keys:
+- `id`: Unique identifier.
+- `profit`: Object with `item` and `qty` for live GE profit estimates.
+- `cooldownMinutes`: Adds a one-click repeating timer button.
 
-RuneScape is a registered trademark of Jagex. This project is fan-made and unofficial.
+### Custom Task System
+Users can create their own tasks directly in the UI. These are persisted within the specific profile and support repeating intervals (Daily/Weekly/Monthly) or custom cooldown timers.
+
+---
+
+---
+
+## 📊 Reference Hub
+
+The project maintains a **[Centralized Reference Registry](file:///c:/Users/antho/Documents/Coding/Dailyscape/src/references/registry.md)** that acts as the authoritative truth source for all:
+- **UI Frameworks**: Bootstrap CDN usage and justifications.
+- **Community Hubs**: Discords and community guide citations.
+- **Domain API**: Documentation for the RuneScape Wiki API integration.
+- **Hard-Coded Truth**: Logical reset boundaries and UTC alignment sources.
+
+Maintaining this registry is a core requirement of the **Reference Integrity Governance Rule**.
+
+---
+
+## 🛠 Local Development
+
+The project uses **Vite** for a fast development experience.
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+---
+
+## 🤖 Governance & Agent Rules
+
+This repository is governed by the **Antigravity** agent protocol.
+- **Standard**: All core runtime files must remain under 300 lines.
+- **Pathing**: The application root is `src/index/`. Static assets are served from `src/public/`.
+- **Ignored State**: Local agent runtime state (`/antigravity/`) is strictly ignored via `.gitignore` to prevent repository bloat.
+
+---
+
+## 📜 Credits & Legal
+RuneScape is a registered trademark of Jagex Ltd. This project is a community-driven initiative and is not affiliated with Jagex.
+Design inspired by the original DailyScape project.
