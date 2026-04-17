@@ -1,11 +1,17 @@
 import { SECTION_CONTAINER_IDS, SECTION_TABLE_IDS } from '../../core/ids/section-ids.js';
 
 export function mergePenguinChildRows(task, weeklyData = {}) {
-  if (task.id !== 'penguins' || !Array.isArray(task.childRows)) {
+  const sourceChildren = Array.isArray(task.childRows)
+    ? task.childRows
+    : Array.isArray(task.children)
+      ? task.children
+      : null;
+
+  if (task.id !== 'penguins' || !sourceChildren) {
     return task;
   }
 
-  const merged = task.childRows.map((child) => {
+  const mergedChildren = sourceChildren.map((child) => {
     const override = weeklyData[child.id] || {};
     return {
       ...child,
@@ -16,7 +22,7 @@ export function mergePenguinChildRows(task, weeklyData = {}) {
 
   return {
     ...task,
-    childRows: merged
+    children: mergedChildren
   };
 }
 

@@ -4,36 +4,54 @@ export function formatOverviewCountdown(kind, targetMs, { formatDurationMs }) {
   return `${kind} in ${formatDurationMs(diff)}`;
 }
 
+function normalizeSectionsObject(sections) {
+  if (!sections || typeof sections !== 'object') return [];
+
+  return [
+    { key: 'custom', tasks: Array.isArray(sections.custom) ? sections.custom : [] },
+    { key: 'rs3daily', tasks: Array.isArray(sections.rs3daily) ? sections.rs3daily : [] },
+    { key: 'gathering', tasks: Array.isArray(sections.gathering) ? sections.gathering : [] },
+    { key: 'rs3weekly', tasks: Array.isArray(sections.rs3weekly) ? sections.rs3weekly : [] },
+    { key: 'rs3monthly', tasks: Array.isArray(sections.rs3monthly) ? sections.rs3monthly : [] },
+    { key: 'rs3farming', groups: Array.isArray(sections.rs3farming) ? sections.rs3farming : [] }
+  ];
+}
+
 export function collectOverviewItems(sections, { getOverviewPins, load }) {
   const pins = getOverviewPins(load);
   const items = [];
+  const normalizedSections = Array.isArray(sections) ? sections : normalizeSectionsObject(sections);
 
-  sections.forEach((section) => {
-    section.tasks.forEach((task) => {
-      const pinId = `${section.key}::${task.id}`;
-      if (pins[pinId]) {
-        items.push({ task, sectionKey: section.key });
-      }
+  normalizedSections.forEach((section) => {
+    if (Array.isArray(section.tasks)) {
+      section.tasks.forEach((task) => {
+        const pinId = `${section.key}::${task.id}`;
+        if (pins[pinId]) {
+          items.push({ task, sectionKey: section.key });
+        }
 
-      if (task.children) {
-        task.children.forEach((child) => {
-          const childPinId = `${section.key}::${task.id}::${child.id}`;
-          if (pins[childPinId]) {
-            items.push({ task: child, sectionKey: section.key });
-          }
-        });
-      }
-    });
+        if (Array.isArray(task.children)) {
+          task.children.forEach((child) => {
+            const childPinId = `${section.key}::${task.id}::${child.id}`;
+            if (pins[childPinId]) {
+              items.push({ task: child, sectionKey: section.key });
+            }
+          });
+        }
+      });
+    }
 
-    if (section.key === 'rs3farming' && section.groups) {
+    if (section.key === 'rs3farming' && Array.isArray(section.groups)) {
       section.groups.forEach((group) => {
+        if (!Array.isArray(group.subgroups)) return;
+
         group.subgroups.forEach((sub) => {
-          if (sub.isTimer) {
+          if (sub.isTimer && sub.timerTask) {
             const pinId = `rs3farming::${sub.timerTask.id}`;
             if (pins[pinId]) {
               items.push({ task: sub.timerTask, sectionKey: 'rs3farming' });
             }
-          } else if (sub.tasks) {
+          } else if (Array.isArray(sub.tasks)) {
             sub.tasks.forEach((t) => {
               const pinId = `rs3farming::${t.id}`;
               if (pins[pinId]) {
@@ -103,14 +121,22 @@ export function renderOverviewPanel(sections, {
   const items = collectOverviewItems(sections, { getOverviewPins, load });
 
   if (items.length === 0) {
-    row.innerHTML = '<div class="col-12 text-center p-5"><h3>No items pinned to overview.</h3><p>Pin tasks from the dashboard to see them here.</p></div>';
+    row.innerHTML = '<div class="col-12"><div class="card rs3-card"><div class="card-body text-muted">No pinned items yet.</div></div></div>';
     return;
   }
 
-  const tableCol = document.createElement('div');
-  tableCol.className = 'col-12';
+  const col = document.createElement('div');
+  col.className = 'col-12';
+
+  const card = document.createElement('div');
+  card.className = 'card rs3-card';
+
+  const body = document.createElement('div');
+  body.className = 'card-body p-0';
+
   const table = document.createElement('table');
-  table.className = 'table table-dark table-hover rs3-table';
+  table.className = 'table table-dark table-hover rs3-table mb-0';
+
   const tbody = document.createElement('tbody');
 
   items.forEach(({ task, sectionKey }) => {
@@ -118,6 +144,8 @@ export function renderOverviewPanel(sections, {
   });
 
   table.appendChild(tbody);
-  tableCol.appendChild(table);
-  row.appendChild(tableCol);
+  body.appendChild(table);
+  card.appendChild(body);
+  col.appendChild(card);
+  row.appendChild(col);
 }
