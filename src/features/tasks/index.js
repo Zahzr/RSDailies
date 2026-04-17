@@ -20,6 +20,78 @@ export function mergePenguinChildRows(task, weeklyData = {}) {
   };
 }
 
+function normalizeFarmingTimer(timer, group, index) {
+  const timerId = timer?.id || `${group.id}-timer-${index}`;
+
+  return {
+    ...timer,
+    id: timerId,
+    isTimerParent: true,
+    vanishOnStart: timer?.vanishOnStart ?? true,
+    plots: Array.isArray(timer?.plots) ? timer.plots : []
+  };
+}
+
+function normalizeStandalonePlots(group) {
+  if (!Array.isArray(group?.plots) || group.plots.length === 0) {
+    return [];
+  }
+
+  if (Array.isArray(group?.timers) && group.timers.length > 0) {
+    return [];
+  }
+
+  return [
+    {
+      id: `${group.id}-plots`,
+      name: group.label || group.name || group.id,
+      isTimer: false,
+      tasks: group.plots.map((plot) => ({
+        ...plot,
+        id: plot.id
+      }))
+    }
+  ];
+}
+
+function normalizeFarmingGroup(group) {
+  const timerSubgroups = Array.isArray(group?.timers)
+    ? group.timers.map((timer, index) => {
+      const timerTask = normalizeFarmingTimer(timer, group, index);
+      const plots = Array.isArray(timer?.plots)
+        ? timer.plots
+        : Array.isArray(group?.plots)
+          ? group.plots
+          : [];
+
+      return {
+        id: timerTask.id,
+        name: timerTask.name || group.label || group.name || group.id,
+        isTimer: true,
+        timerTask,
+        plots: plots.map((plot) => ({
+          ...plot,
+          id: plot.id
+        }))
+      };
+    })
+    : [];
+
+  const nonTimerSubgroups = normalizeStandalonePlots(group);
+
+  return {
+    id: group.id,
+    name: group.label || group.name || group.id,
+    note: group.note || '',
+    subgroups: [...timerSubgroups, ...nonTimerSubgroups]
+  };
+}
+
+function normalizeFarmingGroups(farmingConfig) {
+  const groups = Array.isArray(farmingConfig?.groups) ? farmingConfig.groups : [];
+  return groups.map(normalizeFarmingGroup);
+}
+
 export function getResolvedSections({
   tasksConfig,
   farmingConfig,
@@ -35,8 +107,8 @@ export function getResolvedSections({
   const monthlies = Array.isArray(cfg.monthlies) ? cfg.monthlies : [];
   const custom = getCustomTasks();
   const penguinWeeklyData = getPenguinWeeklyData();
-  const farmingGroups = Array.isArray(farmingConfig?.groups) ? farmingConfig.groups : [];
   const resolvedWeeklies = weeklies.map((task) => mergePenguinChildRows(task, penguinWeeklyData));
+  const resolvedFarmingGroups = normalizeFarmingGroups(farmingConfig);
 
   return {
     custom,
@@ -44,7 +116,7 @@ export function getResolvedSections({
     gathering: gatheringDaily.concat(gatheringWeekly),
     rs3weekly: resolvedWeeklies,
     rs3monthly: monthlies,
-    rs3farming: farmingGroups
+    rs3farming: resolvedFarmingGroups
   };
 }
 
