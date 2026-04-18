@@ -1,9 +1,3 @@
-export function formatOverviewCountdown(kind, targetMs, { formatDurationMs }) {
-  const diff = targetMs - Date.now();
-  if (diff <= 0) return 'READY';
-  return `${kind} in ${formatDurationMs(diff)}`;
-}
-
 function normalizeSectionsObject(sections) {
   if (!sections || typeof sections !== 'object') return [];
 
@@ -15,6 +9,61 @@ function normalizeSectionsObject(sections) {
     { key: 'rs3monthly', tasks: Array.isArray(sections.rs3monthly) ? sections.rs3monthly : [] },
     { key: 'rs3farming', groups: Array.isArray(sections.rs3farming) ? sections.rs3farming : [] }
   ];
+}
+
+function sectionLabel(sectionKey) {
+  switch (sectionKey) {
+    case 'custom':
+      return 'Custom Tasks';
+    case 'rs3daily':
+      return 'Dailies';
+    case 'gathering':
+      return 'Gathering';
+    case 'rs3weekly':
+      return 'Weeklies';
+    case 'rs3monthly':
+      return 'Monthlies';
+    case 'rs3farming':
+      return 'Farming Timers';
+    default:
+      return sectionKey;
+  }
+}
+
+function buildOverviewMeta(task, sectionKey) {
+  const parts = [];
+
+  parts.push(sectionLabel(sectionKey));
+
+  if (task?.note) parts.push(task.note);
+  if (task?.locationNote) parts.push(task.locationNote);
+  if (task?.durationNote) parts.push(task.durationNote);
+
+  return parts.filter(Boolean).join(' • ');
+}
+
+function buildOverviewItem(task, sectionKey) {
+  const item = document.createElement('div');
+  item.className = 'overview_row';
+
+  const title = document.createElement(task?.wiki ? 'a' : 'div');
+  title.className = 'overview_row_title';
+  title.textContent = task?.name || 'Unnamed Task';
+
+  if (task?.wiki) {
+    title.href = task.wiki;
+    title.target = '_blank';
+    title.rel = 'noopener noreferrer';
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'overview_row_meta';
+  meta.textContent = buildOverviewMeta(task, sectionKey);
+
+  item.appendChild(title);
+  item.appendChild(meta);
+
+  return item;
 }
 
 export function collectOverviewItems(sections, { getOverviewPins, load }) {
@@ -52,10 +101,10 @@ export function collectOverviewItems(sections, { getOverviewPins, load }) {
               items.push({ task: sub.timerTask, sectionKey: 'rs3farming' });
             }
           } else if (Array.isArray(sub.tasks)) {
-            sub.tasks.forEach((t) => {
-              const pinId = `rs3farming::${t.id}`;
+            sub.tasks.forEach((task) => {
+              const pinId = `rs3farming::${task.id}`;
               if (pins[pinId]) {
-                items.push({ task: t, sectionKey: 'rs3farming' });
+                items.push({ task, sectionKey: 'rs3farming' });
               }
             });
           }
@@ -73,12 +122,12 @@ export function applyPageModeVisibility(mode) {
 
   if (!dashboard || !overviewMount) return;
 
+  overviewMount.style.display = '';
+
   if (mode === 'overview') {
     dashboard.style.display = 'none';
-    overviewMount.style.display = '';
   } else {
     dashboard.style.display = '';
-    overviewMount.style.display = '';
   }
 }
 
@@ -92,9 +141,7 @@ export function renderOverviewPanel(sections, {
   load,
   applyPageModeVisibility,
   ensureOverviewLayout,
-  collectOverviewItems,
-  createRow,
-  context
+  collectOverviewItems
 }) {
   const mode = getPageMode();
   applyPageModeVisibility(mode);
@@ -104,32 +151,20 @@ export function renderOverviewPanel(sections, {
 
   overview.innerHTML = '';
 
-  if (mode !== 'overview') {
-    return;
-  }
-
   const items = collectOverviewItems(sections, { getOverviewPins, load });
 
   if (items.length === 0) {
-    overview.innerHTML = '<div class="card rs3-card"><div class="card-body text-muted">No pinned items yet.</div></div>';
+    const empty = document.createElement('div');
+    empty.className = 'overview_empty';
+    empty.textContent =
+      mode === 'overview'
+        ? 'No pinned items yet.'
+        : 'Pin rows with the star button to show them here.';
+    overview.appendChild(empty);
     return;
   }
 
-  const table = document.createElement('table');
-  table.className = 'table table-dark table-hover rs3-table mb-0';
-
-  const tbody = document.createElement('tbody');
-
   items.forEach(({ task, sectionKey }) => {
-    const row = createRow(sectionKey, task, {
-      context: {
-        ...context,
-        isOverviewPanel: true
-      }
-    });
-    if (row) tbody.appendChild(row);
+    overview.appendChild(buildOverviewItem(task, sectionKey));
   });
-
-  table.appendChild(tbody);
-  overview.appendChild(table);
 }
