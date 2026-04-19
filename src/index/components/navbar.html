@@ -81,12 +81,7 @@
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="setting-3tick-herbs">
-                        <label class="form-check-label" for="setting-3tick-herbs">Speedy Growth upgrade</label>
-                    </div>
-                    <div class="form-group settings-block">
-                        <label for="setting-growth-offset">Farming tick offset (minutes)</label>
-                        <input type="number" class="form-control" id="setting-growth-offset" min="-60" max="60" step="1"
-                            placeholder="0">
+                        <label class="form-check-label" for="setting-3tick-herbs">Speedy Growth Upgrade</label>
                     </div>
                     <div class="form-check settings-block">
                         <input class="form-check-input" type="checkbox" id="setting-browser-notif">
@@ -97,6 +92,17 @@
                         <label for="setting-webhook-url">Discord Webhook URL (optional)</label>
                         <input type="text" class="form-control" id="setting-webhook-url"
                             placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+                    <div class="form-group settings-block">
+                        <label for="setting-webhook-user-id">Discord User ID to mention (optional)</label>
+                        <input type="text" class="form-control" id="setting-webhook-user-id"
+                            placeholder="123456789012345678">
+                    </div>
+                    <div class="form-group settings-block">
+                        <label for="setting-webhook-message-template">Webhook message template (optional)</label>
+                        <input type="text" class="form-control" id="setting-webhook-message-template"
+                            placeholder="RSDailies: {task} is due.">
+                        <small class="form-text text-muted">Use {task} for the task name.</small>
                     </div>
                     <div class="settings-actions">
                         <button id="save-settings-btn" type="button" class="btn btn-primary btn-sm">Save

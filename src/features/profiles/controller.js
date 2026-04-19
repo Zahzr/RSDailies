@@ -9,19 +9,29 @@ import {
 } from './store.js';
 import { renderProfileHeader, renderProfileRows } from './view.js';
 
+function replaceNode(element) {
+  if (!element) return null;
+  const replacement = element.cloneNode(true);
+  element.replaceWith(replacement);
+  return replacement;
+}
+
 export function updateProfileHeader(profileNameElement = document.getElementById('profile-name')) {
   renderProfileHeader(profileNameElement, getCurrentProfile());
 }
 
 export function setupProfileControl({
-  renderApp = () => {},
-  closeFloatingControls = () => {},
-  documentRef = document
+  renderApp = () => { },
+  closeFloatingControls = () => { },
+  documentRef = document,
+  windowRef = window
 } = {}) {
-  const button = documentRef.getElementById('profile-button');
+  const button = replaceNode(documentRef.getElementById('profile-button'));
   const panel = documentRef.getElementById('profile-control');
   const list = documentRef.getElementById('profile-list');
-  const form = documentRef.getElementById('profile-form');
+  const form = replaceNode(documentRef.getElementById('profile-form'));
+
+  if (!button || !panel || !list || !form) return;
 
   function renderProfiles() {
     renderProfileRows({
@@ -30,41 +40,49 @@ export function setupProfileControl({
       currentProfile: getCurrentProfile(),
       onSelectProfile: (name) => {
         setProfile(name);
+        updateProfileHeader();
         renderProfiles();
         renderApp();
       },
       onDeleteProfile: (name) => {
-        if (!confirm(`Delete profile "${name}"? This removes that profile's browser data.`)) return;
+        if (name === 'default') return;
+        if (!windowRef.confirm(`Delete profile "${name}"? This removes that profile's browser data.`)) return;
 
-        removeProfileStorage(name, window.localStorage);
+        removeProfileStorage(name, windowRef.localStorage);
 
         const next = loadProfiles().filter((profile) => profile !== name);
         saveProfiles(next);
 
-        if (getCurrentProfile() === name) setProfile('default');
+        if (getCurrentProfile() === name) {
+          setProfile('default');
+        }
 
+        updateProfileHeader();
         renderProfiles();
         renderApp();
       }
     });
   }
 
-  button?.addEventListener('click', (event) => {
+  button.addEventListener('click', (event) => {
     event.preventDefault();
-    const visible = panel?.dataset.display === 'block';
+    event.stopPropagation();
+
+    const visible = panel.dataset.display === 'block';
     closeFloatingControls();
-    if (!visible && panel) {
+
+    if (!visible) {
       panel.style.display = 'block';
       panel.style.visibility = 'visible';
       panel.dataset.display = 'block';
     }
   });
 
-  form?.addEventListener('submit', (event) => {
+  form.addEventListener('submit', (event) => {
     event.preventDefault();
 
     const input = documentRef.getElementById('profileName');
-    const name = (input?.value || '').trim();
+    const name = String(input?.value || '').trim();
     if (!name) return;
 
     const profiles = loadProfiles();
@@ -76,47 +94,56 @@ export function setupProfileControl({
     setProfile(name);
     if (input) input.value = '';
 
+    updateProfileHeader();
     renderProfiles();
     renderApp();
+
+    panel.style.display = 'none';
+    panel.style.visibility = 'hidden';
+    panel.dataset.display = 'none';
   });
 
+  updateProfileHeader();
   renderProfiles();
 }
 
 export function setupProfileImportExport({
   documentRef = document,
-  onImport = () => window.location.reload()
+  onImport = () => window.location.reload(),
+  windowRef = window
 } = {}) {
-  const tokenButton = documentRef.getElementById('token-button');
+  const tokenButton = replaceNode(documentRef.getElementById('token-button'));
   const tokenOutput = documentRef.getElementById('token-output');
   const tokenInput = documentRef.getElementById('token-input');
-  const tokenCopy = documentRef.getElementById('token-copy');
-  const tokenImport = documentRef.getElementById('token-import');
+  const tokenCopy = replaceNode(documentRef.getElementById('token-copy'));
+  const tokenImport = replaceNode(documentRef.getElementById('token-import'));
 
-  tokenButton?.addEventListener('click', () => {
-    if (tokenOutput) tokenOutput.value = buildExportToken(window.localStorage);
-    tokenInput?.classList.remove('is-invalid');
+  if (!tokenButton || !tokenOutput || !tokenInput || !tokenCopy || !tokenImport) return;
+
+  tokenButton.addEventListener('click', () => {
+    tokenOutput.value = buildExportToken(windowRef.localStorage);
+    tokenInput.classList.remove('is-invalid');
   });
 
-  tokenCopy?.addEventListener('click', async () => {
-    const text = tokenOutput?.value || '';
+  tokenCopy.addEventListener('click', async () => {
+    const text = tokenOutput.value || '';
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      tokenOutput?.focus();
-      tokenOutput?.select();
+      tokenOutput.focus();
+      tokenOutput.select();
       documentRef.execCommand('copy');
     }
   });
 
-  tokenImport?.addEventListener('click', () => {
-    tokenInput?.classList.remove('is-invalid');
+  tokenImport.addEventListener('click', () => {
+    tokenInput.classList.remove('is-invalid');
 
     try {
-      importProfileToken((tokenInput?.value || '').trim(), window.localStorage);
+      importProfileToken(String(tokenInput.value || '').trim(), windowRef.localStorage);
       onImport();
     } catch {
-      if (tokenInput) tokenInput.classList.add('is-invalid');
+      tokenInput.classList.add('is-invalid');
     }
   });
 }

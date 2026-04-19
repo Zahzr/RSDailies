@@ -1,36 +1,30 @@
-<div id="custom-tasks" class="table_container custom_table">
-    <table id="custom_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="custom">
-        <colgroup class="activity_columns">
+<div id="overview-content" class="mb-4"></div>
+
+<div class="col-12 table_container" id="custom-container" data-hide="show" data-show-hidden="false">
+    <table id="custom-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Custom Tasks</th>
-                <td colspan="2">
-                    <span class="text-nowrap">
-                        <button id="custom_add_button" class="btn btn-primary btn-sm active"
-                            title="Add custom task">+ Add</button>
-                        <button id="custom_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding and order to default">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="custom_sort_button"
-                            class="sort_button expanding_button btn btn-secondary btn-sm active"
-                            title="Sort by alpha/default">&#8645;<span
-                                class="expanding_text">Sort</span></button>
-                        <button id="custom_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="custom_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="custom_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Custom Tasks</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <button id="custom_add_button" type="button" class="btn btn-primary btn-sm active">+
+                                Add</button>
+                            <button id="custom_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="custom_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>
@@ -38,33 +32,31 @@
     </table>
 </div>
 
-<div id="farming" class="table_container rs3farming_table">
-    <table id="rs3farming_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="rs3farming">
-        <colgroup class="activity_columns">
+<div class="col-12 table_container" id="rs3farming-container" data-hide="show" data-show-hidden="false">
+    <table id="rs3farming-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Farming Timers</th>
-                <td colspan="2">
-                    <span class="text-nowrap">
-                        <button id="rs3farming_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding, order, and running timers">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="rs3farming_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="rs3farming_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="rs3farming_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Farming</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <button id="rs3farming_reset_button" type="button" class="btn btn-secondary btn-sm active">↴
+                                Reset</button>
+                            <button id="rs3farming_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="rs3farming_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>
@@ -72,34 +64,31 @@
     </table>
 </div>
 
-<div id="dailies" class="table_container rs3daily_table">
-    <table id="rs3daily_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="rs3daily">
-        <colgroup class="activity_columns">
+<div class="col-12 table_container" id="gathering-container" data-hide="show" data-show-hidden="false">
+    <table id="gathering-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Dailies <span id="countdown-rs3daily" class="countdown"></span></th>
-                <td colspan="2">
-                    <span id="rs3daily_totalprofit"></span>
-                    <span class="text-nowrap">
-                        <button id="rs3daily_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding and order to default">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="rs3daily_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="rs3daily_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="rs3daily_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Gathering</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <button id="gathering_reset_button" type="button" class="btn btn-secondary btn-sm active">↴
+                                Reset</button>
+                            <button id="gathering_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="gathering_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>
@@ -107,38 +96,32 @@
     </table>
 </div>
 
-<div id="gathering" class="table_container gathering_table">
-    <table id="gathering_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="gathering">
-        <colgroup class="activity_columns">
+<div class="col-12 table_container" id="rs3daily-container" data-hide="show" data-show-hidden="false">
+    <table id="rs3daily-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Gathering</th>
-                <td colspan="2">
-                    <span id="gathering_totalprofit"></span>
-                    <span class="text-nowrap">
-                        <button id="gathering_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding and order to default">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="gathering_sort_button"
-                            class="sort_button expanding_button btn btn-secondary btn-sm active"
-                            title="Sort by alpha/default">&#8645;<span
-                                class="expanding_text">Sort</span></button>
-                        <button id="gathering_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="gathering_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="gathering_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Dailies</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <span id="countdown-rs3daily" class="countdown badge bg-secondary">--:--:--</span>
+                            <button id="rs3daily_reset_button" type="button" class="btn btn-secondary btn-sm active">↴
+                                Reset</button>
+                            <button id="rs3daily_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="rs3daily_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>
@@ -146,34 +129,32 @@
     </table>
 </div>
 
-<div id="weeklies" class="table_container rs3weekly_table">
-    <table id="rs3weekly_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="rs3weekly">
-        <colgroup class="activity_columns">
+<div class="col-12 table_container" id="rs3weekly-container" data-hide="show" data-show-hidden="false">
+    <table id="rs3weekly-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Weeklies <span id="countdown-rs3weekly" class="countdown"></span></th>
-                <td colspan="2">
-                    <span id="rs3weekly_totalprofit"></span>
-                    <span class="text-nowrap">
-                        <button id="rs3weekly_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding and order to default">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="rs3weekly_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="rs3weekly_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="rs3weekly_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Weeklies</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <span id="countdown-rs3weekly" class="countdown badge bg-secondary">--:--:--</span>
+                            <button id="rs3weekly_reset_button" type="button" class="btn btn-secondary btn-sm active">↴
+                                Reset</button>
+                            <button id="rs3weekly_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="rs3weekly_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>
@@ -181,33 +162,32 @@
     </table>
 </div>
 
-<div id="monthlies" class="table_container rs3monthly_table">
-    <table id="rs3monthly_table" class="activity_table table table-dark table-striped table-hover"
-        data-timeframe="rs3monthly">
-        <colgroup class="activity_columns">
+<div class="col-12 table_container" id="rs3monthly-container" data-hide="show" data-show-hidden="false">
+    <table id="rs3monthly-table" class="table table-dark table-hover activity_table">
+        <colgroup>
             <col class="activity_col_name">
             <col class="activity_col_notes">
             <col class="activity_col_status">
         </colgroup>
         <thead>
             <tr>
-                <th>Monthlies <span id="countdown-rs3monthly" class="countdown"></span></th>
-                <td colspan="2">
-                    <span class="text-nowrap">
-                        <button id="rs3monthly_reset_button"
-                            class="reset_button expanding_button btn btn-secondary btn-sm active"
-                            title="Reset hiding and order to default">&#8634;<span
-                                class="expanding_text">Reset</span></button>
-                        <button id="rs3monthly_show_hidden_button"
-                            class="show_hidden_button expanding_button btn btn-secondary btn-sm active"
-                            title="Show hidden rows">+<span class="expanding_text">Show Hidden</span></button>
-                        <button id="rs3monthly_hide_button"
-                            class="hide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Hide section">&#9660;<span class="expanding_text">Hide</span></button>
-                        <button id="rs3monthly_unhide_button"
-                            class="unhide_button expanding_button btn btn-secondary btn-sm active"
-                            title="Unhide section">&#9654;<span class="expanding_text">Unhide</span></button>
-                    </span>
+                <td colspan="3" class="header_like_color">
+                    <div class="header_like_inner"
+                        style="position:relative; display:flex; align-items:center; justify-content:center; width:100%; min-height:42px;">
+                        <div class="activity_name header_like_name" style="width:100%; text-align:center;">
+                            <span class="header_like_text">Monthlies</span>
+                        </div>
+                        <div
+                            style="position:absolute; right:0; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:8px;">
+                            <span id="countdown-rs3monthly" class="countdown badge bg-secondary">--:--:--</span>
+                            <button id="rs3monthly_reset_button" type="button" class="btn btn-secondary btn-sm active">↴
+                                Reset</button>
+                            <button id="rs3monthly_hide_button" type="button"
+                                class="btn btn-secondary btn-sm active hide_button">▼ Hide</button>
+                            <button id="rs3monthly_unhide_button" type="button"
+                                class="btn btn-secondary btn-sm active unhide_button">▶ Show</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         </thead>

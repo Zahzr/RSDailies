@@ -16,6 +16,11 @@ import { createRow, createRightSideChildRow } from '../../../ui/rows/factory.js'
 import { applyOrderingAndSort } from '../../../ui/table/utils.js';
 import { SECTION_CONTAINER_IDS, SECTION_TABLE_IDS } from '../../../core/ids/section-ids.js';
 import { formatDurationMs as formatDurationMsCore } from '../../../core/time/formatters.js';
+import {
+  nextDailyBoundary,
+  nextWeeklyBoundary,
+  nextMonthlyBoundary
+} from '../../../core/time/boundaries.js';
 
 function getSectionElements(sectionKey) {
   const container = document.getElementById(SECTION_CONTAINER_IDS[sectionKey]);
@@ -25,11 +30,24 @@ function getSectionElements(sectionKey) {
   return { container, table, tbody };
 }
 
-function setSectionHiddenState(sectionKey, hidden) {
+function reorderDashboardSections(sectionKeys) {
+  const dashboard = document.getElementById('dashboard-container');
+  if (!dashboard) return;
+
+  sectionKeys.forEach((sectionKey) => {
+    const container = document.getElementById(SECTION_CONTAINER_IDS[sectionKey]);
+    if (container) dashboard.appendChild(container);
+  });
+}
+
+function setSectionHiddenState(sectionKey, hidden, showHidden = false) {
   const { container, tbody } = getSectionElements(sectionKey);
   if (!container || !tbody) return;
 
+  container.dataset.hide = hidden ? 'hide' : 'show';
+  container.dataset.showHidden = showHidden ? 'true' : 'false';
   container.classList.toggle('section-hidden', hidden);
+
   tbody.style.display = hidden ? 'none' : '';
 
   const hideBtn = document.getElementById(`${sectionKey}_hide_button`);
@@ -43,12 +61,16 @@ function setSectionModeVisibility(sectionKey, mode) {
   const { container } = getSectionElements(sectionKey);
   if (!container) return false;
 
-  let shouldShow = true;
+  let shouldShow = false;
 
   if (mode === 'overview') {
-    shouldShow = false;
+    shouldShow = sectionKey === 'custom';
   } else if (mode === 'all') {
-    shouldShow = true;
+    shouldShow = ['rs3daily', 'rs3weekly', 'rs3monthly'].includes(sectionKey);
+  } else if (mode === 'custom') {
+    shouldShow = sectionKey === 'custom';
+  } else if (mode === 'rs3farming') {
+    shouldShow = sectionKey === 'rs3farming';
   } else {
     shouldShow = sectionKey === mode;
   }
@@ -62,6 +84,86 @@ function clearAllSectionBodies(sectionKeys) {
     const { tbody } = getSectionElements(key);
     if (tbody) tbody.innerHTML = '';
   });
+}
+
+function getGroupCountdown(groupName) {
+  const lower = String(groupName || '').toLowerCase().trim();
+
+  if (lower === 'general' || lower.includes('daily')) {
+    return formatDurationMsCore(nextDailyBoundary(new Date()) - Date.now());
+  }
+
+  if (lower.includes('weekly')) {
+    return formatDurationMsCore(nextWeeklyBoundary(new Date()) - Date.now());
+  }
+
+  if (lower.includes('monthly')) {
+    return formatDurationMsCore(nextMonthlyBoundary(new Date()) - Date.now());
+  }
+
+  return '';
+}
+
+function getLeadingText(row) {
+  if (!row) return '';
+  const first = row.querySelector('th, td, .activity_name, .activity_desc');
+  return String(first?.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function movePenguinsBlockToBottom() {
+  const tbody = document.querySelector(`#${SECTION_TABLE_IDS.rs3weekly} tbody`);
+  if (!tbody) return;
+
+  const rows = [...tbody.querySelectorAll('tr')];
+  const startIndex = rows.findIndex((row) => getLeadingText(row) === 'Penguins');
+  if (startIndex === -1) return;
+
+  const block = [rows[startIndex]];
+  let cursor = startIndex + 1;
+
+  while (cursor < rows.length) {
+    const row = rows[cursor];
+    const text = getLeadingText(row);
+
+    const isPenguinChild =
+      row.classList.contains('weekly-child-row') ||
+      /^Penguin\s+\d+$/i.test(text) ||
+      text === 'Polar Bear';
+
+    if (!isPenguinChild) break;
+
+    block.push(row);
+    cursor += 1;
+  }
+
+  block.forEach((row) => tbody.appendChild(row));
+}
+
+function hideAllSortButtons() {
+  document.querySelectorAll('[id$="_sort_button"]').forEach((button) => {
+    button.style.display = 'none';
+    button.style.visibility = 'hidden';
+  });
+}
+
+function appendCustomEmptyPlaceholder(tbody) {
+  if (!tbody || tbody.children.length > 0) return;
+
+  const row = document.createElement('tr');
+  row.className = 'custom-empty-row';
+
+  const cell = document.createElement('td');
+  cell.colSpan = 3;
+  cell.style.background = '#2f353d';
+  cell.style.border = '1px solid #505963';
+  cell.style.padding = '1rem';
+  cell.style.textAlign = 'center';
+  cell.style.color = '#d8dde3';
+  cell.style.fontSize = '0.98rem';
+  cell.textContent = 'Click the add button to add a custom task!';
+
+  row.appendChild(cell);
+  tbody.appendChild(row);
 }
 
 export function renderApp(deps) {
@@ -183,10 +285,17 @@ export function renderApp(deps) {
   };
 
   const sections = getResolvedSections();
-  const sectionKeys = ['custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'];
+  const sectionKeys = ['custom', 'rs3farming', 'gathering', 'rs3daily', 'rs3weekly', 'rs3monthly'];
   const mode = getPageMode();
 
+  reorderDashboardSections(sectionKeys);
   applyPageModeVisibility(mode);
+
+  const dashboard = document.getElementById('dashboard-container');
+  if (dashboard) {
+    dashboard.style.display = '';
+  }
+
   clearAllSectionBodies(sectionKeys);
 
   sectionKeys.forEach((key) => {
@@ -194,22 +303,25 @@ export function renderApp(deps) {
     if (!tbody) return;
 
     const sectionTasks = key === 'rs3farming' ? sections.rs3farming : sections[key];
-    const hidden = !!load(`hideSection:${key}`, false);
+    const storedHidden = !!load(`hideSection:${key}`, false);
+    const showHidden = !!load(`showHidden:${key}`, false);
+    const hidden = mode === 'overview' && key === 'custom' ? false : storedHidden;
     const visibleByMode = setSectionModeVisibility(key, mode);
 
-    if (!visibleByMode) {
-      return;
-    }
+    if (!visibleByMode) return;
 
-    setSectionHiddenState(key, hidden);
+    setSectionHiddenState(key, hidden, showHidden);
 
     if (hidden) {
-      bindSectionControls(key, { sortable: true });
+      bindSectionControls(key, { sortable: false });
       return;
     }
 
     if (!sectionTasks) {
-      bindSectionControls(key, { sortable: true });
+      if (key === 'custom') {
+        appendCustomEmptyPlaceholder(tbody);
+      }
+      bindSectionControls(key, { sortable: false });
       return;
     }
 
@@ -238,11 +350,13 @@ export function renderApp(deps) {
         isCollapsedBlock,
         createHeaderRow,
         createRow,
-        context: uiContext
+        context: uiContext,
+        getGroupCountdown
       });
     } else if (key === 'rs3weekly') {
       renderWeekliesWithChildren(tbody, sortedTasks, {
         isCollapsedBlock,
+        createHeaderRow,
         createRow,
         createRightSideChildRow,
         context: uiContext
@@ -254,8 +368,14 @@ export function renderApp(deps) {
       });
     }
 
-    bindSectionControls(key, { sortable: true });
+    if (key === 'custom' && tbody.children.length === 0) {
+      appendCustomEmptyPlaceholder(tbody);
+    }
+
+    bindSectionControls(key, { sortable: false });
   });
+
+  movePenguinsBlockToBottom();
 
   renderOverviewPanel(sections, {
     getPageMode,
@@ -271,10 +391,12 @@ export function renderApp(deps) {
     }
   });
 
+  hideAllSortButtons();
+
   fetchProfits();
   updateProfileHeader();
 
-  ['custom', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'].forEach((key) => {
+  ['custom', 'gathering', 'rs3daily', 'rs3weekly', 'rs3monthly'].forEach((key) => {
     const tasks = sections[key];
     if (Array.isArray(tasks)) {
       tasks.forEach((task) => maybeNotifyTaskAlert(task, key));

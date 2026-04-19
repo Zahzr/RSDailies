@@ -1,5 +1,100 @@
 import { slugify } from '../../../ui/table/utils.js';
 
+function parsePositiveInt(value, fallback) {
+  const parsed = parseInt(String(value ?? '').trim(), 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
+}
+
+function buildCustomTask({
+  rawName,
+  rawNote,
+  rawWiki,
+  rawReset,
+  rawAlertDaysBeforeReset,
+  rawTimerMinutes
+}) {
+  const allowed = ['daily', 'weekly', 'monthly', 'timer'];
+
+  let reset = allowed.includes(rawReset) ? rawReset : 'daily';
+  let alertDaysBeforeReset = parsePositiveInt(rawAlertDaysBeforeReset, 0);
+
+  const task = {
+    id: `custom-${slugify(rawName)}-${Date.now()}`,
+    name: rawName,
+    note: rawNote,
+    wiki: rawWiki,
+    reset,
+    alertDaysBeforeReset
+  };
+
+  if (task.reset === 'timer') {
+    let minutes = parsePositiveInt(rawTimerMinutes, 60);
+    if (minutes < 1) minutes = 60;
+
+    task.cooldownMinutes = minutes;
+    task.alertDaysBeforeReset = 0;
+    task.note = task.note
+      ? `${task.note} | Repeating timer: ${minutes}m`
+      : `Repeating timer: ${minutes}m`;
+  }
+
+  return task;
+}
+
+function cloneAndReplace(element) {
+  if (!element) return null;
+  const replacement = element.cloneNode(true);
+  element.replaceWith(replacement);
+  return replacement;
+}
+
+function resetCustomTaskForm({
+  nameInput,
+  noteInput,
+  wikiInput,
+  resetSelect,
+  alertInput,
+  timerMinsInput,
+  timerBlock
+}) {
+  nameInput.value = '';
+  noteInput.value = '';
+  wikiInput.value = '';
+  resetSelect.value = 'daily';
+  alertInput.value = '0';
+  timerMinsInput.value = '60';
+  timerBlock.style.display = 'none';
+  timerBlock.style.visibility = 'hidden';
+  nameInput.classList.remove('is-invalid');
+  wikiInput.classList.remove('is-invalid');
+}
+
+function syncTimerVisibility(resetSelect, timerBlock, alertInput) {
+  const isTimer = resetSelect.value === 'timer';
+  timerBlock.style.display = isTimer ? '' : 'none';
+  timerBlock.style.visibility = isTimer ? 'visible' : 'hidden';
+
+  if (alertInput) {
+    alertInput.disabled = isTimer;
+    if (isTimer) {
+      alertInput.value = '0';
+    }
+  }
+}
+
+function isValidOptionalUrl(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return true;
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Controller for the Custom Task creation modal and fallback prompt
  */
@@ -12,11 +107,13 @@ export function setupCustomAdd(deps) {
     documentRef = document
   } = deps;
 
-  const addBtn = documentRef.getElementById('custom_add_button');
-  if (!addBtn) return;
+  const existingAddBtn = documentRef.getElementById('custom_add_button');
+  if (!existingAddBtn) return;
+
+  const addBtn = cloneAndReplace(existingAddBtn);
 
   const modalEl = documentRef.getElementById('custom-task-modal');
-  const saveBtn = documentRef.getElementById('custom-task-save');
+  let saveBtn = documentRef.getElementById('custom-task-save');
   const nameInput = documentRef.getElementById('custom-task-name');
   const noteInput = documentRef.getElementById('custom-task-note');
   const wikiInput = documentRef.getElementById('custom-task-wiki');
@@ -24,6 +121,7 @@ export function setupCustomAdd(deps) {
   const alertInput = documentRef.getElementById('custom-task-alert');
   const timerBlock = documentRef.getElementById('custom-task-timer-block');
   const timerMinsInput = documentRef.getElementById('custom-task-timer-mins');
+  const form = documentRef.getElementById('custom-task-form');
 
   const hasModal = !!(
     modalEl &&
@@ -34,94 +132,90 @@ export function setupCustomAdd(deps) {
     resetSelect &&
     alertInput &&
     timerBlock &&
-    timerMinsInput
+    timerMinsInput &&
+    form
   );
-  
-  const bootstrapModal = hasModal && bootstrapRef?.Modal 
-    ? bootstrapRef.Modal.getOrCreateInstance(modalEl) 
+
+  const bootstrapModal = hasModal && bootstrapRef?.Modal
+    ? bootstrapRef.Modal.getOrCreateInstance(modalEl)
     : null;
 
   if (!bootstrapModal) {
-    addBtn.addEventListener('click', (e) => {
-      e.preventDefault();
+    addBtn.addEventListener('click', (event) => {
+      event.preventDefault();
       promptAddCustomTask(deps);
     });
     return;
   }
 
-  function syncTimerVisibility() {
-    const isTimer = resetSelect.value === 'timer';
-    timerBlock.style.display = isTimer ? '' : 'none';
-    timerBlock.style.visibility = isTimer ? 'visible' : 'hidden';
-  }
-
-  function clearValidation() {
-    nameInput.classList.remove('is-invalid');
-  }
+  saveBtn = cloneAndReplace(saveBtn);
 
   resetSelect.addEventListener('change', () => {
-    syncTimerVisibility();
+    syncTimerVisibility(resetSelect, timerBlock, alertInput);
   });
 
-  addBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    clearValidation();
-    nameInput.value = '';
-    noteInput.value = '';
-    wikiInput.value = '';
-    resetSelect.value = 'daily';
-    alertInput.value = '0';
-    timerMinsInput.value = '60';
-    syncTimerVisibility();
+  addBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    resetCustomTaskForm({
+      nameInput,
+      noteInput,
+      wikiInput,
+      resetSelect,
+      alertInput,
+      timerMinsInput,
+      timerBlock
+    });
+
+    syncTimerVisibility(resetSelect, timerBlock, alertInput);
+
     bootstrapModal.show();
-    setTimeout(() => nameInput.focus(), 50);
+    window.setTimeout(() => nameInput.focus(), 50);
   });
 
-  saveBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    clearValidation();
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveBtn.click();
+  });
+
+  saveBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    nameInput.classList.remove('is-invalid');
+    wikiInput.classList.remove('is-invalid');
 
     const rawName = String(nameInput.value || '').trim();
+    const rawNote = String(noteInput.value || '').trim();
+    const rawWiki = String(wikiInput.value || '').trim();
+    const rawReset = String(resetSelect.value || 'daily').trim().toLowerCase();
+    const rawAlertDaysBeforeReset = String(alertInput.value || '0').trim();
+    const rawTimerMinutes = String(timerMinsInput.value || '60').trim();
+
     if (!rawName) {
       nameInput.classList.add('is-invalid');
       nameInput.focus();
       return;
     }
 
-    const rawNote = String(noteInput.value || '').trim();
-    const rawWiki = String(wikiInput.value || '').trim();
-    const rawReset = String(resetSelect.value || 'daily').trim().toLowerCase();
-
-    let alertDaysBeforeReset = parseInt(String(alertInput.value || '0'), 10);
-    if (!Number.isFinite(alertDaysBeforeReset) || alertDaysBeforeReset < 0) {
-      alertDaysBeforeReset = 0;
+    if (!isValidOptionalUrl(rawWiki)) {
+      wikiInput.classList.add('is-invalid');
+      wikiInput.focus();
+      return;
     }
 
-    const allowed = ['daily', 'weekly', 'monthly', 'timer'];
+    const task = buildCustomTask({
+      rawName,
+      rawNote,
+      rawWiki,
+      rawReset,
+      rawAlertDaysBeforeReset,
+      rawTimerMinutes
+    });
 
-    const task = {
-      id: `custom-${slugify(rawName)}-${Date.now()}`,
-      name: rawName,
-      note: rawNote,
-      wiki: rawWiki,
-      reset: allowed.includes(rawReset) ? rawReset : 'daily',
-      alertDaysBeforeReset
-    };
+    const existing = Array.isArray(getCustomTasks()) ? getCustomTasks() : [];
+    const next = [...existing, task];
 
-    if (task.reset === 'timer') {
-      let minutes = parseInt(String(timerMinsInput.value || '60'), 10);
-      if (!Number.isFinite(minutes) || minutes < 1) minutes = 60;
-      task.cooldownMinutes = minutes;
-      task.reset = 'daily';
-      task.note = task.note
-        ? `${task.note} | Repeating timer: ${minutes}m`
-        : `Repeating timer: ${minutes}m`;
-    }
-
-    const tasks = getCustomTasks();
-    tasks.push(task);
-    saveCustomTasks(tasks);
-
+    saveCustomTasks(next);
     bootstrapModal.hide();
     renderApp();
   });
@@ -132,6 +226,7 @@ export function setupCustomAdd(deps) {
  */
 function promptAddCustomTask(deps) {
   const { getCustomTasks, saveCustomTasks, renderApp } = deps;
+
   const name = prompt('Task name:');
   if (!name || !name.trim()) return;
 
@@ -140,37 +235,30 @@ function promptAddCustomTask(deps) {
   const reset = (prompt('Reset type? daily / weekly / monthly / timer', 'daily') || 'daily')
     .trim()
     .toLowerCase();
-  const alertRaw = prompt('Alert how many days before reset? (0 for same day)', '0') || '0';
+  const alertRaw = reset === 'timer'
+    ? '0'
+    : (prompt('Alert how many days before reset? (0 for same day)', '0') || '0');
+  const timerRaw = reset === 'timer'
+    ? (prompt('Timer repeat interval in minutes?', '60') || '60')
+    : '60';
 
-  let alertDaysBeforeReset = parseInt(alertRaw, 10);
-  if (!Number.isFinite(alertDaysBeforeReset) || alertDaysBeforeReset < 0) {
-    alertDaysBeforeReset = 0;
+  if (!isValidOptionalUrl(wiki)) {
+    alert('Please enter a valid URL starting with http:// or https://');
+    return;
   }
 
-  const allowed = ['daily', 'weekly', 'monthly', 'timer'];
+  const task = buildCustomTask({
+    rawName: name.trim(),
+    rawNote: note.trim(),
+    rawWiki: wiki.trim(),
+    rawReset: reset,
+    rawAlertDaysBeforeReset: alertRaw,
+    rawTimerMinutes: timerRaw
+  });
 
-  const task = {
-    id: `custom-${slugify(name)}-${Date.now()}`,
-    name: name.trim(),
-    note: note.trim(),
-    wiki: wiki.trim(),
-    reset: allowed.includes(reset) ? reset : 'daily',
-    alertDaysBeforeReset
-  };
+  const existing = Array.isArray(getCustomTasks()) ? getCustomTasks() : [];
+  const next = [...existing, task];
 
-  if (task.reset === 'timer') {
-    const minsRaw = prompt('Timer repeat interval in minutes?', '60') || '60';
-    let minutes = parseInt(minsRaw, 10);
-    if (!Number.isFinite(minutes) || minutes < 1) minutes = 60;
-    task.cooldownMinutes = minutes;
-    task.reset = 'daily';
-    task.note = task.note
-      ? `${task.note} | Repeating timer: ${minutes}m`
-      : `Repeating timer: ${minutes}m`;
-  }
-
-  const tasks = getCustomTasks();
-  tasks.push(task);
-  saveCustomTasks(tasks);
+  saveCustomTasks(next);
   renderApp();
 }

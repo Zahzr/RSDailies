@@ -18,15 +18,34 @@ export function maybeBrowserNotify(title, body) {
   }
 }
 
-export async function maybeWebhookNotify(body) {
+function applyWebhookTemplate(template, taskName) {
+  const safeTemplate = String(template || 'RSDailies: {task} is due.');
+  const safeTaskName = String(taskName || 'Task');
+  return safeTemplate.replace(/\{task\}/g, safeTaskName);
+}
+
+function buildWebhookContent(taskName) {
+  const settings = getSettingsFeature();
+  if (!settings.webhookUrl) return '';
+
+  const baseMessage = applyWebhookTemplate(settings.webhookMessageTemplate, taskName);
+  const mention = settings.webhookUserId ? `<@${settings.webhookUserId}> ` : '';
+
+  return `${mention}${baseMessage}`.trim();
+}
+
+export async function maybeWebhookNotify(taskName) {
   const settings = getSettingsFeature();
   if (!settings.webhookUrl) return;
+
+  const content = buildWebhookContent(taskName);
+  if (!content) return;
 
   try {
     await fetch(settings.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: body })
+      body: JSON.stringify({ content })
     });
   } catch {
     // noop
@@ -66,7 +85,7 @@ export function maybeNotifyTaskAlert(task, sectionKey, { load, save }) {
   if (notified[task.id] === stamp) return;
 
   maybeBrowserNotify('RSDailies', `${task.name} is due.`);
-  maybeWebhookNotify(`RSDailies: ${task.name} is due.`);
+  maybeWebhookNotify(task.name);
 
   notified[task.id] = stamp;
   save(`notified:${sectionKey}`, notified);

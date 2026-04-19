@@ -1,89 +1,127 @@
-import { getSettings as getSettingsFeature } from '../settings/index.js';
-import {
-  getFarmingTimers as getFarmingTimersFeature,
-  saveFarmingTimers as saveFarmingTimersFeature
-} from '../sections/state.js';
-import { formatDurationMs as formatDurationMsCore } from '../../core/time/formatters.js';
+import { formatDurationMs } from '../../core/time/formatters.js';
 
-/**
- * Common state accessors (usually injected via profile loaders in legacy code)
- * For this modular version, we assume the feature state is managed by the profile store.
- */
+function getNow() {
+  return Date.now();
+}
+
+function getTimerMinutes(task) {
+  if (Number.isFinite(task?.growthMinutes)) return task.growthMinutes;
+  if (Number.isFinite(task?.timerMinutes)) return task.timerMinutes;
+  if (Number.isFinite(task?.cooldownMinutes)) return task.cooldownMinutes;
+
+  const parsedGrowth = parseInt(task?.growthMinutes, 10);
+  if (Number.isFinite(parsedGrowth) && parsedGrowth > 0) return parsedGrowth;
+
+  const parsedTimer = parseInt(task?.timerMinutes, 10);
+  if (Number.isFinite(parsedTimer) && parsedTimer > 0) return parsedTimer;
+
+  const parsedCooldown = parseInt(task?.cooldownMinutes, 10);
+  if (Number.isFinite(parsedCooldown) && parsedCooldown > 0) return parsedCooldown;
+
+  return 0;
+}
+
 function getFarmingTimers(load) {
-  return getFarmingTimersFeature(load);
+  const value = load('farmingTimers', {});
+  return value && typeof value === 'object' ? value : {};
 }
 
-function saveFarmingTimers(timers, save) {
-  saveFarmingTimersFeature(timers, save);
+function saveFarmingTimers(nextTimers, save) {
+  save('farmingTimers', nextTimers);
 }
 
-/**
- * Core calculation logic for farming cycles.
- * @param {number} nowMs 
- * @param {number} cycleMinutes 
- * @param {number} stages 
- * @param {number} offsetMinutes 
- */
-export function computeReadyAtMs(nowMs, cycleMinutes, stages, offsetMinutes = 0) {
-  const cycleMs = Math.max(1, cycleMinutes) * 60000;
-  const offsetMs = (offsetMinutes || 0) * 60000;
-  const anchorMs = Date.UTC(1970, 0, 1, 0, 0, 0, 0) + offsetMs;
-  const elapsed = nowMs - anchorMs;
-  const steps = Math.floor(elapsed / cycleMs);
-  const currentStart = anchorMs + steps * cycleMs;
-  const nextStart = currentStart <= nowMs ? currentStart + cycleMs : currentStart;
-  return nextStart + Math.max(0, (stages || 1) - 1) * cycleMs;
+function cloneTimers(load) {
+  return { ...getFarmingTimers(load) };
 }
 
 export function startFarmingTimer(task, { load, save }) {
-  const timers = getFarmingTimers(load);
-  const settings = getSettingsFeature();
+  if (!task?.id) return false;
 
-  const herbTicks = settings.herbTicks === 3 ? 3 : 4;
-  const stages = task.useHerbSetting ? herbTicks : (task.stages || 1);
-  const cycleMinutes = task.cycleMinutes || 20;
-  const offset = settings.growthOffsetMinutes || 0;
+  const minutes = getTimerMinutes(task);
+  if (!minutes || minutes < 1) return false;
 
-  const startedAt = Date.now();
-  const readyAt = computeReadyAtMs(startedAt, cycleMinutes, stages, offset);
+  const startedAt = getNow();
+  const readyAt = startedAt + minutes * 60 * 1000;
 
+  const timers = cloneTimers(load);
   timers[task.id] = {
     id: task.id,
-    name: task.name,
+    name: task.name || '',
     startedAt,
     readyAt,
-    cycleMinutes,
-    stages,
-    alerted: false
+    growthMinutes: minutes
   };
 
   saveFarmingTimers(timers, save);
+  return true;
 }
 
 export function clearFarmingTimer(taskId, { load, save }) {
-  const timers = getFarmingTimers(load);
+  if (!taskId) return false;
+
+  const timers = cloneTimers(load);
+  if (!timers[taskId]) return false;
+
   delete timers[taskId];
   saveFarmingTimers(timers, save);
+  return true;
 }
 
 export function cleanupReadyFarmingTimers({ load, save }) {
-  const timers = getFarmingTimers(load);
-  let timersChanged = false;
+  const timers = cloneTimers(load);
+  const now = getNow();
+  let changed = false;
 
-  Object.values(timers).forEach((timer) => {
-    if (!timer) return;
-    if (timer.readyAt > Date.now()) return;
+  Object.keys(timers).forEach((taskId) => {
+    const entry = timers[taskId];
+    if (!entry || !Number.isFinite(entry.readyAt)) {
+      delete timers[taskId];
+      changed = true;
+      return;
+    }
 
-    delete timers[timer.id];
-    timersChanged = true;
+    if (entry.readyAt <= now) {
+      delete timers[taskId];
+      changed = true;
+    }
   });
 
-  if (timersChanged) saveFarmingTimers(timers, save);
-  return timersChanged;
+  if (changed) {
+    saveFarmingTimers(timers, save);
+  }
+
+  return changed;
 }
 
 export function getFarmingHeaderStatus(task, { load }) {
+  if (!task?.id) {
+    return {
+      state: 'idle',
+      note: task?.note || ''
+    };
+  }
+
   const timers = getFarmingTimers(load);
-  const running = timers[task.id];
-  return running ? `Ready in ${formatDurationMsCore(running.readyAt - Date.now())}` : 'Start timer';
+  const entry = timers[task.id];
+
+  if (!entry) {
+    return {
+      state: 'idle',
+      note: task?.note || ''
+    };
+  }
+
+  const remaining = entry.readyAt - getNow();
+
+  if (remaining <= 0) {
+    return {
+      state: 'ready',
+      note: 'Ready now'
+    };
+  }
+
+  return {
+    state: 'running',
+    note: `Ready in ${formatDurationMs(remaining)}`
+  };
 }

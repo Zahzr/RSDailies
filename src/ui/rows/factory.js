@@ -14,13 +14,21 @@ function childStorageKey(sectionKey, parentId, childId) {
   return `${sectionKey}::${parentId}::${childId}`;
 }
 
+function buildPinId(sectionKey, task, options = {}) {
+  if (options.overviewPinId) return options.overviewPinId;
+  if (options.customStorageId?.includes('::')) return options.customStorageId;
+  return `${sectionKey}::${task.id}`;
+}
+
 function appendWeeklyCollapseButton(nameCell, task, context = {}) {
   const {
     isCollapsedBlock,
     setCollapsedBlock,
-    renderApp
+    renderApp,
+    isOverviewPanel = false
   } = context;
 
+  if (isOverviewPanel) return;
   if (!Array.isArray(task?.children) || task.children.length === 0) return;
   if (!nameCell || !isCollapsedBlock || !setCollapsedBlock || !renderApp) return;
 
@@ -42,6 +50,49 @@ function appendWeeklyCollapseButton(nameCell, task, context = {}) {
   });
 
   nameCell.appendChild(btn);
+}
+
+function appendSectionBadge(nameCell, sectionKey) {
+  if (!nameCell) return;
+
+  const badge = document.createElement('span');
+  badge.className = 'overview-section-badge';
+
+  switch (sectionKey) {
+    case 'custom':
+      badge.textContent = 'Custom';
+      break;
+    case 'rs3farming':
+      badge.textContent = 'Farming';
+      break;
+    case 'rs3daily':
+      badge.textContent = 'Dailies';
+      break;
+    case 'gathering':
+      badge.textContent = 'Gathering';
+      break;
+    case 'rs3weekly':
+      badge.textContent = 'Weeklies';
+      break;
+    case 'rs3monthly':
+      badge.textContent = 'Monthlies';
+      break;
+    default:
+      badge.textContent = sectionKey;
+      break;
+  }
+
+  nameCell.appendChild(badge);
+}
+
+function hideRowActionsForOverview(row) {
+  row.querySelectorAll('.hide-button').forEach((el) => {
+    el.style.display = 'none';
+  });
+
+  row.querySelectorAll('.mini-collapse-btn').forEach((el) => {
+    el.style.display = 'none';
+  });
 }
 
 export function persistOrderFromTable(sectionKey, { getTableId, save }) {
@@ -81,7 +132,10 @@ export function createBaseRow(sectionKey, task, options = {}) {
     startFarmingTimer,
     startCooldown,
     getTableId,
-    isOverviewPanel = false
+    isCollapsedBlock,
+    setCollapsedBlock,
+    isOverviewPanel = false,
+    overviewPinId = null
   } = context;
 
   const taskId = customStorageId || task.id;
@@ -115,7 +169,7 @@ export function createBaseRow(sectionKey, task, options = {}) {
   if (renderNameOnRight) {
     nameLink.textContent = '';
     nameLink.href = '#';
-    nameLink.addEventListener('click', (e) => e.preventDefault());
+    nameLink.addEventListener('click', (event) => event.preventDefault());
 
     desc.textContent = '';
     const nameLine = document.createElement('span');
@@ -129,7 +183,7 @@ export function createBaseRow(sectionKey, task, options = {}) {
       nameLink.href = task.wiki;
     } else {
       nameLink.href = '#';
-      nameLink.addEventListener('click', (e) => e.preventDefault());
+      nameLink.addEventListener('click', (event) => event.preventDefault());
     }
 
     nameLink.textContent = task.name;
@@ -138,13 +192,28 @@ export function createBaseRow(sectionKey, task, options = {}) {
     attachTooltipFeature(nameLink, task);
   }
 
-  appendWeeklyCollapseButton(nameCell, task, context);
+  appendWeeklyCollapseButton(nameCell, task, {
+    isCollapsedBlock,
+    setCollapsedBlock,
+    renderApp,
+    isOverviewPanel
+  });
+
+  if (isOverviewPanel) {
+    appendSectionBadge(nameCell, sectionKey);
+  }
 
   const actions = createInlineActions(task, isCustom);
-  if (actions && !isOverviewPanel) desc.appendChild(actions);
+  if (actions && !isOverviewPanel) {
+    desc.appendChild(actions);
+  }
 
   if (pinBtn) {
-    const pinId = taskId.includes('::') ? taskId : `${sectionKey}::${taskId}`;
+    const pinId = buildPinId(sectionKey, task, {
+      overviewPinId,
+      customStorageId
+    });
+
     const pins = getOverviewPinsFeature(load);
     const pinned = !!pins[pinId];
 
@@ -152,15 +221,16 @@ export function createBaseRow(sectionKey, task, options = {}) {
     pinBtn.title = pinned ? 'Unpin from Overview' : 'Pin to Overview';
     pinBtn.setAttribute('aria-label', pinBtn.title);
 
-    pinBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    pinBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
 
       const nextPins = { ...getOverviewPinsFeature(load) };
+
       if (nextPins[pinId]) {
         delete nextPins[pinId];
       } else {
-        nextPins[pinId] = true;
+        nextPins[pinId] = Date.now();
       }
 
       saveOverviewPinsFeature(nextPins, save);
@@ -172,9 +242,9 @@ export function createBaseRow(sectionKey, task, options = {}) {
     if (isOverviewPanel) {
       hideBtn.style.display = 'none';
     } else {
-      hideBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+      hideBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
         if (isCustom) {
           if (!confirm(`Delete custom task "${task.name}"?`)) return;
@@ -193,8 +263,23 @@ export function createBaseRow(sectionKey, task, options = {}) {
           save('completed:custom', completed);
           save('hiddenRows:custom', hiddenRows);
           save('notified:custom', notified);
+
+          const pins = { ...getOverviewPinsFeature(load) };
+          delete pins[`custom::${task.id}`];
+          saveOverviewPinsFeature(pins, save);
         } else {
           hideTask(sectionKey, taskId);
+
+          const hiddenRows = { ...(load(`hiddenRows:${sectionKey}`, {}) || {}) };
+          hiddenRows[taskId] = task.name || taskId;
+          save(`hiddenRows:${sectionKey}`, hiddenRows);
+
+          const pins = { ...getOverviewPinsFeature(load) };
+          const directPinId = buildPinId(sectionKey, task, {
+            customStorageId
+          });
+          delete pins[directPinId];
+          saveOverviewPinsFeature(pins, save);
         }
 
         renderApp();
@@ -202,8 +287,8 @@ export function createBaseRow(sectionKey, task, options = {}) {
     }
   }
 
-  const toggleTask = (e) => {
-    e.preventDefault();
+  const toggleTask = (event) => {
+    event.preventDefault();
 
     const state = getTaskState(sectionKey, taskId, task);
     if (state === 'hide') return;
@@ -245,15 +330,18 @@ export function createBaseRow(sectionKey, task, options = {}) {
       persistOrderFromTable(sectionKey, { getTableId, save });
     });
 
-    row.addEventListener('dragover', (e) => {
-      e.preventDefault();
+    row.addEventListener('dragover', (event) => {
+      event.preventDefault();
       if (!dragRow || dragRow === row) return;
 
       const tbody = row.parentElement;
       const rect = row.getBoundingClientRect();
-      const insertAfter = (e.clientY - rect.top) > rect.height / 2;
+      const insertAfter = (event.clientY - rect.top) > rect.height / 2;
       tbody.insertBefore(dragRow, insertAfter ? row.nextSibling : row);
     });
+  } else {
+    hideRowActionsForOverview(row);
+    row.removeAttribute('draggable');
   }
 
   if (renderNameOnRight) {

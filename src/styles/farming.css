@@ -1,28 +1,29 @@
 .header_like_name {
     padding: 0 !important;
-    background: #111;
-    min-height: 38px !important;
+    background: transparent;
+    min-height: 42px !important;
 }
 
 .header_like_name .header_like_text {
     display: flex;
     align-items: center;
-    height: 100%;
-    min-height: 38px;
-    padding: 0.32rem 0.8rem;
-    font-weight: 700;
-    font-size: 0.88rem;
-    letter-spacing: 0.04em;
+    justify-content: center;
+    width: 100%;
+    min-height: 42px;
+    padding: 0.38rem 1rem;
+    font-weight: 800;
+    font-size: 1.02rem;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #fff;
+    color: #f2f4f7;
+    text-shadow: 0 0 8px rgba(180, 190, 205, 0.28);
 }
 
-/* Right side of group header rows inherits the same background, preventing black bleed. */
 .header_like_color {
     cursor: default !important;
     background: inherit !important;
     box-shadow: none !important;
-    padding: 0.2rem 0.55rem !important;
+    padding: 0.22rem 0.55rem !important;
 }
 
 .header_like_click {
@@ -37,21 +38,22 @@
 .header_like_inner {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
-    min-height: 30px;
+    min-height: 38px;
 }
 
 .header_like_status {
-    color: #d8d8d8;
-    font-size: 0.84rem;
+    color: #e0e3e8;
+    font-size: 0.94rem;
     line-height: 1rem;
+    white-space: nowrap;
 }
 
 .mini-collapse-btn {
-    min-width: 30px;
-    width: 30px;
-    height: 28px;
+    min-width: 36px;
+    width: 36px;
+    height: 32px;
     padding: 0;
     line-height: 1;
     display: inline-flex;
@@ -59,21 +61,32 @@
     justify-content: center;
 }
 
-.farming-group-row td {
-    background: linear-gradient(90deg, #141414, #1b222a) !important;
-    border-top: 1px solid #555 !important;
-    border-bottom: 1px solid #555 !important;
+.mini-reset-btn {
+    min-height: 32px;
+    white-space: nowrap;
+}
+
+.farming-group-row td,
+.activity_table thead td.header_like_color {
+    background: linear-gradient(90deg, #1a1e23, #242c35) !important;
+    border-top: 1px solid #4c5663 !important;
+    border-bottom: 1px solid #4c5663 !important;
 }
 
 .farming-subgroup-row td,
 .gathering-group-row td {
-    background: linear-gradient(90deg, #171717, #202020) !important;
-    border-top: 1px solid #333 !important;
-    border-bottom: 1px solid #333 !important;
+    background: linear-gradient(90deg, #222831, #2a323c) !important;
+    border-top: 1px solid #5d6772 !important;
+    border-bottom: 1px solid #5d6772 !important;
+}
+
+.farming-group-row .header_like_text,
+.activity_table thead .header_like_text {
+    font-size: 1.08rem;
 }
 
 .farming-subheader-row .header_like_text {
-    padding-left: 1.35rem;
+    font-size: 0.98rem;
 }
 
 .farming-location-row .activity_desc {
@@ -86,9 +99,13 @@
 }
 
 .farming-child-row td.activity_name {
-    background: #0a0a0a;
-    box-shadow: inset 0 0 0 9999px #0a0a0a;
+    background: #3a4048 !important;
+    box-shadow: inset 0 0 0 9999px #3a4048 !important;
     min-height: 40px;
+}
+
+.farming-child-row td.activity_name::before {
+    background: #3a4048 !important;
 }
 
 .farming-child-row td.activity_name a,
@@ -101,12 +118,13 @@
     padding: 0;
 }
 
-.farming-child-row td.activity_name::before {
-    background: #0a0a0a !important;
+.farming-child-row td.activity_name button.pin-button,
+.farming-child-row td.activity_name button.hide-button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
-.farming-child-row td.activity_name button.pin-button,
-.farming-child-row td.activity_name button.hide-button,
 .farming-child-row td.activity_name button.delete-button {
     display: none !important;
 }

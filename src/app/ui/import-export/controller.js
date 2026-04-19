@@ -1,46 +1,29 @@
-/**
- * Import/Export controller for profile data tokens
- */
-export function setupImportExport(deps) {
-  const {
-    buildExportTokenFeature,
-    importProfileToken: importProfileTokenFeature,
-    localStorageRef = localStorage,
-    locationRef = location,
-    documentRef = document
-  } = deps;
-
-  const tokenButton = documentRef.getElementById('token-button');
+export function setupImportExport({
+  documentRef = document,
+  onImport = () => window.location.reload()
+} = {}) {
+  const tokenModal = documentRef.getElementById('token-modal');
   const tokenOutput = documentRef.getElementById('token-output');
   const tokenInput = documentRef.getElementById('token-input');
   const tokenCopy = documentRef.getElementById('token-copy');
   const tokenImport = documentRef.getElementById('token-import');
 
-  function buildExportToken() {
-    return buildExportTokenFeature(localStorageRef);
+  if (!tokenModal || !tokenOutput || !tokenInput || !tokenCopy || !tokenImport) {
+    return;
   }
 
-  function importToken(rawToken) {
-    try {
-      importProfileTokenFeature(rawToken, localStorageRef);
-      locationRef.reload();
-    } catch {
-      if (tokenInput) tokenInput.classList.add('is-invalid');
-    }
-  }
+  const copyReplacement = tokenCopy.cloneNode(true);
+  tokenCopy.replaceWith(copyReplacement);
 
-  tokenButton?.addEventListener('click', () => {
-    if (tokenOutput) {
-      tokenOutput.value = buildExportToken();
-    }
-    if (tokenInput) {
-      tokenInput.classList.remove('is-invalid');
-    }
-  });
+  const importReplacement = tokenImport.cloneNode(true);
+  tokenImport.replaceWith(importReplacement);
 
-  tokenCopy?.addEventListener('click', async () => {
-    if (!tokenOutput) return;
-    const text = tokenOutput.value;
+  copyReplacement.addEventListener('click', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const text = tokenOutput.value || '';
+
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -50,10 +33,18 @@ export function setupImportExport(deps) {
     }
   });
 
-  tokenImport?.addEventListener('click', () => {
-    if (tokenInput) {
-      tokenInput.classList.remove('is-invalid');
-      importToken(tokenInput.value.trim());
+  importReplacement.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    tokenInput.classList.remove('is-invalid');
+
+    const value = String(tokenInput.value || '').trim();
+    if (!value) {
+      tokenInput.classList.add('is-invalid');
+      return;
     }
+
+    onImport(value);
   });
 }

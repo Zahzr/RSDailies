@@ -1,28 +1,43 @@
 import { applySettingsToDom, collectSettingsFromDom, getSettings, saveSettings } from './state.js';
 
+function replaceNode(element) {
+  if (!element) return null;
+  const replacement = element.cloneNode(true);
+  element.replaceWith(replacement);
+  return replacement;
+}
+
 export function setupSettingsControl({
-  renderApp = () => {},
-  closeFloatingControls = () => {},
+  renderApp = () => { },
+  closeFloatingControls = () => { },
   documentRef = document
 } = {}) {
-  const button = documentRef.getElementById('settings-button');
+  const button = replaceNode(documentRef.getElementById('settings-button'));
   const panel = documentRef.getElementById('settings-control');
-  const saveBtn = documentRef.getElementById('save-settings-btn');
+  const saveBtn = replaceNode(documentRef.getElementById('save-settings-btn'));
 
-  button?.addEventListener('click', (event) => {
+  if (!button || !panel || !saveBtn) return;
+
+  applySettingsToDom(documentRef, getSettings());
+
+  button.addEventListener('click', (event) => {
     event.preventDefault();
-    const visible = panel?.dataset.display === 'block';
+    event.stopPropagation();
+
+    const visible = panel.dataset.display === 'block';
     closeFloatingControls();
-    if (panel) {
-      if (!visible) {
-        panel.style.display = 'block';
-        panel.style.visibility = 'visible';
-        panel.dataset.display = 'block';
-      }
+
+    if (!visible) {
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.dataset.display = 'block';
     }
   });
 
-  saveBtn?.addEventListener('click', async () => {
+  saveBtn.addEventListener('click', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
     const settings = collectSettingsFromDom(documentRef);
     saveSettings(settings);
 
@@ -34,8 +49,17 @@ export function setupSettingsControl({
       }
     }
 
+    panel.style.display = 'none';
+    panel.style.visibility = 'hidden';
+    panel.dataset.display = 'none';
+
     renderApp();
   });
 }
 
-export { applySettingsToDom, collectSettingsFromDom, getSettings, saveSettings };
+export {
+  applySettingsToDom,
+  collectSettingsFromDom,
+  getSettings,
+  saveSettings
+};

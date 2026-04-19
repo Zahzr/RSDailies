@@ -1,66 +1,56 @@
 import { tasksConfig as TASKS_CONFIG } from '../config/tasks/index.js';
 import { farmingConfig as FARMING_CONFIG } from '../config/farming/index.js';
+
 import {
-  initProfileContext as initProfileContextFeature,
-  setProfile as setProfileFeature,
-  loadProfiles as loadProfilesFeature,
-  saveProfiles as saveProfilesFeature,
-  profileKey as profileKeyFeature,
-} from '../features/profiles/index.js';
+  initProfileContext,
+  setupProfileControl as setupProfileControlFeature,
+  setupProfileImportExport,
+  updateProfileHeader
+} from '../features/profiles/controller.js';
+
 import {
-  hideTooltip as hideTooltipFeature,
-  attachTooltip as attachTooltipFeature
-} from '../ui/tooltip.js';
-import {
-  buildExportToken as buildExportTokenFeature,
-  importProfileToken,
-  updateProfileHeader as updateProfileHeaderFeature,
-  setupProfileControl as setupProfileControlFeature
-} from '../features/profiles/index.js';
-import {
-  getSettings as getSettingsFeature,
-  saveSettings as saveSettingsFeature,
+  getSettings,
   applySettingsToDom as applySettingsToDomFeature,
-  collectSettingsFromDom as collectSettingsFromDomFeature,
   setupSettingsControl as setupSettingsControlFeature
-} from '../features/settings/index.js';
+} from '../features/settings/controller.js';
+
 import {
-  getResolvedSections as getResolvedSectionsFeature,
-  getTableId as getTableIdFeature
-} from '../features/tasks/index.js';
-import {
-  migrateLegacyViewModeToPageMode as migrateLegacyViewModeToPageModeFeature,
-  getPageMode as getPageModeFeature,
-  setPageMode as setPageModeFeature,
-  closeFloatingControls as closeFloatingControlsFeature,
+  closeFloatingControls,
   setupViewsControl as setupViewsControlFeature
-} from '../features/views/index.js';
+} from '../features/views/controller.js';
+
 import {
-  nextDailyBoundary as nextDailyBoundaryCore,
-  nextWeeklyBoundary as nextWeeklyBoundaryCore,
-  nextMonthlyBoundary as nextMonthlyBoundaryCore
-} from '../core/time/boundaries.js';
-import { formatCountdown as formatCountdownCore } from '../core/time/countdowns.js';
+  getPageMode,
+  migrateLegacyViewModeToPageMode
+} from '../features/views/model.js';
+
 import {
-  startFarmingTimer as startFarmingTimerFeature,
-  clearFarmingTimer as clearFarmingTimerFeature,
-  getFarmingHeaderStatus,
-  cleanupReadyFarmingTimers as cleanupReadyFarmingTimersFeature
+  getResolvedSections
+} from '../features/tasks/index.js';
+
+import {
+  startFarmingTimer,
+  clearFarmingTimer,
+  cleanupReadyFarmingTimers as cleanupReadyFarmingTimersFeature,
+  getFarmingHeaderStatus
 } from '../features/farming/timers.js';
+
 import {
-  startCooldown as startCooldownFeature,
+  startCooldown,
   cleanupReadyCooldowns as cleanupReadyCooldownsFeature
 } from '../features/cooldowns/timers.js';
+
 import {
-  maybeBrowserNotify as maybeBrowserNotifyFeature,
-  maybeWebhookNotify as maybeWebhookNotifyFeature,
-  maybeNotifyTaskAlert as maybeNotifyTaskAlertFeature
+  maybeNotifyTaskAlert,
+  maybeBrowserNotify,
+  maybeWebhookNotify
 } from '../features/notifications/bridge.js';
+
 import {
   checkAutoReset as checkAutoResetFeature,
-  resetSectionView as resetSectionViewFeature,
-  setTaskCompleted as setTaskCompletedFeature,
-  hideTask as hideTaskFeature
+  hideTask,
+  resetSectionView,
+  setTaskCompleted
 } from '../features/sections/logic.js';
 
 import {
@@ -75,166 +65,260 @@ import {
   saveCustomTasks,
   getFarmingTimers,
   getCooldowns,
-  getOverviewPins,
+  getOverviewPins
 } from './core/storage-bridge.js';
 
 import {
-  bindSectionControls as bindSectionControlsFeature
+  bindSectionControls
 } from './ui/controls/sections.js';
+
 import {
-  setupProfileControl as setupProfileControlFeatureBridged,
-  setupSettingsControl as setupSettingsControlFeatureBridged,
-  setupViewsControl as setupViewsControlFeatureBridged,
-  closeFloatingControls as closeFloatingControlsFeatureBridged,
-  setupGlobalClickCloser as setupGlobalClickCloserFeatureBridged,
-  updateProfileHeader as updateProfileHeaderFeatureBridged
+  setupProfileControl as setupProfileControlBridge,
+  setupSettingsControl as setupSettingsControlBridge,
+  setupViewsControl as setupViewsControlBridge,
+  closeFloatingControls as closeFloatingControlsBridge,
+  setupGlobalClickCloser as setupGlobalClickCloserBridge,
+  updateProfileHeader as updateProfileHeaderBridge
 } from './ui/controls/floating.js';
+
 import {
   setupImportExport as setupImportExportFeature
 } from './ui/import-export/controller.js';
+
 import {
   setupCustomAdd as setupCustomAddFeature
 } from './ui/modals/custom-tasks.js';
 
 import { renderApp as renderAppCore } from './ui/render/orchestrator.js';
 
-/* -----------------------------
-   Public API / Bridging
------------------------------ */
+import {
+  nextDailyBoundary,
+  nextWeeklyBoundary,
+  nextMonthlyBoundary
+} from '../core/time/boundaries.js';
 
-export function migrateLegacyViewModeToPageMode() { migrateLegacyViewModeToPageModeFeature(); }
-export function initProfileContext() { initProfileContextFeature(); }
+import { formatDurationMs } from '../core/time/formatters.js';
 
-export function updateCountdowns() {
-  const ids = {
-    'countdown-rs3daily': formatCountdownCore(nextDailyBoundaryCore(new Date())),
-    'countdown-rs3weekly': formatCountdownCore(nextWeeklyBoundaryCore(new Date())),
-    'countdown-rs3monthly': formatCountdownCore(nextMonthlyBoundaryCore(new Date()))
-  };
-  Object.entries(ids).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  });
+import {
+  hideTooltip
+} from '../ui/tooltip.js';
+
+function formatBoundaryCountdown(targetMs) {
+  const diff = targetMs - Date.now();
+  if (diff <= 0) return '00:00:00';
+  return formatDurationMs(diff);
 }
 
+function getStorageDeps() {
+  return { load, save, removeKey };
+}
+
+export { initProfileContext, migrateLegacyViewModeToPageMode };
+
 export function applySettingsToDom() {
-  applySettingsToDomFeature(document, getSettingsFeature());
+  applySettingsToDomFeature(document, getSettings());
 }
 
 export function checkAutoReset() {
-  return checkAutoResetFeature({ load, save, removeKey });
+  return checkAutoResetFeature(getStorageDeps());
+}
+
+export function cleanupReadyFarmingTimers() {
+  return cleanupReadyFarmingTimersFeature({ load, save });
+}
+
+export function cleanupReadyCooldowns() {
+  return cleanupReadyCooldownsFeature({ load, save });
+}
+
+export function updateCountdowns() {
+  const ids = {
+    'countdown-rs3daily': formatBoundaryCountdown(nextDailyBoundary(new Date())),
+    'countdown-rs3weekly': formatBoundaryCountdown(nextWeeklyBoundary(new Date())),
+    'countdown-rs3monthly': formatBoundaryCountdown(nextMonthlyBoundary(new Date()))
+  };
+
+  Object.entries(ids).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  });
 }
 
 export function renderApp() {
   renderAppCore({
     load,
     save,
-    getSectionState,
-    getCustomTasks,
-    saveCustomTasks,
+    getSectionState: (sectionKey) => getSectionState(sectionKey, load),
+    getCustomTasks: () => getCustomTasks(load),
+    saveCustomTasks: (tasks) => saveCustomTasks(tasks, save),
     cleanupReadyFarmingTimers: () => cleanupReadyFarmingTimersFeature({ load, save }),
     cleanupReadyCooldowns: () => cleanupReadyCooldownsFeature({ load, save }),
-    hideTooltip: () => hideTooltipFeature(document),
-    getTaskState: (key, id, task) => {
-      const state = getSectionState(key);
-      if (state.hiddenRows[id]) return 'hide';
-      if (task?.cooldownMinutes && (getCooldowns()[id]?.readyAt > Date.now())) return 'hide';
-      if (key === 'rs3farming' && task?.isTimerParent) {
-        const running = !!getFarmingTimers()[id];
-        return (running && task.vanishOnStart && !state.showHidden) ? 'hide' : (running ? 'running' : 'idle');
+    hideTooltip: () => hideTooltip(document),
+    getTaskState: (sectionKey, taskId, task) => {
+      const section = getSectionState(sectionKey, load);
+      const hiddenRows = section.hiddenRows || {};
+      const completed = section.completed || {};
+      const cooldowns = getCooldowns(load);
+      const farmingTimers = getFarmingTimers(load);
+
+      if (hiddenRows[taskId]) return 'hide';
+
+      if (task?.cooldownMinutes && cooldowns[taskId]?.readyAt > Date.now()) {
+        return 'running';
       }
-      const completed = !!state.completed[id];
-      if (completed && task?.reset && !state.showHidden) return 'hide';
-      return completed ? 'true' : 'false';
+
+      if (sectionKey === 'rs3farming' && task?.isTimerParent) {
+        const active = !!farmingTimers[task.id];
+        if (!active) return 'idle';
+        return farmingTimers[task.id]?.readyAt > Date.now() ? 'running' : 'ready';
+      }
+
+      return completed[taskId] ? 'true' : 'false';
     },
-    getResolvedSections: () => getResolvedSectionsFeature({
-      tasksConfig: TASKS_CONFIG,
-      farmingConfig: FARMING_CONFIG,
-      getCustomTasks,
-      getPenguinWeeklyData: () => load('penguinWeeklyData', {})
-    }),
+    getResolvedSections: () =>
+      getResolvedSections({
+        tasksConfig: TASKS_CONFIG,
+        farmingConfig: FARMING_CONFIG,
+        getCustomTasks: () => getCustomTasks(load),
+        getPenguinWeeklyData: () => load('penguinWeeklyData', {})
+      }),
     getFarmingHeaderStatus: (task) => getFarmingHeaderStatus(task, { load }),
-    hideTask: (key, id) => hideTaskFeature(key, id, { load, save }),
-    setTaskCompleted: (key, id, c) => setTaskCompletedFeature(key, id, c, { load, save }),
-    clearFarmingTimer: (id) => clearFarmingTimerFeature(id, { load, save }),
-    startFarmingTimer: (t) => startFarmingTimerFeature(t, { load, save }),
-    startCooldown: (id, m) => startCooldownFeature(id, m, { load, save }),
-    isCollapsedBlock,
-    setCollapsedBlock,
+    hideTask: (sectionKey, taskId) => hideTask(sectionKey, taskId, { load, save }),
+    setTaskCompleted: (sectionKey, taskId, complete) =>
+      setTaskCompleted(sectionKey, taskId, complete, { load, save }),
+    clearFarmingTimer: (taskId) => clearFarmingTimer(taskId, { load, save }),
+    startFarmingTimer: (task) => startFarmingTimer(task, { load, save }),
+    startCooldown: (taskId, minutes) => startCooldown(taskId, minutes, { load, save }),
+    isCollapsedBlock: (blockId) => isCollapsedBlock(blockId, load),
+    setCollapsedBlock: (blockId, collapsed) => setCollapsedBlock(blockId, collapsed, load, save),
     fetchProfits,
-    updateProfileHeader: () => updateProfileHeaderFeatureBridged({ updateProfileHeaderFeature }),
-    maybeNotifyTaskAlert: (t, k) => maybeNotifyTaskAlertFeature(t, k, { load, save }),
-    sectionLabel: (k) =>
-      k === 'custom' ? 'Custom Tasks'
-        : k === 'rs3farming' ? 'Farming Timers'
-          : k === 'rs3daily' ? 'Dailies'
-            : k === 'gathering' ? 'Gathering'
-              : k === 'rs3weekly' ? 'Weeklies'
-                : 'Monthlies',
-    bindSectionControls,
-    getPageMode: getPageModeFeature,
-    getOverviewPins
+    updateProfileHeader: () =>
+      updateProfileHeaderBridge({
+        updateProfileHeaderFeature: updateProfileHeader,
+        documentRef: document
+      }),
+    maybeNotifyTaskAlert: (task, sectionKey) =>
+      maybeNotifyTaskAlert(task, sectionKey, { load, save, maybeBrowserNotify, maybeWebhookNotify }),
+    bindSectionControls: (sectionKey, opts) =>
+      bindSectionControls(sectionKey, opts, {
+        renderApp,
+        getSectionState: (key) => getSectionState(key, load),
+        saveSectionValue: (key, name, value) => saveSectionValue(key, name, value, save),
+        resetSectionView: (key) => resetSectionView(key, { load, save, removeKey })
+      }),
+    getPageMode,
+    getOverviewPins: () => getOverviewPins(load)
   });
 }
 
-/* -----------------------------
-   Controls Implementation
------------------------------ */
+export function setupSectionBindings() {
+  ['custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'].forEach((sectionKey) => {
+    bindSectionControls(sectionKey, { sortable: true }, {
+      renderApp,
+      getSectionState: (key) => getSectionState(key, load),
+      saveSectionValue: (key, name, value) => saveSectionValue(key, name, value, save),
+      resetSectionView: (key) => resetSectionView(key, { load, save, removeKey })
+    });
+  });
+}
 
-function bindSectionControls(sectionKey, opts = { sortable: false }) {
-  bindSectionControlsFeature(sectionKey, opts, {
+function setupProfileControlEntry() {
+  setupProfileControlBridge({
+    setupProfileControlFeature,
     renderApp,
-    getSectionState,
-    saveSectionValue,
-    resetSectionView: (key) => resetSectionViewFeature(key, { load, save, removeKey })
+    closeFloatingControls: () =>
+      closeFloatingControlsBridge({
+        closeFloatingControlsFeature: closeFloatingControls,
+        documentRef: document
+      }),
+    documentRef: document,
+    windowRef: window
+  });
+}
+
+function setupSettingsControlEntry() {
+  setupSettingsControlBridge({
+    setupSettingsControlFeature,
+    renderApp,
+    closeFloatingControls: () =>
+      closeFloatingControlsBridge({
+        closeFloatingControlsFeature: closeFloatingControls,
+        documentRef: document
+      }),
+    documentRef: document
+  });
+}
+
+function setupViewsControlEntry() {
+  setupViewsControlBridge({
+    setupViewsControlFeature,
+    renderApp,
+    closeFloatingControls: () =>
+      closeFloatingControlsBridge({
+        closeFloatingControlsFeature: closeFloatingControls,
+        documentRef: document
+      }),
+    documentRef: document,
+    windowRef: window
+  });
+}
+
+function setupGlobalClickCloserEntry() {
+  setupGlobalClickCloserBridge({
+    closeFloatingControls: () =>
+      closeFloatingControlsBridge({
+        closeFloatingControlsFeature: closeFloatingControls,
+        documentRef: document
+      }),
+    documentRef: document
+  });
+}
+
+function setupImportExportEntry() {
+  setupImportExportFeature({
+    documentRef: document,
+    onImport: () => window.location.reload()
+  });
+
+  setupProfileImportExport({
+    documentRef: document,
+    onImport: () => window.location.reload(),
+    windowRef: window
+  });
+}
+
+function setupCustomAddEntry() {
+  setupCustomAddFeature({
+    getCustomTasks: () => getCustomTasks(load),
+    saveCustomTasks: (tasks) => saveCustomTasks(tasks, save),
+    renderApp,
+    bootstrapRef: window.bootstrap,
+    documentRef: document
   });
 }
 
 export function setupProfileControl() {
-  setupProfileControlFeatureBridged({
-    setupProfileControlFeature,
-    renderApp,
-    closeFloatingControls: () => closeFloatingControlsFeature(document)
-  });
+  setupProfileControlEntry();
 }
 
 export function setupSettingsControl() {
-  setupSettingsControlFeatureBridged({
-    setupSettingsControlFeature,
-    renderApp,
-    closeFloatingControls: () => closeFloatingControlsFeature(document)
-  });
+  setupSettingsControlEntry();
 }
 
 export function setupViewsControl() {
-  setupViewsControlFeatureBridged({
-    setupViewsControlFeature,
-    renderApp,
-    closeFloatingControls: () => closeFloatingControlsFeature(document)
-  });
+  setupViewsControlEntry();
 }
 
 export function setupGlobalClickCloser() {
-  setupGlobalClickCloserFeatureBridged({
-    closeFloatingControls: () => closeFloatingControlsFeature(document)
-  });
+  setupGlobalClickCloserEntry();
 }
 
 export function setupImportExport() {
-  setupImportExportFeature({
-    buildExportTokenFeature: () => buildExportTokenFeature(localStorage),
-    importProfileToken: (t) => importProfileToken(t, localStorage)
-  });
+  setupImportExportEntry();
 }
 
 export function setupCustomAdd() {
-  setupCustomAddFeature({ getCustomTasks, saveCustomTasks, renderApp });
-}
-
-export function setupSectionBindings() {
-  ['custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'].forEach((key) =>
-    bindSectionControls(key, { sortable: true })
-  );
+  setupCustomAddEntry();
 }
 
 export function initAppRoot() {
@@ -245,12 +329,12 @@ export function initAppRoot() {
   updateCountdowns();
 
   setupSectionBindings();
-  setupProfileControl();
-  setupSettingsControl();
-  setupViewsControl();
-  setupGlobalClickCloser();
-  setupImportExport();
-  setupCustomAdd();
+  setupProfileControlEntry();
+  setupSettingsControlEntry();
+  setupViewsControlEntry();
+  setupGlobalClickCloserEntry();
+  setupImportExportEntry();
+  setupCustomAddEntry();
 
   renderApp();
 }
@@ -258,17 +342,27 @@ export function initAppRoot() {
 async function fetchProfits() {
   const nodes = [...document.querySelectorAll('.item_profit[data-item][data-qty]')];
   if (!nodes.length) return;
-  const items = [...new Set(nodes.map((n) => n.dataset.item).filter(Boolean))];
+
+  const items = [...new Set(nodes.map((node) => node.dataset.item).filter(Boolean))];
+  if (!items.length) return;
+
   try {
-    const res = await fetch(`https://runescape.wiki/api.php?action=ask&query=[[Exchange:${items.join('||Exchange:')}]]|?Exchange:Price&format=json&origin=*`);
-    const results = (await res.json())?.query?.results || {};
+    const response = await fetch(
+      `https://runescape.wiki/api.php?action=ask&query=[[Exchange:${items.join('||Exchange:')}]]|?Exchange:Price&format=json&origin=*`
+    );
+    const json = await response.json();
+    const results = json?.query?.results || {};
+
     nodes.forEach((node) => {
-      const price = results[`Exchange:${node.dataset.item}`]?.printouts?.['Exchange:Price']?.[0]?.num;
-      node.textContent = price ? ` ~${Math.round(price * parseInt(node.dataset.qty, 10)).toLocaleString()} gp` : '';
+      const item = node.dataset.item;
+      const qty = parseInt(node.dataset.qty || '0', 10);
+      const price = results[`Exchange:${item}`]?.printouts?.['Exchange:Price']?.[0]?.num;
+
+      node.textContent = price ? ` ~${Math.round(price * qty).toLocaleString()} gp` : '';
     });
   } catch {
-    nodes.forEach((n) => n.textContent = '');
+    nodes.forEach((node) => {
+      node.textContent = '';
+    });
   }
 }
-
-export { cleanupReadyFarmingTimersFeature as cleanupReadyFarmingTimers, cleanupReadyCooldownsFeature as cleanupReadyCooldowns };

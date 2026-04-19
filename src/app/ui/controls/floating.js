@@ -1,18 +1,23 @@
 /**
  * Orchestration for floating UI panels (Profiles, Settings, Views)
  */
+
+let globalClickCloserBound = false;
+
 export function setupProfileControl(deps) {
   const {
     setupProfileControlFeature,
     renderApp,
     closeFloatingControls,
-    documentRef = document
+    documentRef = document,
+    windowRef = window
   } = deps;
 
   setupProfileControlFeature({
     renderApp,
     closeFloatingControls,
-    documentRef
+    documentRef,
+    windowRef
   });
 }
 
@@ -36,13 +41,15 @@ export function setupViewsControl(deps) {
     setupViewsControlFeature,
     renderApp,
     closeFloatingControls,
-    documentRef = document
+    documentRef = document,
+    windowRef = window
   } = deps;
 
   setupViewsControlFeature({
     renderApp,
     closeAllFloatingControls: closeFloatingControls,
-    documentRef
+    documentRef,
+    windowRef
   });
 }
 
@@ -54,8 +61,13 @@ export function closeFloatingControls(deps) {
 export function setupGlobalClickCloser(deps) {
   const { closeFloatingControls, documentRef = document } = deps;
 
-  documentRef.addEventListener('click', (e) => {
-    const target = e.target;
+  if (globalClickCloserBound) return;
+  globalClickCloserBound = true;
+
+  documentRef.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
     if (
       target.closest('#views-button') ||
       target.closest('#views-button-panel') ||
@@ -63,7 +75,11 @@ export function setupGlobalClickCloser(deps) {
       target.closest('#profile-button') ||
       target.closest('#profile-control') ||
       target.closest('#settings-button') ||
-      target.closest('#settings-control')
+      target.closest('#settings-control') ||
+      target.closest('#token-button') ||
+      target.closest('#token-modal') ||
+      target.closest('#custom_add_button') ||
+      target.closest('#custom-task-modal')
     ) {
       return;
     }
@@ -74,8 +90,8 @@ export function setupGlobalClickCloser(deps) {
 
 export function updateProfileHeader(deps) {
   const { updateProfileHeaderFeature, documentRef = document } = deps;
-  const el = documentRef.getElementById('profile-name');
-  if (el) {
-    updateProfileHeaderFeature(el);
+  const element = documentRef.getElementById('profile-name');
+  if (element) {
+    updateProfileHeaderFeature(element);
   }
 }

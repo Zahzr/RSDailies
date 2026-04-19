@@ -1,34 +1,28 @@
-export function formatMinutesCountdown(totalMinutes) {
-  const safeMinutes = Math.max(0, totalMinutes);
+function pad2(value) {
+  return String(Math.max(0, value)).padStart(2, '0');
+}
 
-  if (safeMinutes < 60) {
-    return `${safeMinutes}`;
-  }
+export function formatDurationMs(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
 
-  const days = Math.floor(safeMinutes / 1440);
-  const hours = Math.floor((safeMinutes % 1440) / 60);
-  const minutes = safeMinutes % 60;
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
   if (days > 0) {
-    return `${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    return `${days}d ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
   }
 
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
 }
 
-export function formatDurationMs(milliseconds) {
-  const clamped = Math.max(0, milliseconds);
-  return formatMinutesCountdown(Math.floor(clamped / 60000));
+export function formatMinutesAsDuration(minutes) {
+  const totalMinutes = Number.isFinite(minutes) ? minutes : parseInt(minutes, 10) || 0;
+  return formatDurationMs(totalMinutes * 60 * 1000);
 }
 
-export function formatDateTimeLocal(timestamp) {
-  const date = new Date(timestamp);
-  return date.toLocaleString([], {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
+export function formatSecondsAsDuration(seconds) {
+  const totalSeconds = Number.isFinite(seconds) ? seconds : parseInt(seconds, 10) || 0;
+  return formatDurationMs(totalSeconds * 1000);
 }

@@ -1,4 +1,16 @@
-import { getProfileLabel } from './model.js';
+function formatProfileRowLabel(name, currentProfile) {
+  const isActive = name === currentProfile;
+
+  if (name === 'default' && isActive) {
+    return 'Default - None';
+  }
+
+  if (isActive) {
+    return `${name} (active)`;
+  }
+
+  return name;
+}
 
 export function renderProfileRows({
   listElement,
@@ -18,7 +30,7 @@ export function renderProfileRows({
     const link = document.createElement('a');
     link.href = '#';
     link.className = 'profile-link';
-    link.textContent = getProfileLabel(name, currentProfile);
+    link.textContent = formatProfileRowLabel(name, currentProfile);
     link.addEventListener('click', (event) => {
       event.preventDefault();
       onSelectProfile?.(name);
@@ -42,8 +54,7 @@ export function renderProfileRows({
 export function renderProfileHeader(profileNameElement, currentProfile) {
   if (!profileNameElement) return;
 
-  profileNameElement.style.display = '';
-  profileNameElement.style.visibility = 'visible';
-  profileNameElement.textContent = currentProfile;
+  profileNameElement.style.display = 'none';
+  profileNameElement.style.visibility = 'hidden';
+  profileNameElement.textContent = currentProfile || 'default';
 }
-

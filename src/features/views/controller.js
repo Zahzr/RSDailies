@@ -1,5 +1,5 @@
-import { getPageMode, getViews, migrateLegacyViewModeToPageMode, setPageMode } from './model.js';
-import { positionPanel, renderViewsList } from './view.js';
+import { getPageMode, migrateLegacyViewModeToPageMode, setPageMode } from './model.js';
+import { positionPanel } from './view.js';
 
 export function closeFloatingControls(documentRef = document) {
   ['profile-control', 'settings-control', 'views-control'].forEach((id) => {
@@ -11,65 +11,200 @@ export function closeFloatingControls(documentRef = document) {
   });
 }
 
+function replaceNode(element) {
+  if (!element) return null;
+  const replacement = element.cloneNode(true);
+  element.replaceWith(replacement);
+  return replacement;
+}
+
+function setViewsButtonLabel(button, mode) {
+  if (!button) return;
+
+  const labelMap = {
+    overview: 'Overview',
+    all: 'Tasks',
+    gathering: 'Gathering',
+    rs3farming: 'Timers',
+    custom: 'Overview',
+    rs3daily: 'Tasks',
+    rs3weekly: 'Tasks',
+    rs3monthly: 'Tasks'
+  };
+
+  const textNode = button.querySelector('.expanding_text');
+  if (textNode) {
+    textNode.innerHTML = `&nbsp;${labelMap[mode] || 'Overview'}`;
+  }
+}
+
+function buildViewsDefinition() {
+  return [
+    {
+      heading: 'Home',
+      items: [{ mode: 'overview', label: 'Overview' }]
+    },
+    {
+      heading: 'Tasks',
+      items: [{ mode: 'all', label: 'Tasks' }]
+    },
+    {
+      heading: 'Gathering',
+      items: [{ mode: 'gathering', label: 'Gathering' }]
+    },
+    {
+      heading: 'Timers',
+      items: [{ mode: 'rs3farming', label: 'Farming' }]
+    }
+  ];
+}
+
+function renderViewsList(list, onSelectView) {
+  if (!list) return;
+  list.innerHTML = '';
+
+  buildViewsDefinition().forEach((group) => {
+    const heading = document.createElement('li');
+    heading.className = 'profile-row';
+    heading.style.fontWeight = '700';
+    heading.style.opacity = '0.9';
+    heading.style.paddingTop = '6px';
+    heading.textContent = group.heading;
+    list.appendChild(heading);
+
+    group.items.forEach((view) => {
+      const item = document.createElement('li');
+      item.className = 'profile-row';
+
+      const link = document.createElement('a');
+      link.href = '#';
+      link.className = 'profile-link';
+      link.textContent = view.label;
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        onSelectView?.(view.mode);
+      });
+
+      item.appendChild(link);
+      list.appendChild(item);
+    });
+  });
+}
+
+function upsertPrimaryNavLinks(documentRef, onSelectMode) {
+  const navList = documentRef.querySelector('#navbarSupportedContent .navbar-nav.me-auto');
+  if (!navList) return;
+
+  navList.querySelectorAll('[data-primary-page-link="true"]').forEach((node) => node.remove());
+
+  const resourcesItem = navList.querySelector('.nav-item.dropdown');
+
+  const definitions = [
+    { mode: 'all', label: 'Tasks' },
+    { mode: 'gathering', label: 'Gathering' },
+    { mode: 'rs3farming', label: 'Timers' }
+  ];
+
+  // DO NOT reverse order anymore
+
+  definitions.forEach((def) => {
+    const li = documentRef.createElement('li');
+    li.className = 'nav-item';
+    li.dataset.primaryPageLink = 'true';
+
+    const link = documentRef.createElement('a');
+    link.className = 'nav-link';
+    link.href = '#';
+    link.textContent = def.label;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      onSelectMode(def.mode);
+    });
+
+    li.appendChild(link);
+
+    if (resourcesItem) {
+      navList.insertBefore(li, resourcesItem);
+    } else {
+      navList.appendChild(li);
+    }
+  });
+}
+
 export function setupViewsControl({
-  renderApp = () => {},
+  renderApp = () => { },
   documentRef = document,
   windowRef = window,
   closeAllFloatingControls = () => closeFloatingControls(documentRef)
 } = {}) {
   migrateLegacyViewModeToPageMode();
 
-  const navbarButton = documentRef.getElementById('views-button');
   const panelButton = documentRef.getElementById('views-button-panel');
   const panel = documentRef.getElementById('views-control');
   const list = documentRef.getElementById('views-list');
 
-  navbarButton?.closest('li')?.setAttribute('style', 'display:none; visibility:hidden;');
+  if (!panelButton || !panel || !list) return;
 
-  const buttons = [panelButton].filter(Boolean);
-  if (!buttons.length || !panel || !list) return;
+  const button = replaceNode(panelButton);
 
-  function render() {
-    renderViewsList(list, getViews(), (mode) => {
-      setPageMode(mode);
-      closeAllFloatingControls();
-      renderApp();
-    });
+  const panelTitle = panel.querySelector('strong');
+  if (panelTitle && panelTitle.textContent.trim().toLowerCase() === 'views') {
+    panelTitle.remove();
   }
 
-  function openFrom(button) {
+  function applyMode(mode) {
+    setPageMode(mode);
+    setViewsButtonLabel(button, mode);
+
+    panel.style.display = 'none';
+    panel.style.visibility = 'hidden';
+    panel.dataset.display = 'none';
+
+    renderApp();
+  }
+
+  upsertPrimaryNavLinks(documentRef, applyMode);
+
+  const currentMode = 'overview';
+  setPageMode(currentMode);
+  setViewsButtonLabel(button, currentMode);
+
+  function renderList() {
+    renderViewsList(list, applyMode);
+  }
+
+  function openPanel() {
     closeAllFloatingControls();
+    renderList();
+
     panel.style.display = 'block';
     panel.style.visibility = 'visible';
     panel.dataset.display = 'block';
-    panel.dataset.anchor = button.id || '';
-    render();
+
     positionPanel(panel, button, windowRef);
   }
 
-  buttons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      event.preventDefault();
+  function closePanel() {
+    panel.style.display = 'none';
+    panel.style.visibility = 'hidden';
+    panel.dataset.display = 'none';
+  }
 
-      const visible = panel.dataset.display === 'block';
-      const sameAnchor = (panel.dataset.anchor || '') === (button.id || '');
-      if (visible && sameAnchor) {
-        closeAllFloatingControls();
-        return;
-      }
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-      openFrom(button);
-    });
+    const visible = panel.dataset.display === 'block';
+    if (visible) {
+      closePanel();
+    } else {
+      openPanel();
+    }
   });
 
-  windowRef.addEventListener('resize', () => {
-    if (panel.dataset.display !== 'block') return;
-    const anchorId = panel.dataset.anchor || '';
-    if (!anchorId) return;
-    const anchor = documentRef.getElementById(anchorId);
-    if (!anchor) return;
-    positionPanel(panel, anchor, windowRef);
+  documentRef.addEventListener('page-mode-sync', (event) => {
+    const mode = event?.detail?.mode || getPageMode();
+    setViewsButtonLabel(button, mode);
+    renderList();
   });
 }
-
-export { getPageMode, getViews, migrateLegacyViewModeToPageMode, setPageMode };
