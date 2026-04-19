@@ -155,15 +155,49 @@ function appendCustomEmptyPlaceholder(tbody) {
   const cell = document.createElement('td');
   cell.colSpan = 3;
   cell.style.background = '#2f353d';
-  cell.style.border = '1px solid #505963';
+  cell.style.borderTop = '1px solid #505963';
+  cell.style.borderBottom = '1px solid #505963';
+  cell.style.borderLeft = '14px solid #000';
+  cell.style.borderRight = '14px solid #000';
+  cell.style.backgroundClip = 'padding-box';
   cell.style.padding = '1rem';
   cell.style.textAlign = 'center';
   cell.style.color = '#d8dde3';
   cell.style.fontSize = '0.98rem';
+  cell.style.borderBottomLeftRadius = '14px';
+  cell.style.borderBottomRightRadius = '14px';
   cell.textContent = 'Click the add button to add a custom task!';
 
   row.appendChild(cell);
   tbody.appendChild(row);
+}
+
+function clearSectionEdgeMarkers(sectionKeys) {
+  sectionKeys.forEach((key) => {
+    const { container } = getSectionElements(key);
+    if (!container) return;
+    container.classList.remove('last-visible-section');
+    container.classList.remove('visible-open-section');
+    container.classList.remove('visible-hidden-section');
+  });
+}
+
+function markVisibleSectionEdges(sectionKeys) {
+  clearSectionEdgeMarkers(sectionKeys);
+
+  const visibleContainers = sectionKeys
+    .map((key) => getSectionElements(key).container)
+    .filter((container) => container && container.style.display !== 'none');
+
+  if (visibleContainers.length === 0) return;
+
+  visibleContainers.forEach((container) => {
+    const isHidden = container.dataset.hide === 'hide';
+    container.classList.add(isHidden ? 'visible-hidden-section' : 'visible-open-section');
+  });
+
+  const lastVisible = visibleContainers[visibleContainers.length - 1];
+  lastVisible.classList.add('last-visible-section');
 }
 
 export function renderApp(deps) {
@@ -223,14 +257,17 @@ export function renderApp(deps) {
 
           const completed = load('completed:custom', {});
           const hiddenRows = load('hiddenRows:custom', {});
+          const removedRows = load('removedRows:custom', {});
           const notified = load('notified:custom', {});
 
           delete completed[task.id];
           delete hiddenRows[task.id];
+          delete removedRows[task.id];
           delete notified[task.id];
 
           save('completed:custom', completed);
           save('hiddenRows:custom', hiddenRows);
+          save('removedRows:custom', removedRows);
           save('notified:custom', notified);
 
           renderApp(deps);
@@ -305,7 +342,7 @@ export function renderApp(deps) {
     const sectionTasks = key === 'rs3farming' ? sections.rs3farming : sections[key];
     const storedHidden = !!load(`hideSection:${key}`, false);
     const showHidden = !!load(`showHidden:${key}`, false);
-    const hidden = mode === 'overview' && key === 'custom' ? false : storedHidden;
+    const hidden = storedHidden;
     const visibleByMode = setSectionModeVisibility(key, mode);
 
     if (!visibleByMode) return;
@@ -376,6 +413,7 @@ export function renderApp(deps) {
   });
 
   movePenguinsBlockToBottom();
+  markVisibleSectionEdges(sectionKeys);
 
   renderOverviewPanel(sections, {
     getPageMode,

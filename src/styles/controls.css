@@ -150,14 +150,26 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
     color: #fff;
 }
 
+/* stable row action layout to prevent hover jitter */
+.activity_table td.activity_name {
+    position: relative;
+    overflow: visible;
+}
+
 .activity_table td.activity_name button.pin-button,
 .activity_table td.activity_name button.hide-button,
 .activity_table td.activity_name button.delete-button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     z-index: 120;
+    transition: opacity 120ms ease, visibility 120ms ease;
 }
 
 .activity_table td.activity_name button.hide-button {
@@ -166,7 +178,6 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 
 .activity_table td.activity_name button.pin-button {
     right: 42px;
-    top: 50%;
 }
 
 .activity_table td.activity_name button.delete-button {
@@ -179,7 +190,21 @@ div.table_container[data-show-hidden="true"] .show_hidden_button {
 .activity_table tbody tr:focus-within td.activity_name button.pin-button,
 .activity_table tbody tr:focus-within td.activity_name button.hide-button,
 .activity_table tbody tr:focus-within td.activity_name button.delete-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* do not let hover outlines/underlines create layout jumps */
+.activity_table td.activity_name a,
+.activity_table td.activity_name a:hover,
+.activity_table td.activity_name a:focus,
+.activity_table td.activity_name a:active {
+    text-decoration-thickness: 0;
+    text-underline-offset: 0;
+}
+
+.activity_table tbody tr,
+.activity_table tbody td {
+    will-change: auto;
 }

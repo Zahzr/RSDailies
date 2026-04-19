@@ -1,5 +1,7 @@
 /**
- * Controls for individual sections (reset, visibility, restore, etc.)
+ * Controls for individual sections (reset, visibility, sort, etc.)
+ * Parent section headers should NOT inject inline restore UI.
+ * Restore belongs only to subgroup header dropdowns in src/ui/rows/headers.js.
  */
 
 function rebindButton(documentRef, id, onClick) {
@@ -18,12 +20,7 @@ function rebindButton(documentRef, id, onClick) {
   return replacement;
 }
 
-function ensureRestoreControls(sectionKey, {
-  renderApp,
-  getSectionState,
-  saveSectionValue,
-  documentRef = document
-}) {
+function removeLegacyRestoreControls(sectionKey, { documentRef = document }) {
   const hideBtn = documentRef.getElementById(`${sectionKey}_hide_button`);
   if (!hideBtn) return;
 
@@ -31,54 +28,6 @@ function ensureRestoreControls(sectionKey, {
   if (!controlsHost) return;
 
   controlsHost.querySelectorAll(`[data-restore-ui="${sectionKey}"]`).forEach((node) => node.remove());
-
-  const hiddenRows = getSectionState(sectionKey).hiddenRows || {};
-  const entries = Object.entries(hiddenRows).filter(([, value]) => !!value);
-
-  if (entries.length === 0) return;
-
-  const select = documentRef.createElement('select');
-  select.dataset.restoreUi = sectionKey;
-  select.className = 'form-select form-select-sm';
-  select.style.width = 'auto';
-  select.style.maxWidth = '220px';
-  select.style.display = 'inline-block';
-
-  const placeholder = documentRef.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = 'Restore removed...';
-  select.appendChild(placeholder);
-
-  entries.forEach(([taskId, label]) => {
-    const option = documentRef.createElement('option');
-    option.value = taskId;
-    option.textContent = typeof label === 'string' ? label : taskId;
-    select.appendChild(option);
-  });
-
-  const restoreBtn = documentRef.createElement('button');
-  restoreBtn.type = 'button';
-  restoreBtn.dataset.restoreUi = sectionKey;
-  restoreBtn.className = 'btn btn-secondary btn-sm';
-  restoreBtn.textContent = '↺ Restore';
-
-  restoreBtn.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const selected = select.value;
-    if (!selected) return;
-
-    const state = getSectionState(sectionKey);
-    const nextHiddenRows = { ...(state.hiddenRows || {}) };
-    delete nextHiddenRows[selected];
-
-    saveSectionValue(sectionKey, 'hiddenRows', nextHiddenRows);
-    renderApp();
-  });
-
-  controlsHost.insertBefore(restoreBtn, hideBtn);
-  controlsHost.insertBefore(select, restoreBtn);
 }
 
 export function bindSectionControls(sectionKey, opts = { sortable: false }, deps) {
@@ -89,6 +38,8 @@ export function bindSectionControls(sectionKey, opts = { sortable: false }, deps
     resetSectionView,
     documentRef = document
   } = deps;
+
+  removeLegacyRestoreControls(sectionKey, { documentRef });
 
   rebindButton(documentRef, `${sectionKey}_reset_button`, () => {
     resetSectionView(sectionKey);
@@ -119,11 +70,4 @@ export function bindSectionControls(sectionKey, opts = { sortable: false }, deps
       renderApp();
     });
   }
-
-  ensureRestoreControls(sectionKey, {
-    renderApp,
-    getSectionState,
-    saveSectionValue,
-    documentRef
-  });
 }

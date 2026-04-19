@@ -34,11 +34,44 @@ function cloneTimers(load) {
   return { ...getFarmingTimers(load) };
 }
 
+function clearChildProgressForTimer(taskId, { load, save }) {
+  if (!taskId) return false;
+
+  const prefix = `rs3farming::${taskId}::`;
+  const completed = { ...(load('completed:rs3farming', {}) || {}) };
+  const hiddenRows = { ...(load('hiddenRows:rs3farming', {}) || {}) };
+
+  let changed = false;
+
+  Object.keys(completed).forEach((key) => {
+    if (key.startsWith(prefix)) {
+      delete completed[key];
+      changed = true;
+    }
+  });
+
+  Object.keys(hiddenRows).forEach((key) => {
+    if (key.startsWith(prefix)) {
+      delete hiddenRows[key];
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    save('completed:rs3farming', completed);
+    save('hiddenRows:rs3farming', hiddenRows);
+  }
+
+  return changed;
+}
+
 export function startFarmingTimer(task, { load, save }) {
   if (!task?.id) return false;
 
   const minutes = getTimerMinutes(task);
   if (!minutes || minutes < 1) return false;
+
+  clearChildProgressForTimer(task.id, { load, save });
 
   const startedAt = getNow();
   const readyAt = startedAt + minutes * 60 * 1000;
@@ -60,11 +93,15 @@ export function clearFarmingTimer(taskId, { load, save }) {
   if (!taskId) return false;
 
   const timers = cloneTimers(load);
-  if (!timers[taskId]) return false;
+  const hadTimer = !!timers[taskId];
 
-  delete timers[taskId];
-  saveFarmingTimers(timers, save);
-  return true;
+  if (hadTimer) {
+    delete timers[taskId];
+    saveFarmingTimers(timers, save);
+  }
+
+  const clearedChildren = clearChildProgressForTimer(taskId, { load, save });
+  return hadTimer || clearedChildren;
 }
 
 export function cleanupReadyFarmingTimers({ load, save }) {
@@ -74,14 +111,17 @@ export function cleanupReadyFarmingTimers({ load, save }) {
 
   Object.keys(timers).forEach((taskId) => {
     const entry = timers[taskId];
+
     if (!entry || !Number.isFinite(entry.readyAt)) {
       delete timers[taskId];
+      clearChildProgressForTimer(taskId, { load, save });
       changed = true;
       return;
     }
 
     if (entry.readyAt <= now) {
       delete timers[taskId];
+      clearChildProgressForTimer(taskId, { load, save });
       changed = true;
     }
   });

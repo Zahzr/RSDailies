@@ -95,6 +95,59 @@ function hideRowActionsForOverview(row) {
   });
 }
 
+function isFarmingChildStorageId(sectionKey, taskId, task) {
+  return (
+    sectionKey === 'rs3farming' &&
+    typeof taskId === 'string' &&
+    taskId.startsWith('rs3farming::') &&
+    taskId.split('::').length >= 3 &&
+    !task?.isTimerParent
+  );
+}
+
+function getHiddenRows(sectionKey, load) {
+  return { ...(load(`hiddenRows:${sectionKey}`, {}) || {}) };
+}
+
+function saveHiddenRows(sectionKey, value, save) {
+  save(`hiddenRows:${sectionKey}`, value);
+}
+
+function getRemovedRows(sectionKey, load) {
+  return { ...(load(`removedRows:${sectionKey}`, {}) || {}) };
+}
+
+function saveRemovedRows(sectionKey, value, save) {
+  save(`removedRows:${sectionKey}`, value);
+}
+
+function hideCompletedRow(sectionKey, taskId, task, { load, save }) {
+  const hiddenRows = getHiddenRows(sectionKey, load);
+  hiddenRows[taskId] = task?.name || taskId;
+  saveHiddenRows(sectionKey, hiddenRows, save);
+}
+
+function unhideCompletedRow(sectionKey, taskId, { load, save }) {
+  const hiddenRows = getHiddenRows(sectionKey, load);
+  delete hiddenRows[taskId];
+  saveHiddenRows(sectionKey, hiddenRows, save);
+}
+
+function removeRowViaX(sectionKey, taskId, task, { load, save }) {
+  const hiddenRows = getHiddenRows(sectionKey, load);
+  const removedRows = getRemovedRows(sectionKey, load);
+
+  hiddenRows[taskId] = task?.name || taskId;
+  removedRows[taskId] = task?.name || taskId;
+
+  saveHiddenRows(sectionKey, hiddenRows, save);
+  saveRemovedRows(sectionKey, removedRows, save);
+}
+
+function shouldIgnoreToggleClick(event) {
+  return !!event.target.closest('a, button, select, option, input, textarea, .pin-button, .hide-button, .delete-button, .mini-collapse-btn');
+}
+
 export function persistOrderFromTable(sectionKey, { getTableId, save }) {
   if (!getTableId || !save) return;
 
@@ -254,14 +307,17 @@ export function createBaseRow(sectionKey, task, options = {}) {
 
           const completed = load('completed:custom', {});
           const hiddenRows = load('hiddenRows:custom', {});
+          const removedRows = load('removedRows:custom', {});
           const notified = load('notified:custom', {});
 
           delete completed[task.id];
           delete hiddenRows[task.id];
+          delete removedRows[task.id];
           delete notified[task.id];
 
           save('completed:custom', completed);
           save('hiddenRows:custom', hiddenRows);
+          save('removedRows:custom', removedRows);
           save('notified:custom', notified);
 
           const pins = { ...getOverviewPinsFeature(load) };
@@ -269,10 +325,7 @@ export function createBaseRow(sectionKey, task, options = {}) {
           saveOverviewPinsFeature(pins, save);
         } else {
           hideTask(sectionKey, taskId);
-
-          const hiddenRows = { ...(load(`hiddenRows:${sectionKey}`, {}) || {}) };
-          hiddenRows[taskId] = task.name || taskId;
-          save(`hiddenRows:${sectionKey}`, hiddenRows);
+          removeRowViaX(sectionKey, taskId, task, { load, save });
 
           const pins = { ...getOverviewPinsFeature(load) };
           const directPinId = buildPinId(sectionKey, task, {
@@ -289,6 +342,7 @@ export function createBaseRow(sectionKey, task, options = {}) {
 
   const toggleTask = (event) => {
     event.preventDefault();
+    if (shouldIgnoreToggleClick(event)) return;
 
     const state = getTaskState(sectionKey, taskId, task);
     if (state === 'hide') return;
@@ -304,17 +358,49 @@ export function createBaseRow(sectionKey, task, options = {}) {
     }
 
     if (task.cooldownMinutes && !task.isChildRow) {
-      if (state === 'true' || state === 'hide') return;
+      if (state === 'running') return;
+
+      if (state === 'true') {
+        setTaskCompleted(sectionKey, taskId, false);
+        unhideCompletedRow(sectionKey, taskId, { load, save });
+        renderApp();
+        return;
+      }
+
       startCooldown(taskId, task.cooldownMinutes);
       setTaskCompleted(sectionKey, taskId, true);
+      hideCompletedRow(sectionKey, taskId, task, { load, save });
       renderApp();
       return;
     }
 
-    setTaskCompleted(sectionKey, taskId, state !== 'true');
+    if (isFarmingChildStorageId(sectionKey, taskId, task)) {
+      if (state === 'true') {
+        setTaskCompleted(sectionKey, taskId, false);
+        unhideCompletedRow(sectionKey, taskId, { load, save });
+        renderApp();
+        return;
+      }
+
+      setTaskCompleted(sectionKey, taskId, true);
+      hideCompletedRow(sectionKey, taskId, task, { load, save });
+      renderApp();
+      return;
+    }
+
+    if (state === 'true') {
+      setTaskCompleted(sectionKey, taskId, false);
+      unhideCompletedRow(sectionKey, taskId, { load, save });
+      renderApp();
+      return;
+    }
+
+    setTaskCompleted(sectionKey, taskId, true);
+    hideCompletedRow(sectionKey, taskId, task, { load, save });
     renderApp();
   };
 
+  nameCell.addEventListener('click', toggleTask);
   notesCell.addEventListener('click', toggleTask);
   statusCell.addEventListener('click', toggleTask);
 

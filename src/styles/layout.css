@@ -1,11 +1,40 @@
 .table_container {
-    padding-top: 72px;
-    margin-top: -72px;
+    margin-top: 0;
+    padding-top: 0;
     margin-bottom: 44px;
 }
 
 div.table_container[data-hide="hide"] table tbody {
     display: none;
+}
+
+.table_container .activity_table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: 0 0 14px 14px;
+}
+
+.table_container .activity_table thead,
+.table_container .activity_table thead tr,
+.table_container .activity_table thead td,
+.table_container .activity_table thead .header_like_inner,
+.table_container .activity_table thead .header_like_name {
+    border-radius: 0 !important;
+}
+
+.table_container .activity_table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 14px;
+}
+
+.table_container .activity_table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 14px;
+}
+
+.table_container .activity_table tbody tr:last-child td {
+    overflow: hidden;
 }
 
 .overview_panel {

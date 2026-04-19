@@ -28,6 +28,31 @@ function saveSectionValue(sectionKey, key, value, save) {
   save(`${key}:${sectionKey}`, value);
 }
 
+function restoreTaskInSection(sectionKey, taskId, { load, save }) {
+  const section = getSectionState(sectionKey, load);
+  const completed = { ...(section.completed || {}) };
+  const hiddenRows = { ...(section.hiddenRows || {}) };
+
+  let changed = false;
+
+  if (completed[taskId]) {
+    delete completed[taskId];
+    changed = true;
+  }
+
+  if (hiddenRows[taskId]) {
+    delete hiddenRows[taskId];
+    changed = true;
+  }
+
+  if (changed) {
+    saveSectionValue(sectionKey, 'completed', completed, save);
+    saveSectionValue(sectionKey, 'hiddenRows', hiddenRows, save);
+  }
+
+  return changed;
+}
+
 export function startCooldown(taskId, minutes, { load, save }) {
   if (!taskId) return false;
 
@@ -86,19 +111,13 @@ export function cleanupReadyCooldowns({ load, save }) {
   let changed = false;
 
   Object.entries(cooldowns).forEach(([taskId, state]) => {
-    if (!state || state.readyAt > Date.now()) return;
+    if (!state || !state.readyAt || state.readyAt > Date.now()) return;
 
     delete cooldowns[taskId];
     changed = true;
 
     sections.forEach((sectionKey) => {
-      const section = getSectionState(sectionKey, load);
-      const completed = { ...(section.completed || {}) };
-
-      if (completed[taskId]) {
-        delete completed[taskId];
-        saveSectionValue(sectionKey, 'completed', completed, save);
-      }
+      restoreTaskInSection(sectionKey, taskId, { load, save });
     });
   });
 
