@@ -64,8 +64,13 @@ The current site focuses on RuneScape 3 tracking, with OSRS expansion planned. I
 
 ## 🖼️ Preview
 
-![Landing](./assets/screenshots/landing.png)
-![Tracker](./assets/screenshots/tracker.png)
+### Landing Page
+
+![Landing](./assets/img/landing.png)
+
+### Tracker
+
+![Tracker](./assets/img/tracker.png)
 
 ---
 
