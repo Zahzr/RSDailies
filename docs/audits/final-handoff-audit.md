@@ -1,10 +1,14 @@
-# Pass 11 Final Handoff Audit
+# RSDailies Handoff Notes
 
-This is the final checkpoint for the new-chat Dailyscape3 micro-pass sequence.
+This document records the current clean handoff state for the deployed RSDailies project.
 
-## Status
+---
 
-The project is ready for local terminal verification from the repository root:
+## Current Status
+
+The project is ready to run locally from the repository root.
+
+Recommended validation commands:
 
 ```bash
 npm install
@@ -13,40 +17,95 @@ npm run build
 npm run preview
 ```
 
-## Verified in this pass
+---
 
-- Import audit script completes successfully.
-- Topology audit script completes successfully.
-- Removed runtime/UI paths are blocked by topology checks.
-- Root-level historical clutter has been removed.
-- The handoff zip was integrity-tested after packaging.
-
-## Current project shape
+## Current Project Shape
 
 ```text
-assets/      Static public assets
-src/app/     Boot, composition, and runtime orchestration
-src/core/    Non-visual shared logic
-src/data/    Game configuration/data shells
-src/features/ Domain behavior and feature configuration
-src/ui/      All visual rendering, pages, components, primitives, and styles
-tools/       Audit and developer verification scripts
-docs/        Current architecture/reference/handoff documentation only
+assets/       Static public assets
+docs/         Current architecture, reference, and handoff documentation
+src/app/      Boot, composition, runtime wiring, and orchestration
+src/core/     Shared non-visual utilities
+src/data/     Game data and configuration shells
+src/features/ Feature/domain behavior and configuration
+src/ui/       Pages, components, primitives, app shell HTML, and styles
+tools/        Audit and verification scripts
 ```
 
-## Clean handoff rules
+---
 
-- Do not restore removed compatibility paths.
-- Do not add re-export surfaces just to keep removed paths alive.
-- Keep UI implementation under `src/ui/`.
-- Keep domain behavior under `src/features/`.
-- Keep non-visual shared logic under `src/core/`.
-- Keep static game data/configuration under `src/data/` or feature `config/` folders.
-- Keep future passes small and zip-checkpointed before broad visual comparison work.
+## Verification Scripts
 
-## Next local validation step
+```bash
+npm run audit:imports
+npm run audit:topology
+npm run audit
+```
 
-After extracting this zip, run the commands below from the extracted root folder:
+The audits are intended to catch broken imports, removed path usage, and topology issues before changes are committed.
+
+---
+
+## Git Commit Checklist
+
+Before committing:
+
+```bash
+npm run audit
+npm run build
+```
+
+Then:
+
+```bash
+git status
+git add .
+git commit -m "Update RSDailies documentation"
+git push
+```
+
+---
+
+## Files That Should Not Be Committed
+
+Do not commit:
+
+```text
+node_modules/
+dist/
+```
+
+The file below is only needed if Google Search Console HTML verification is actively being used:
+
+```text
+googlec7c393bb3b6c202e.html
+```
+
+If that verification method is not needed, it can be deleted. The current `.gitignore` already includes rules for it.
+
+---
+
+## Maintenance Rules
+
+- Keep UI in `src/ui/`.
+- Keep reusable non-visual helpers in `src/core/`.
+- Keep feature/domain behavior in `src/features/`.
+- Keep game/task data in `src/data/`.
+- Keep public images/icons in `assets/`.
+- Keep documentation current and concise.
+- Run audits after structural changes.
+
+# RSDailies Handoff Notes
+
+This document records the current clean handoff state for the deployed RSDailies project.
+
+---
+
+## Current Status
+
+The project is ready to run locally from the repository root.
+
+Recommended validation commands:
 
 ```bash
 npm install
@@ -55,4 +114,80 @@ npm run build
 npm run preview
 ```
 
-Then compare the preview against the last known-good visual baseline before starting any new visual restoration or enhancement passes.
+---
+
+## Current Project Shape
+
+```text
+assets/       Static public assets
+docs/         Current architecture, reference, and handoff documentation
+src/app/      Boot, composition, runtime wiring, and orchestration
+src/core/     Shared non-visual utilities
+src/data/     Game data and configuration shells
+src/features/ Feature/domain behavior and configuration
+src/ui/       Pages, components, primitives, app shell HTML, and styles
+tools/        Audit and verification scripts
+```
+
+---
+
+## Verification Scripts
+
+```bash
+npm run audit:imports
+npm run audit:topology
+npm run audit
+```
+
+The audits are intended to catch broken imports, removed path usage, and topology issues before changes are committed.
+
+---
+
+## Git Commit Checklist
+
+Before committing:
+
+```bash
+npm run audit
+npm run build
+```
+
+Then:
+
+```bash
+git status
+git add .
+git commit -m "Update RSDailies documentation"
+git push
+```
+
+---
+
+## Files That Should Not Be Committed
+
+Do not commit:
+
+```text
+node_modules/
+dist/
+```
+
+The file below is only needed if Google Search Console HTML verification is actively being used:
+
+```text
+googlec7c393bb3b6c202e.html
+```
+
+If that verification method is not needed, it can be deleted. The current `.gitignore` already includes rules for it.
+
+---
+
+## Maintenance Rules
+
+- Keep UI in `src/ui/`.
+- Keep reusable non-visual helpers in `src/core/`.
+- Keep feature/domain behavior in `src/features/`.
+- Keep game/task data in `src/data/`.
+- Keep public images/icons in `assets/`.
+- Keep documentation current and concise.
+- Run audits after structural changes.

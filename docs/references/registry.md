@@ -1,82 +1,109 @@
-# Dailyscape3: Centralized Reference Registry
+# RSDailies Reference Registry
 
-This document serves as the **Single Source of Truth** for all external references, citations, and dependencies utilized within the Dailyscape3 project.
+This document tracks external references and project integration points used by RSDailies.
 
----
-
-## 🏛 UI & Framework Assets
-**Justification**: External libraries used to provide core responsiveness, aesthetics, and interactive components.
-
-- **Feature**: Core Styling & Layout
-  - **Service Type**: Content Delivery Network (JSDelivr)
-  - **File**: `src/ui/app-shell/html/index.html`
-  - **Citation**: [Bootstrap CSS v5.1.3](https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css)
-  - **Usage**: Provides the CSS framework, grid system, and standard dark-mode utility classes.
-
-- **Feature**: Interactive Controls
-  - **Service Type**: Content Delivery Network (JSDelivr)
-  - **File**: `src/ui/app-shell/html/index.html`
-  - **Citation**: [Bootstrap JS Bundle v5.1.3](https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js)
-  - **Usage**: Handles modal behavior, dropdown logic, and collapse events for the navbar.
+Keep this file updated when adding or removing outside services, CDN links, community URLs, or API references.
 
 ---
 
-## 🔗 Community & Support Hubs
-**Justification**: Direct links to community resources and official support channels for the RS3 player base.
+## UI and Framework Assets
 
-- **Feature**: Project Support
-  - **Service Type**: Discord
-  - **File**: `src/ui/app-shell/html/footer.html`
-  - **Citation**: [Dailyscape Support Discord](https://discord.gg/bH85NeVv2p)
-  - **Usage**: Primary channel for user feedback, bug reporting, and community interaction.
+| Purpose | Location | Reference |
+|---|---|---|
+| Bootstrap CSS | `src/ui/app-shell/html/index.html` | `https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css` |
+| Bootstrap JS bundle | `src/ui/app-shell/html/index.html` | `https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js` |
 
-- **Feature**: Community Navigation
-  - **Service Type**: Discord
-  - **File**: `src/ui/app-shell/html/navbar.html`
-  - **Citations**:
-    - [Official RuneScape](https://discord.gg/rs)
-    - [Achievement Help](https://discord.gg/ahelp)
-    - [Deep Sea Fishing](https://discord.gg/whirlpooldnd)
-    - [Player Owned Farms](https://discord.gg/nnrmtTU)
-  - **Usage**: Quick-access links to specialized RS3 community servers for player assistance.
+Bootstrap is used for base layout behavior, modal support, dropdown behavior, and general responsive UI utilities.
 
 ---
 
-## 📚 Domain Knowledge & Data Sources
-**Justification**: authoritative sources for game data, task logic, and live economy information.
+## Project and Community Links
 
-- **Feature**: Player Optimization
-  - **Service Type**: Wiki / Documentation
-  - **File**: `src/ui/app-shell/html/navbar.html`
-  - **Citations**:
-    - [Money Making Guide](https://runescape.wiki/w/Money_making_guide)
-    - [Distractions & Diversions](https://runescape.wiki/w/Distractions_and_Diversions)
-    - [PVM Encyclopedia](https://pvme.github.io)
-    - [Runepixels](https://runepixels.com/)
-  - **Usage**: Encyclopedic references for optimizing daily activities and tracking player progress.
-
-- **Feature**: Live Profit Calculations
-  - **Service Type**: MediaWiki API
-  - **File**: `src/app/runtime/app-core/runtime-api.js`
-  - **Citation**: [RuneScape Wiki API (Ask)](https://runescape.wiki/api.php?action=ask)
-  - **Usage**: Programmatic fetching of Grand Exchange prices via the `[[Exchange:Item]]` query.
-  - **Justification**: Ensures profit estimates in the task tables reflect the current game economy.
+| Purpose | Location | Reference |
+|---|---|---|
+| Project repository | Navbar/footer links where used | `https://github.com/rsdailies/RSDailies` |
+| Discord/community link | Navbar/footer links where used | Discord invite configured in the app shell |
 
 ---
 
-## Project Infrastructure
-**Justification**: Canonical notes for project maintenance and site integration.
+## RuneScape References
 
-- **Feature**: Task Reset Logic
-  - **Service Type**: Reset Countdown (Logic)
-  - **File**: `src/core/time/boundaries.js`
-  - **Justification**: Reset boundaries align strictly with the Jagex UTC server reset (00:00 UTC).
+| Purpose | Location | Reference |
+|---|---|---|
+| RuneScape Wiki | Navbar/reference links where used | `https://runescape.wiki/` |
+| Money making guide | Navbar/reference links where used | `https://runescape.wiki/w/Money_making_guide` |
+| Distractions and Diversions | Navbar/reference links where used | `https://runescape.wiki/w/Distractions_and_Diversions` |
+| PVM Encyclopedia | Navbar/reference links where used | `https://pvme.github.io` |
+| Runepixels | Navbar/reference links where used | `https://runepixels.com/` |
+
+These references support player navigation, planning, and task research.
+
 ---
 
-## 🛡 Reference Integrity Rule
+## API and Live Data Notes
 
-> [!IMPORTANT]
-> **Governance Standard**: Any future AI-assisted or manual edits that introduce a new external script, CDN link, or authoritative URL **MUST** be recorded in this registry immediately. 
-> 1. Identify the **Feature** it supports.
-> 2. Document the **Service Type** (CDN, API, Discord, etc).
-> 3. Provide a **Justification** for "why" the external dependency was added.
+| Purpose | Location | Notes |
+|---|---|---|
+| Grand Exchange / wiki-backed item data | `src/core/api/`, `src/app/runtime/app-core/` | UI should call app/domain services instead of fetching directly from UI renderers. |
+| Penguin data proxy | `vite.config.js`, `src/features/penguins/` | Development/preview proxy supports the configured penguin endpoint path. |
+
+---
+
+## Static Assets
+
+Current public assets are stored under:
+
+```text
+assets/img/
+├── dailyscape.png
+├── dailyscape.svg
+├── dailyscapebig.png
+├── discord.png
+└── github.png
+```
+
+---
+
+## Registry Rule
+
+When adding a new external dependency or URL:
+
+1. Add the reference here.
+2. Include where it is used.
+3. Explain what part of the app it supports.
+4. Avoid adding external services directly inside UI files unless they are static links or already part of the app shell.
+
+---
+
+## 🧭 What This Document Is For
+
+This registry serves as the **Single Source of Truth** for external dependencies, ensuring long-term maintainability and preventing "drift" in future development cycles.
+
+- **Stops random folder sprawl** - keeps files in predictable places
+- **Guides AI edits** - ensures AI knows where each piece of code belongs
+- **Sets boundaries** - clear rules about what belongs in UI vs. features vs. core
+- **Supports staged improvements** - allows targeted cleanup passes without breaking everything
+- **Keeps maintenance clear** - easy to know where to look when bugs or missing features pop up
+
+---
+
+## 🛠 How To Use This Today
+
+When you add or modify code:
+
+1. Ask yourself:
+   - Is this UI or logic?
+   - Is it reusable or feature-specific?
+   - Does it belong in `ui`, `features`, or `core`?
+2. Update the appropriate file
+3. Verify the change works
+4. If the change is significant, **update this document with the new structure**
+
+---
+
+## ⚠️ What This Document Is Not For
+
+- **Not a style guide** - use `src/ui/styles/` for that
+- **Not a full API reference** - use code comments and JSDoc
+- **Not a design spec** - use `docs/design` if you want visual mockups
+- **Not a strict template** - you can add folders inside these paths (e.g. `src/ui/components/tracker/rows/columns/types/`)

@@ -1,89 +1,196 @@
-# Dailyscape3 Authority Map
+# RSDailies Architecture Authority Map
 
-This file is the architecture contract for staged cleanup passes. It exists so future AI edits do not improvise folder ownership.
+This document defines the current folder ownership rules for the RSDailies codebase.
 
-## Top-level authority
+The goal is to keep the tracker easy to maintain by making each top-level folder responsible for one clear part of the app.
 
-```text
-assets/      Static public files only: logos, icons, images, favicons.
-docs/        Human-readable audits, plans, references, and pass reports.
-src/app/     App boot and runtime composition only. No visual components. No domain calculators.
-src/core/    Non-visual logic, hooks, state, storage, validation, debugging, API clients, and calculators.
-src/data/    Data/configuration only. No rendering logic. No DOM access.
-src/ui/      All visual output, layout, CSS, primitives, pages, app shell, and feature UI.
-tools/       Developer verification tools only.
+---
+
+## Top-Level Ownership
+
+| Path | Owns |
+|---|---|
+| `assets/` | Static images, icons, and public assets served by Vite. |
+| `docs/` | Current architecture, reference, and handoff documentation. |
+| `src/app/` | App boot, composition, runtime wiring, scheduling, and orchestration. |
+| `src/core/` | Shared non-visual utilities, storage, state, time helpers, IDs, API clients, and calculators. |
+| `src/data/` | Game data and configuration shells for RS3 and OSRS. |
+| `src/features/` | Feature/domain logic, controllers, state, calculations, and configuration. |
+| `src/ui/` | All visual rendering, pages, components, primitives, HTML partials, and CSS. |
+| `tools/` | Developer audit and verification scripts. |
+
+---
+
+## Boundary Rules
+
+1. UI rendering belongs in `src/ui/`.
+2. Shared non-visual helpers belong in `src/core/`.
+3. Feature/domain behavior belongs in `src/features/`.
+4. Game and task data belongs in `src/data/` or feature config folders.
+5. Static images and icons belong in `assets/`.
+6. Developer checks belong in `tools/`.
+7. Documentation should stay current and useful.
+8. Removed compatibility paths should not be recreated.
+9. Broad rewrites should be avoided unless they are intentionally planned and verified.
+
+---
+
+## Runtime Flow
+
+```mermaid
+flowchart TD
+    A[src/app boot] --> B[src/app runtime]
+    B --> C[src/features domain logic]
+    C --> D[src/data configuration]
+    B --> E[src/ui pages and components]
+    E --> F[src/ui primitives and styles]
+    B --> G[src/core storage/state/time/api utilities]
 ```
 
-## Non-negotiable boundaries
+---
 
-1. UI code belongs under `src/ui/`.
-2. Non-visual logic belongs under `src/core/`.
-3. Reusable stateful non-visual hooks belong under `src/core/hooks/` once introduced.
-4. Static configuration belongs under `src/data/` or a feature-specific config folder until migrated.
-5. Do not introduce a theme engine. Color customization should stay in explicit rgba token/config files.
-6. Do not reintroduce `src/shared/` or `src/ui/shared/`.
-7. Do not move everything in one pass. Each pass should produce a buildable ZIP checkpoint.
+## Tracker Rendering Flow
 
-## Tracker architecture target
-
-Tracker rendering should follow a pipeline:
-
-```text
-data/config -> normalize/build pipeline -> parent system -> sub-parent system -> row system -> column system -> primitive UI
+```mermaid
+flowchart LR
+    A[Data/config] --> B[Feature logic]
+    B --> C[Section renderer]
+    C --> D[Parent header]
+    D --> E[Subparent header]
+    E --> F[Rows]
+    F --> G[Columns]
+    G --> H[UI primitives]
 ```
 
-Each system should use consistent file roles where applicable:
+---
+
+## Tracker UI Systems
+
+Tracker UI is organized under:
 
 ```text
-*.render.js      DOM/markup/render assembly only
-*.logic.js       local non-render decision logic only
-*.styles.css     CSS only
-*.constants.js   names, selectors, options, registries
-hooks/           stateful helpers for that system only, or core hooks if reusable
-utils/           pure helpers for that system only
+src/ui/components/tracker/
+├── farming/
+├── parents/
+├── rows/
+├── sections/
+├── subparents/
+└── tables/
 ```
 
-## Column system target
-
-Columns should be centralized as a single system, not one folder per physical column count:
-
-```text
-src/ui/components/tracker/rows/columns/
-  index.js
-  column.render.js
-  column.logic.js
-  column.styles.css
-  column.constants.js
-  types/
-  hooks/
-  utils/
-```
-
-Rows import the column system; rows should not know individual column internals.
-
-## Row system target
-
-Rows should also be a system, not a single overloaded handler:
+### Rows
 
 ```text
 src/ui/components/tracker/rows/
-  index.js
-  row.render.js
-  row.logic.js
-  row.styles.css
-  row.constants.js
-  types/
-  hooks/
-  utils/
-  columns/
+├── row.constants.js
+├── row.logic.js
+├── row.render.js
+├── row.styles.css
+├── columns/
+├── factory/
+└── templates/
 ```
 
-## Header / parent / sub-parent targets
-
-Header, parent, and sub-parent controls should be split the same way when they contain behavior:
+### Columns
 
 ```text
-render + logic + styles + constants + hooks + utils
+src/ui/components/tracker/rows/columns/
+├── column.constants.js
+├── column.logic.js
+├── column.render.js
+├── column.styles.css
+├── hooks/
+├── types/
+└── utils/
 ```
 
-This avoids hidden button/control behavior inside broad handler files.
+Rows should use the column system instead of owning individual column internals directly.
+
+---
+
+## UI Rule
+
+If a file renders markup, controls layout, or owns CSS behavior, it should live under `src/ui/`.
+
+Examples:
+
+- Headers
+- Buttons
+- Rows
+- Tables
+- Menus
+- Modals
+- Section renderers
+- Page selection UI
+- App shell HTML/CSS
+
+---
+
+## Feature Rule
+
+If a file decides app behavior but does not render UI, it should live under `src/features/`.
+
+Examples:
+
+- Section state logic
+- Settings controllers
+- View controllers
+- Farming timer math
+- Profile stores
+- Task configuration adapters
+
+---
+
+## Core Rule
+
+If a file is reusable, non-visual, and not tied to one feature, it should live under `src/core/`.
+
+Examples:
+
+- Storage helpers
+- Time formatting
+- Countdown helpers
+- DOM utilities
+- ID helpers
+- API wrappers
+- Shared calculators
+
+## What This Document Is For
+
+- **Stops random folder sprawl** - keeps files in predictable places
+- **Guides AI edits** - ensures AI knows where each piece of code belongs
+- **Sets boundaries** - clear rules about what belongs in UI vs. features vs. core
+- **Supports staged improvements** - allows targeted cleanup passes without breaking everything
+- **Keeps maintenance clear** - easy to know where to look when bugs or missing features pop up
+
+This document is the **contract** between you and future developers (including AI).
+
+If you want to change this file later, you should:
+
+1. Plan the change intentionally
+2. Update the rules
+3. Verify that the site still builds and works
+4. Update screenshots or examples if necessary
+
+---
+
+## How To Use This Today
+
+When you add or modify code:
+
+1. Ask yourself:
+   - Is this UI or logic?
+   - Is it reusable or feature-specific?
+   - Does it belong in `ui`, `features`, or `core`?
+2. Update the appropriate file
+3. Verify the change works
+4. If the change is significant, update this document with the new structure
+
+---
+
+## What This Document Is Not For
+
+- **Not a style guide** - use `src/ui/styles/` for that
+- **Not a full API reference** - use code comments and JSDoc
+- **Not a design spec** - use `docs/design` if you want visual mockups
+- **Not a strict template** - you can add folders inside these paths (e.g. `src/ui/components/tracker/rows/columns/types/`)
