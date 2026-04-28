@@ -74,7 +74,9 @@ The current site focuses on RuneScape 3 tracking, with OSRS expansion planned. I
 
 ---
 
-## Website Features (Detailed)
+## Features
+
+### Website
 
 | Area | Description |
 |---|---|
@@ -86,9 +88,7 @@ The current site focuses on RuneScape 3 tracking, with OSRS expansion planned. I
 | Views | Layout controls |
 | Import/Export | Data portability |
 
----
-
-## Feature Summary
+### Feature Summary
 
 | Feature | Description |
 |--------|------------|
