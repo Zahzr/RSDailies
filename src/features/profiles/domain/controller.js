@@ -1,4 +1,3 @@
-import { buildExportToken, importProfileToken } from './model.js';
 import {
   getCurrentProfile,
   initProfileContext,
@@ -105,47 +104,6 @@ export function setupProfileControl({
 
   updateProfileHeader();
   renderProfiles();
-}
-
-export function setupProfileImportExport({
-  documentRef = document,
-  onImport = () => window.location.reload(),
-  windowRef = window
-} = {}) {
-  const tokenButton = replaceNode(documentRef.getElementById('token-button'));
-  const tokenOutput = documentRef.getElementById('token-output');
-  const tokenInput = documentRef.getElementById('token-input');
-  const tokenCopy = replaceNode(documentRef.getElementById('token-copy'));
-  const tokenImport = replaceNode(documentRef.getElementById('token-import'));
-
-  if (!tokenButton || !tokenOutput || !tokenInput || !tokenCopy || !tokenImport) return;
-
-  tokenButton.addEventListener('click', () => {
-    tokenOutput.value = buildExportToken(windowRef.localStorage);
-    tokenInput.classList.remove('is-invalid');
-  });
-
-  tokenCopy.addEventListener('click', async () => {
-    const text = tokenOutput.value || '';
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      tokenOutput.focus();
-      tokenOutput.select();
-      documentRef.execCommand('copy');
-    }
-  });
-
-  tokenImport.addEventListener('click', () => {
-    tokenInput.classList.remove('is-invalid');
-
-    try {
-      importProfileToken(String(tokenInput.value || '').trim(), windowRef.localStorage);
-      onImport();
-    } catch {
-      tokenInput.classList.add('is-invalid');
-    }
-  });
 }
 
 export { initProfileContext };

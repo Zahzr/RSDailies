@@ -1,10 +1,7 @@
-import { tasksConfig as TASKS_CONFIG } from '../../../features/tasks/config/index.js';
-import { farmingConfig as FARMING_CONFIG } from '../../../features/farming/config/index.js';
-import { initProfileContext, setupProfileControl as setupProfileControlFeature, setupProfileImportExport, updateProfileHeader } from '../../../features/profiles/domain/controller.js';
+import { initProfileContext, setupProfileControl as setupProfileControlFeature, updateProfileHeader } from '../../../features/profiles/domain/controller.js';
 import { getSettings, applySettingsToDom as applySettingsToDomFeature, setupSettingsControl as setupSettingsControlFeature } from '../../../features/settings/domain/controller.js';
 import { closeFloatingControls, setupViewsControl as setupViewsControlFeature } from '../../../features/views/domain/controller.js';
 import { getPageMode, syncStoredViewModeToPageMode } from '../../../features/views/domain/model.js';
-import { getResolvedSections } from '../../../features/tasks/index.js';
 import { startFarmingTimer, clearFarmingTimer, cleanupReadyFarmingTimers as cleanupReadyFarmingTimersFeature, getFarmingHeaderStatus } from '../../../features/farming/domain/timers.js';
 import { startCooldown, cleanupReadyCooldowns as cleanupReadyCooldownsFeature } from '../../../features/cooldowns/domain/timers.js';
 import { maybeNotifyTaskAlert, maybeBrowserNotify, maybeWebhookNotify } from '../../../features/notifications/domain/bridge.js';
@@ -24,6 +21,10 @@ import { fetchProfits } from './fetch-profits.js';
 import { createRenderAppRunner } from './render-deps.js';
 import { runAppInitialization } from './init-app-root.js';
 import { applySettingsToDomBridge, checkAutoResetBridge, updateCountdowns as updateCountdownsBridge } from './core-actions.js';
+import { resolveTrackerSections } from '../../../core/domain/content/resolve-tracker-content.js';
+import { getTrackerSectionIds } from '../../registries/unified-registry.js';
+import { migrateStorageShape } from '../../../core/storage/migrations.js';
+import { buildExportToken, importProfileToken } from '../../../features/profiles/domain/model.js';
 
 const getStorageDeps = () => ({ load, save, removeKey });
 export { initProfileContext, syncStoredViewModeToPageMode };
@@ -43,7 +44,7 @@ const renderApp = createRenderAppRunner(renderAppCore, {
   cleanupReadyFarmingTimers: () => cleanupReadyFarmingTimersFeature({ load, save }),
   cleanupReadyCooldowns: () => cleanupReadyCooldownsFeature({ load, save }),
   hideTooltip: () => hideTooltip(document),
-  getResolvedSections: () => getResolvedSections({ tasksConfig: TASKS_CONFIG, farmingConfig: FARMING_CONFIG, getCustomTasks: () => getCustomTasks(load), getPenguinWeeklyData: () => load('penguinWeeklyData', {}) }),
+  getResolvedSections: () => resolveTrackerSections({ getCustomTasks: () => getCustomTasks(load), getPenguinWeeklyData: () => load('penguinWeeklyData', {}) }),
   getFarmingHeaderStatus: (task) => getFarmingHeaderStatus(task, { load }),
   hideTask: (sectionKey, taskId) => hideTask(sectionKey, taskId, { load, save }),
   setTaskCompleted: (sectionKey, taskId, complete) => setTaskCompleted(sectionKey, taskId, complete, { load, save }),
@@ -63,13 +64,13 @@ const renderApp = createRenderAppRunner(renderAppCore, {
 export { renderApp };
 
 export function setupSectionBindings() {
-  ['custom', 'rs3farming', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'].forEach((sectionKey) => bindSectionControls(sectionKey, { sortable: true }, { renderApp, getSectionState: (key) => getSectionState(key, load), saveSectionValue: (key, name, value) => saveSectionValue(key, name, value, save), resetSectionView: (key) => resetSectionView(key, { load, save, removeKey }) }));
+  getTrackerSectionIds().forEach((sectionKey) => bindSectionControls(sectionKey, { sortable: true }, { renderApp, getSectionState: (key) => getSectionState(key, load), saveSectionValue: (key, name, value) => saveSectionValue(key, name, value, save), resetSectionView: (key) => resetSectionView(key, { load, save, removeKey }) }));
 }
 
 const controlEntries = setupFeatureControls({
   setupProfileControlBridge, setupProfileControlFeature, setupSettingsControlBridge, setupSettingsControlFeature,
   setupViewsControlBridge, setupViewsControlFeature, closeFloatingControlsBridge, closeFloatingControls,
-  setupGlobalClickCloserBridge, setupImportExportFeature, setupProfileImportExport, setupCustomAddFeature,
+  setupGlobalClickCloserBridge, setupImportExportFeature, buildExportToken, importProfileToken, setupCustomAddFeature,
   renderApp, getCustomTasks: () => getCustomTasks(load), saveCustomTasks: (tasks) => saveCustomTasks(tasks, save),
   documentRef: document, windowRef: window
 });
@@ -80,5 +81,5 @@ export const setupViewsControl = () => controlEntries.setupViews();
 export const setupGlobalClickCloser = () => controlEntries.setupCloser();
 export const setupImportExport = () => controlEntries.setupImportExport();
 export const setupCustomAdd = () => controlEntries.setupCustomAdd();
-export const initAppRoot = () => runAppInitialization({ initProfileContext, syncStoredViewModeToPageMode, applySettingsToDom, checkAutoReset, updateCountdowns, setupSectionBindings, controlEntries, renderApp });
+export const initAppRoot = () => runAppInitialization({ migrateStorageShape, initProfileContext, syncStoredViewModeToPageMode, applySettingsToDom, checkAutoReset, updateCountdowns, setupSectionBindings, controlEntries, renderApp });
 export const startPenguinSync = () => syncPenguinWeeklyData({ load, save, renderApp });

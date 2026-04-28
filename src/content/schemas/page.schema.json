@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "page.schema.json",
+  "title": "Tracker Page Definition",
+  "type": "object",
+  "required": ["id", "title", "game", "layout", "sections"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "game": { "type": "string", "minLength": 1 },
+    "layout": { "type": "string", "minLength": 1 },
+    "route": { "type": "string" },
+    "legacyMode": { "type": "string" },
+    "sections": {
+      "type": "array",
+      "items": { "$ref": "section.schema.json" }
+    }
+  },
+  "additionalProperties": true
+}

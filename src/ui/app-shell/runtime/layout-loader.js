@@ -1,11 +1,11 @@
 // Import HTML partials as raw strings using Vite's ?raw feature
 import navbarHtml from '../html/navbar.html?raw';
 import overviewHtml from '../html/overview.html?raw';
-import dashboardHtml from '../html/dashboard.html?raw';
 import footerHtml from '../html/footer.html?raw';
 import customTaskModalHtml from '../html/modals/custom-task.html?raw';
 import tokenModalHtml from '../html/modals/token.html?raw';
 import rowTemplateHtml from '../../components/tracker/rows/templates/row-sample.html?raw';
+import { renderAppView } from './render-app-shell.js';
 
 /**
  * Loads and injects modular HTML components into the DOM.
@@ -16,7 +16,6 @@ export async function loadLayout() {
   const mounts = {
     'main-nav': navbarHtml,
     'overview-mount': overviewHtml,
-    'dashboard-mount': dashboardHtml,
     'main-footer': footerHtml,
     'token-modal': tokenModalHtml,
     'custom-task-modal': customTaskModalHtml,
@@ -35,6 +34,8 @@ export async function loadLayout() {
       console.warn(`[LayoutLoader] Mount point not found: ${id}`);
     }
   }
+
+  renderAppView();
 
   console.log('[LayoutLoader] Components injected successfully.');
 }

@@ -9,7 +9,8 @@ export function setupFeatureControls({
   closeFloatingControls,
   setupGlobalClickCloserBridge,
   setupImportExportFeature,
-  setupProfileImportExport,
+  buildExportToken,
+  importProfileToken,
   setupCustomAddFeature,
   renderApp,
   getCustomTasks,
@@ -24,8 +25,14 @@ export function setupFeatureControls({
   const setupViews = () => setupViewsControlBridge({ setupViewsControlFeature, renderApp, closeFloatingControls: closeAll, documentRef, windowRef });
   const setupCloser = () => setupGlobalClickCloserBridge({ closeFloatingControls: closeAll, documentRef });
   const setupImportExport = () => {
-    setupImportExportFeature({ documentRef, onImport: () => windowRef.location.reload() });
-    setupProfileImportExport({ documentRef, onImport: () => windowRef.location.reload(), windowRef });
+    setupImportExportFeature({
+      documentRef,
+      navigatorRef: windowRef.navigator,
+      buildExportToken,
+      importProfileToken,
+      onImport: () => windowRef.location.reload(),
+      storage: windowRef.localStorage
+    });
   };
   const setupCustomAdd = () => setupCustomAddFeature({ getCustomTasks, saveCustomTasks, renderApp, bootstrapRef: windowRef.bootstrap, documentRef });
 

@@ -30,16 +30,11 @@ export function setSectionHiddenState(sectionKey, hidden, showHidden = false) {
   if (unhideBtn) unhideBtn.style.display = hidden ? '' : 'none';
 }
 
-export function setSectionModeVisibility(sectionKey, mode) {
+export function setSectionModeVisibility(sectionKey, visibleSectionIds) {
   const { container } = getSectionElements(sectionKey);
   if (!container) return false;
 
-  let shouldShow = false;
-  if (mode === 'overview') shouldShow = sectionKey === 'custom';
-  else if (mode === 'all') shouldShow = ['rs3daily', 'rs3weekly', 'rs3monthly'].includes(sectionKey);
-  else if (mode === 'custom') shouldShow = sectionKey === 'custom';
-  else if (mode === 'rs3farming') shouldShow = sectionKey === 'rs3farming';
-  else shouldShow = sectionKey === mode;
+  const shouldShow = visibleSectionIds.has(sectionKey);
 
   container.style.display = shouldShow ? '' : 'none';
   return shouldShow;

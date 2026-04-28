@@ -4,6 +4,9 @@ rsdata/
 node_modules/
 dist/
 coverage/
+test-results/
+playwright-report/
+.playwright/
 *.log
 
 # Env files

@@ -1,4 +1,5 @@
 import { getCurrentProfile, getProfilePrefix, loadProfiles, saveProfiles, setProfile } from './store.js';
+import { CURRENT_EXPORT_SCHEMA_VERSION, CURRENT_STORAGE_SCHEMA_VERSION, migrateStorageShape } from '../../../core/storage/migrations.js';
 
 export function isActiveProfile(name, currentProfile = getCurrentProfile()) {
   return name === currentProfile;
@@ -9,10 +10,14 @@ export function getProfileLabel(name, currentProfile = getCurrentProfile()) {
 }
 
 export function buildExportToken(storage = window.localStorage) {
+  migrateStorageShape(storage);
   const profile = getCurrentProfile();
   const profilePrefix = getProfilePrefix();
 
   const payload = {
+    exportVersion: CURRENT_EXPORT_SCHEMA_VERSION,
+    storageSchemaVersion: CURRENT_STORAGE_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
     profile,
     globals: {
       profiles: loadProfiles(),
@@ -45,5 +50,8 @@ export function importProfileToken(rawToken, storage = window.localStorage) {
     });
   }
 
+  migrateStorageShape(storage);
+
   if (data?.profile) setProfile(data.profile);
+  return data;
 }

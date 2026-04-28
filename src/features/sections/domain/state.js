@@ -1,3 +1,6 @@
+import { createTaskStateManager } from '../../../core/state/task-state-manager.js';
+import { StorageKeyBuilder } from '../../../core/storage/keys-builder.js';
+
 function safeObject(value) {
   return value && typeof value === 'object' ? value : {};
 }
@@ -11,11 +14,11 @@ function safeArray(value) {
 ========================= */
 
 export function getOverviewPins(load) {
-  return safeObject(load('overviewPins', {}));
+  return safeObject(load(StorageKeyBuilder.overviewPins(), {}));
 }
 
 export function saveOverviewPins(nextPins, save) {
-  save('overviewPins', safeObject(nextPins));
+  save(StorageKeyBuilder.overviewPins(), safeObject(nextPins));
 }
 
 /* =========================
@@ -23,11 +26,11 @@ export function saveOverviewPins(nextPins, save) {
 ========================= */
 
 export function getCustomTasks(load) {
-  return safeArray(load('customTasks', []));
+  return safeArray(load(StorageKeyBuilder.customTasks(), []));
 }
 
 export function saveCustomTasks(tasks, save) {
-  save('customTasks', safeArray(tasks));
+  save(StorageKeyBuilder.customTasks(), safeArray(tasks));
 }
 
 /* =========================
@@ -35,11 +38,11 @@ export function saveCustomTasks(tasks, save) {
 ========================= */
 
 export function getFarmingTimers(load) {
-  return safeObject(load('farmingTimers', {}));
+  return safeObject(load(StorageKeyBuilder.farmingTimers(), {}));
 }
 
 export function saveFarmingTimers(timers, save) {
-  save('farmingTimers', safeObject(timers));
+  save(StorageKeyBuilder.farmingTimers(), safeObject(timers));
 }
 
 /* =========================
@@ -47,11 +50,11 @@ export function saveFarmingTimers(timers, save) {
 ========================= */
 
 export function getCooldowns(load) {
-  return safeObject(load('cooldowns', {}));
+  return safeObject(load(StorageKeyBuilder.cooldowns(), {}));
 }
 
 export function saveCooldowns(cooldowns, save) {
-  save('cooldowns', safeObject(cooldowns));
+  save(StorageKeyBuilder.cooldowns(), safeObject(cooldowns));
 }
 
 /* =========================
@@ -59,7 +62,7 @@ export function saveCooldowns(cooldowns, save) {
 ========================= */
 
 export function getCollapsedBlocks(load) {
-  return safeObject(load('collapsedBlocks', {}));
+  return safeObject(load(StorageKeyBuilder.collapsedBlocks(), {}));
 }
 
 export function isCollapsedBlock(blockId, load) {
@@ -76,37 +79,21 @@ export function setCollapsedBlock(blockId, collapsed, load, save) {
     delete collapsedBlocks[blockId];
   }
 
-  save('collapsedBlocks', collapsedBlocks);
+  save(StorageKeyBuilder.collapsedBlocks(), collapsedBlocks);
 }
 
 /* =========================
    SECTION STATE
 ========================= */
 
-function getSectionKey(sectionKey, key) {
-  return `${key}:${sectionKey}`;
-}
-
 export function getSectionState(sectionKey, load) {
-  return {
-    completed: safeObject(load(getSectionKey(sectionKey, 'completed'), {})),
-    hiddenRows: safeObject(load(getSectionKey(sectionKey, 'hiddenRows'), {})),
-    hidden: !!load(getSectionKey(sectionKey, 'hideSection'), false),
-    hideSection: !!load(getSectionKey(sectionKey, 'hideSection'), false),
-    showHidden: !!load(getSectionKey(sectionKey, 'showHidden'), false),
-    sort: load(getSectionKey(sectionKey, 'sort'), 'default'),
-    order: safeArray(load(getSectionKey(sectionKey, 'order'), []))
-  };
+  return createTaskStateManager(sectionKey, { load }).getSectionState();
 }
 
 export function saveSectionValue(sectionKey, key, value, save) {
-  save(getSectionKey(sectionKey, key), value);
+  createTaskStateManager(sectionKey, { save }).saveSectionValue(key, value);
 }
 
 export function resetSectionView(sectionKey, save) {
-  save(getSectionKey(sectionKey, 'hideSection'), false);
-  save(getSectionKey(sectionKey, 'showHidden'), false);
-  save(getSectionKey(sectionKey, 'sort'), 'default');
-  save(getSectionKey(sectionKey, 'order'), []);
-  save(getSectionKey(sectionKey, 'hiddenRows'), {});
+  createTaskStateManager(sectionKey, { save }).resetSectionView();
 }

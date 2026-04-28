@@ -1,12 +1,14 @@
 import { formatDurationMs } from '../../../core/time/formatters.js';
+import { StorageKeyBuilder } from '../../../core/storage/keys-builder.js';
+import { getTrackerSections } from '../../../app/registries/unified-registry.js';
 
 function getCooldowns(load) {
-  const value = load('cooldowns', {});
+  const value = load(StorageKeyBuilder.cooldowns(), {});
   return value && typeof value === 'object' ? value : {};
 }
 
 function saveCooldowns(data, save) {
-  save('cooldowns', data);
+  save(StorageKeyBuilder.cooldowns(), data);
 }
 
 function cloneCooldowns(load) {
@@ -15,17 +17,17 @@ function cloneCooldowns(load) {
 
 function getSectionState(sectionKey, load) {
   return {
-    completed: load(`completed:${sectionKey}`, {}),
-    hiddenRows: load(`hiddenRows:${sectionKey}`, {}),
-    order: load(`order:${sectionKey}`, []),
-    sort: load(`sort:${sectionKey}`, 'default'),
-    hideSection: load(`hideSection:${sectionKey}`, false),
-    showHidden: load(`showHidden:${sectionKey}`, false)
+    completed: load(StorageKeyBuilder.sectionCompletion(sectionKey), {}),
+    hiddenRows: load(StorageKeyBuilder.sectionHiddenRows(sectionKey), {}),
+    order: load(StorageKeyBuilder.sectionOrder(sectionKey), []),
+    sort: load(StorageKeyBuilder.sectionSort(sectionKey), 'default'),
+    hideSection: load(StorageKeyBuilder.sectionHidden(sectionKey), false),
+    showHidden: load(StorageKeyBuilder.sectionShowHidden(sectionKey), false)
   };
 }
 
 function saveSectionValue(sectionKey, key, value, save) {
-  save(`${key}:${sectionKey}`, value);
+  save(StorageKeyBuilder.sectionValue(sectionKey, key), value);
 }
 
 function restoreTaskInSection(sectionKey, taskId, { load, save }) {
@@ -107,7 +109,9 @@ export function getCooldownStatus(taskId, { load }) {
 
 export function cleanupReadyCooldowns({ load, save }) {
   const cooldowns = cloneCooldowns(load);
-  const sections = ['custom', 'rs3daily', 'gathering', 'rs3weekly', 'rs3monthly'];
+  const sections = getTrackerSections()
+    .filter((section) => section.renderVariant !== 'timer-groups')
+    .map((section) => section.id);
   let changed = false;
 
   Object.entries(cooldowns).forEach(([taskId, state]) => {

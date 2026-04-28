@@ -1,0 +1,2 @@
+export function calculateProfitPerHour(profit, minutes) { const amount = Number(profit); const duration = Number(minutes); if (!Number.isFinite(amount) || !Number.isFinite(duration) || duration <= 0) return 0; return Math.round((amount / duration) * 60); }
+export function sortByProfitPerHour(tasks) { return [...(Array.isArray(tasks) ? tasks : [])].sort((a, b) => (b.profitPerHour || 0) - (a.profitPerHour || 0)); }

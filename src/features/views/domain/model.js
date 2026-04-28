@@ -1,57 +1,25 @@
 import { loadProfileValue, saveProfileValue } from '../../profiles/domain/store.js';
+import {
+  getTrackerPageModes,
+  getTrackerViews,
+  isTrackerPageMode,
+  normalizeTrackerPageMode,
+} from '../../../app/registries/unified-registry.js';
 
-export const PAGE_MODES = [
-  'overview',
-  'all',
-  'custom',
-  'rs3farming',
-  'rs3daily',
-  'gathering',
-  'rs3weekly',
-  'rs3monthly'
-];
+export const PAGE_MODES = getTrackerPageModes();
 
 function normalizePageMode(mode) {
-  return PAGE_MODES.includes(mode) ? mode : 'all';
-}
-
-function mapStoredViewMode(mode) {
-  switch (mode) {
-    case 'overview':
-      return 'overview';
-    case 'custom':
-      return 'custom';
-    case 'farming':
-    case 'rs3farming':
-      return 'rs3farming';
-    case 'daily':
-    case 'dailies':
-    case 'rs3daily':
-      return 'rs3daily';
-    case 'gathering':
-      return 'gathering';
-    case 'weekly':
-    case 'weeklies':
-    case 'rs3weekly':
-      return 'rs3weekly';
-    case 'monthly':
-    case 'monthlies':
-    case 'rs3monthly':
-      return 'rs3monthly';
-    case 'all':
-    default:
-      return 'all';
-  }
+  return normalizeTrackerPageMode(mode, 'all');
 }
 
 export function syncStoredViewModeToPageMode() {
   const current = loadProfileValue('pageMode', null);
-  if (typeof current === 'string' && PAGE_MODES.includes(current)) {
+  if (typeof current === 'string' && isTrackerPageMode(current)) {
     return current;
   }
 
   const storedViewMode = loadProfileValue('viewMode', null);
-  const migrated = mapStoredViewMode(storedViewMode);
+  const migrated = normalizeTrackerPageMode(storedViewMode, 'all');
 
   saveProfileValue('pageMode', migrated);
   return migrated;
@@ -59,12 +27,12 @@ export function syncStoredViewModeToPageMode() {
 
 export function getPageMode() {
   const mode = loadProfileValue('pageMode', null);
-  if (typeof mode === 'string' && PAGE_MODES.includes(mode)) {
+  if (typeof mode === 'string' && isTrackerPageMode(mode)) {
     return mode;
   }
 
   const storedViewMode = loadProfileValue('viewMode', 'all');
-  return mapStoredViewMode(storedViewMode);
+  return normalizeTrackerPageMode(storedViewMode, 'all');
 }
 
 export function setPageMode(mode) {
@@ -81,14 +49,5 @@ export function setPageMode(mode) {
 }
 
 export function getViews() {
-  return [
-    { mode: 'overview', label: 'Overview' },
-    { mode: 'all', label: 'All' },
-    { mode: 'custom', label: 'Custom Tasks' },
-    { mode: 'rs3farming', label: 'Farming' },
-    { mode: 'rs3daily', label: 'Dailies' },
-    { mode: 'gathering', label: 'Gathering' },
-    { mode: 'rs3weekly', label: 'Weeklies' },
-    { mode: 'rs3monthly', label: 'Monthlies' }
-  ];
+  return getTrackerViews();
 }

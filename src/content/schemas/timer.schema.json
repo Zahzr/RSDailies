@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "timer.schema.json",
+  "title": "Timer Definition",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "intervalMinutes": { "type": "number", "minimum": 1 },
+    "game": { "type": "string" }
+  },
+  "additionalProperties": true
+}

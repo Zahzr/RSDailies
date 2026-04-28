@@ -1,0 +1,76 @@
+.header_like_inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+}
+
+.header_like_name {
+  text-align: center;
+  width: 100%;
+  pointer-events: none;
+}
+
+.header_like_controls {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header_like_status {
+  min-width: 74px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.header_restore_wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.header_restore_menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 230px;
+  padding: 8px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, #28303a, #222932);
+  border: 1px solid #5f6975;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  z-index: 450;
+}
+
+.header_restore_select {
+  width: 100%;
+}
+
+.activity_table tbody .header_like_inner {
+  min-height: 44px;
+  padding-left: 1rem;
+  padding-right: 2.2rem;
+}
+
+.activity_table tbody .header_like_controls {
+  right: 30px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  min-height: 32px;
+  z-index: 5;
+}

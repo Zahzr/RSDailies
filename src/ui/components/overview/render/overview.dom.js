@@ -1,13 +1,7 @@
+import { getTrackerSection } from '../../../../app/registries/unified-registry.js';
+
 function getSectionLabel(sectionKey) {
-  const labels = {
-    custom: 'Custom',
-    rs3daily: 'Dailies',
-    gathering: 'Gathering',
-    rs3weekly: 'Weeklies',
-    rs3monthly: 'Monthlies',
-    rs3farming: 'Farming'
-  };
-  return labels[sectionKey] || sectionKey;
+  return getTrackerSection(sectionKey)?.shortLabel || getTrackerSection(sectionKey)?.label || sectionKey;
 }
 
 export function sortTopFive(items) {

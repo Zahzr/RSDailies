@@ -1,4 +1,5 @@
 import { SECTION_CONTAINER_IDS, SECTION_TABLE_IDS } from '../../../../../core/ids/section-ids.js';
+import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
 
 export function getContainerId(sectionKey) {
   return SECTION_CONTAINER_IDS[sectionKey] || `table-${sectionKey}`;
@@ -20,8 +21,8 @@ export function slugify(input) {
 }
 
 export function applyOrderingAndSort(sectionKey, tasks, { load }) {
-  const order = load(`order:${sectionKey}`, []);
-  const sort = load(`sort:${sectionKey}`, 'default');
+  const order = load(StorageKeyBuilder.sectionOrder(sectionKey), []);
+  const sort = load(StorageKeyBuilder.sectionSort(sectionKey), 'default');
 
   let results = [...tasks];
 

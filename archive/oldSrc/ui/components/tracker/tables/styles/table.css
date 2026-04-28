@@ -1,0 +1,344 @@
+.activity_table {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#custom-table.activity_table {
+    table-layout: auto;
+}
+
+.activity_table col.activity_col_name {
+    width: 40%;
+}
+
+.activity_table col.activity_col_notes {
+    width: auto;
+}
+
+.activity_table col.activity_col_status {
+    width: 56px;
+}
+
+.activity_table th {
+    font-size: 1.18rem;
+    vertical-align: middle;
+    border: none;
+    padding-top: 0.56rem !important;
+    padding-bottom: 0.56rem !important;
+}
+
+.activity_table thead td {
+    text-align: right;
+    position: relative;
+    vertical-align: middle;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+}
+
+.activity_table thead td span.text-nowrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    white-space: normal !important;
+}
+
+.activity_table td.activity_name {
+    padding: 0;
+    height: 100%;
+    min-height: 50px;
+    position: relative;
+    vertical-align: middle;
+    overflow: visible;
+}
+
+.activity_table td.activity_name::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.activity_table td.activity_name a,
+.activity_table td.activity_name a:active,
+.activity_table td.activity_name a:link,
+.activity_table td.activity_name a:visited {
+    color: #fff;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    padding: 0.62rem 4.9rem 0.62rem 0.85rem;
+    line-height: 1.02rem;
+    text-decoration: none;
+    z-index: 1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.activity_table td.activity_name a:hover,
+.activity_table td.activity_name a:focus,
+.activity_table td.activity_name a:active {
+    color: #4083ca;
+    text-decoration: none;
+}
+
+/* hard-disable hover pseudo content that causes jitter */
+.activity_table tr:hover a::after,
+.activity_table td.activity_name a::after,
+.activity_table td.activity_name a:hover::after,
+.activity_table td.activity_name a:focus::after,
+.activity_table td.activity_name a:active::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+    background-image: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.activity_table td.activity_notes {
+    padding: 0.48rem 0.78rem;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.activity_table td.activity_status {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    border-left: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.activity_table td.activity_status .activity_check_on {
+    display: none;
+    visibility: hidden;
+}
+
+.activity_table td.activity_notes a,
+.activity_table td.activity_notes a:active,
+.activity_table td.activity_notes a:link,
+.activity_table td.activity_notes a:visited {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.activity_table td.activity_notes a:hover,
+.activity_table td.activity_notes a:focus {
+    color: #4083ca;
+}
+
+.activity_desc {
+    width: 100%;
+    min-height: 40px;
+    white-space: normal;
+    line-height: 1.15rem;
+}
+
+.activity_note_line {
+    display: block;
+    margin-top: 2px;
+    color: #f0f0f0;
+    line-height: 1.15rem;
+    font-size: 0.92rem;
+}
+
+.activity_child_name {
+    font-weight: 600;
+    color: #fff;
+    margin-top: 0;
+    margin-bottom: 1px;
+}
+
+.activity_duration_note {
+    display: block;
+    margin-top: 2px;
+    color: #aad4ff;
+    font-size: 0.85rem;
+    line-height: 1.1rem;
+}
+
+.activity_location_note {
+    display: block;
+    margin-top: 1px;
+    color: #b8d8b0;
+    font-size: 0.85rem;
+    line-height: 1.1rem;
+}
+
+.activity_status .activity_check_off,
+.activity_status .activity_check_on {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    width: 100%;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.item_profit {
+    display: inline-block;
+    margin-left: 0;
+    margin-top: 5px;
+    white-space: nowrap;
+    font-weight: 700;
+    color: #c1991c;
+    font-size: 0.9rem;
+}
+
+.activity_inline_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.activity_inline_actions .btn {
+    white-space: nowrap;
+}
+
+/* --- Custom Tasks empty state curvature fix --- */
+.activity_table tbody tr.custom-empty-row td {
+    border-bottom-left-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+    overflow: hidden !important;
+    background-clip: padding-box !important;
+}
+
+.activity_table tbody tr.custom-empty-row.subsection-end-row td {
+    border-bottom-left-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+    overflow: hidden !important;
+    background-clip: padding-box !important;
+}
+
+.activity_table tbody tr.custom-empty-row:last-child td {
+    border-bottom-left-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+    overflow: hidden !important;
+    background-clip: padding-box !important;
+}
+
+/* --- Custom Tasks live row layout --- */
+.activity_table tbody tr.custom-task-row td.activity_name {
+    width: 34%;
+    background: linear-gradient(90deg, #1b222a, #232b35);
+    box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.08);
+}
+
+.activity_table tbody tr.custom-task-row td.activity_name a,
+.activity_table tbody tr.custom-task-row td.activity_name a:active,
+.activity_table tbody tr.custom-task-row td.activity_name a:link,
+.activity_table tbody tr.custom-task-row td.activity_name a:visited {
+    padding: 0.62rem 5.9rem 0.62rem 0.85rem;
+}
+
+.activity_table tbody tr.custom-task-row td.activity_name button.pin-button,
+.activity_table tbody tr.custom-task-row td.activity_name button.hide-button {
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.activity_table tbody tr.custom-task-row:hover td.activity_name button.pin-button,
+.activity_table tbody tr.custom-task-row:hover td.activity_name button.hide-button,
+.activity_table tbody tr.custom-task-row:focus-within td.activity_name button.pin-button,
+.activity_table tbody tr.custom-task-row:focus-within td.activity_name button.hide-button {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.activity_table tbody tr.custom-task-row td.activity_name button.pin-button {
+    right: 42px;
+}
+
+.activity_table tbody tr.custom-task-row td.activity_name button.hide-button {
+    right: 8px;
+}
+
+.activity_table tbody tr.custom-task-row td.custom-task-timer {
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+    padding: 0.48rem 0.7rem;
+    cursor: pointer;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 700;
+    font-size: 0.94rem;
+    letter-spacing: 0.03em;
+    color: #e7edf7;
+    background: linear-gradient(90deg, #313844, #39414d);
+    border-left: 1px solid rgba(0, 0, 0, 0.18);
+    border-right: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.activity_table tbody tr.custom-task-row td.custom-task-notes {
+    background-color: #590505;
+    box-shadow: inset 0 0 0 9999px #590505;
+    padding: 0.48rem 0.78rem;
+}
+
+.activity_table tbody tr.custom-task-row:hover td.custom-task-notes,
+.activity_table tbody tr.custom-task-row:focus-within td.custom-task-notes {
+    background-color: #3b0404;
+    box-shadow: inset 0 0 0 9999px #3b0404;
+}
+
+.activity_table tbody tr.custom-task-row td.custom-task-status {
+    background-color: #590505;
+    box-shadow: inset 0 0 0 9999px #590505;
+}
+
+.activity_table tbody tr.custom-task-row:hover td.custom-task-status,
+.activity_table tbody tr.custom-task-row:focus-within td.custom-task-status {
+    background-color: #3b0404;
+    box-shadow: inset 0 0 0 9999px #3b0404;
+}
+
+.activity_table tbody tr.custom-task-row td.custom-task-notes .activity_desc {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+}
+
+.activity_table tbody tr.custom-task-row td.custom-task-notes .activity_note_line {
+    margin-top: 0;
+}
+
+.activity_table tbody tr.custom-task-row.block-end-row td:first-child {
+    border-bottom-left-radius: 14px !important;
+    overflow: hidden !important;
+    background-clip: padding-box !important;
+}
+
+.activity_table tbody tr.custom-task-row.block-end-row td:last-child {
+    border-bottom-right-radius: 14px !important;
+    overflow: hidden !important;
+    background-clip: padding-box !important;
+}
+
+
+/* Dailyscape3 primitive/custom task table stability */
+#custom-table.activity_table { table-layout: fixed; }
+#custom-table.activity_table col.activity_col_name { width: 38%; }
+#custom-table.activity_table col.activity_col_timer { width: 150px; }
+#custom-table.activity_table col.activity_col_notes { width: auto; }
+#custom-table.activity_table col.activity_col_status { width: 56px; }
+.activity_table td.custom-task-timer:empty::before { content: '\00a0'; }
+.activity_table tbody tr.custom-task-row td.activity_name { width: auto; }
+.activity_table tbody tr.custom-task-row td.custom-task-notes .activity_desc { display: block; min-height: 40px; overflow-wrap: anywhere; word-break: break-word; }

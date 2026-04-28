@@ -2,6 +2,7 @@ import { IMPORT_EXPORT_ELEMENT_IDS } from '../constants/import-export.constants.
 
 export function getImportExportElements(documentRef = document) {
   return {
+    tokenButton: documentRef.getElementById(IMPORT_EXPORT_ELEMENT_IDS.button),
     tokenModal: documentRef.getElementById(IMPORT_EXPORT_ELEMENT_IDS.modal),
     tokenOutput: documentRef.getElementById(IMPORT_EXPORT_ELEMENT_IDS.output),
     tokenInput: documentRef.getElementById(IMPORT_EXPORT_ELEMENT_IDS.input),
@@ -11,7 +12,7 @@ export function getImportExportElements(documentRef = document) {
 }
 
 export function hasImportExportElements(elements) {
-  return Boolean(elements.tokenModal && elements.tokenOutput && elements.tokenInput && elements.tokenCopy && elements.tokenImport);
+  return Boolean(elements.tokenButton && elements.tokenModal && elements.tokenOutput && elements.tokenInput && elements.tokenCopy && elements.tokenImport);
 }
 
 export function cloneInteractiveElement(element) {

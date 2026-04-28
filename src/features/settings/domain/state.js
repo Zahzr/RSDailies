@@ -1,6 +1,7 @@
 import { settingsDefaults } from '../config/settings-defaults.js';
 import { loadJson, saveJson } from '../../../core/storage/local-store.js';
 import { getProfilePrefix } from '../../profiles/domain/store.js';
+import { getSettingsFieldIds } from '../../../ui/components/settings/settings-menu.js';
 
 function deriveGrowthOffsetMinutes(herbTicks) {
   return herbTicks === 3 ? 20 : 0;
@@ -57,14 +58,15 @@ export function saveSettings(settings, storage = window.localStorage) {
 }
 
 export function applySettingsToDom(documentRef = document, settings = getSettings()) {
-  const splitDaily = documentRef.getElementById('setting-split-daily-tables');
-  const splitWeekly = documentRef.getElementById('setting-split-weekly-tables');
-  const herbs3 = documentRef.getElementById('setting-3tick-herbs');
-  const growthOffset = documentRef.getElementById('setting-growth-offset');
-  const browserNotif = documentRef.getElementById('setting-browser-notif');
-  const webhook = documentRef.getElementById('setting-webhook-url');
-  const webhookUserId = documentRef.getElementById('setting-webhook-user-id');
-  const webhookTemplate = documentRef.getElementById('setting-webhook-message-template');
+  const fieldIds = getSettingsFieldIds();
+  const splitDaily = documentRef.getElementById(fieldIds.splitDailyTables);
+  const splitWeekly = documentRef.getElementById(fieldIds.splitWeeklyTables);
+  const herbs3 = documentRef.getElementById(fieldIds.herbTicks);
+  const growthOffset = documentRef.getElementById(fieldIds.growthOffset);
+  const browserNotif = documentRef.getElementById(fieldIds.browserNotif);
+  const webhook = documentRef.getElementById(fieldIds.webhookUrl);
+  const webhookUserId = documentRef.getElementById(fieldIds.webhookUserId);
+  const webhookTemplate = documentRef.getElementById(fieldIds.webhookMessageTemplate);
 
   if (splitDaily) splitDaily.checked = settings.splitDailyTables !== false;
   if (splitWeekly) splitWeekly.checked = settings.splitWeeklyTables !== false;
@@ -86,16 +88,17 @@ export function applySettingsToDom(documentRef = document, settings = getSetting
 }
 
 export function collectSettingsFromDom(documentRef = document) {
-  const herbTicks = documentRef.getElementById('setting-3tick-herbs')?.checked ? 3 : 4;
+  const fieldIds = getSettingsFieldIds();
+  const herbTicks = documentRef.getElementById(fieldIds.herbTicks)?.checked ? 3 : 4;
 
   return normalizeSettings({
-    splitDailyTables: !!documentRef.getElementById('setting-split-daily-tables')?.checked,
-    splitWeeklyTables: !!documentRef.getElementById('setting-split-weekly-tables')?.checked,
+    splitDailyTables: !!documentRef.getElementById(fieldIds.splitDailyTables)?.checked,
+    splitWeeklyTables: !!documentRef.getElementById(fieldIds.splitWeeklyTables)?.checked,
     herbTicks,
-    browserNotif: !!documentRef.getElementById('setting-browser-notif')?.checked,
-    webhookUrl: (documentRef.getElementById('setting-webhook-url')?.value || '').trim(),
-    webhookUserId: (documentRef.getElementById('setting-webhook-user-id')?.value || '').trim(),
-    webhookMessageTemplate: (documentRef.getElementById('setting-webhook-message-template')?.value || '').trim(),
+    browserNotif: !!documentRef.getElementById(fieldIds.browserNotif)?.checked,
+    webhookUrl: (documentRef.getElementById(fieldIds.webhookUrl)?.value || '').trim(),
+    webhookUserId: (documentRef.getElementById(fieldIds.webhookUserId)?.value || '').trim(),
+    webhookMessageTemplate: (documentRef.getElementById(fieldIds.webhookMessageTemplate)?.value || '').trim(),
     overviewVisible: true
   });
 }

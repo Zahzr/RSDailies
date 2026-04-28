@@ -1,0 +1,84 @@
+div.table_container:not([data-show-hidden="true"]) .activity_table tr[data-completed="hide"] {
+    display: none;
+    visibility: hidden;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_notes,
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_status {
+    background-color: #4a3a08;
+    box-shadow: inset 0 0 0 9999px #4a3a08;
+    cursor: not-allowed;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr:hover[data-completed="hide"] .activity_notes,
+div.table_container[data-show-hidden="true"] .activity_table tr:hover[data-completed="hide"] .activity_status {
+    background-color: #382c06;
+    box-shadow: inset 0 0 0 9999px #382c06;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_check_off {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 0.55;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_check_on {
+    display: none;
+    visibility: hidden;
+}
+
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_desc,
+div.table_container[data-show-hidden="true"] .activity_table tr[data-completed="hide"] .activity_name a {
+    opacity: 0.8;
+}
+
+/* keep completed rows visually red for the current tracker state model */
+.activity_table tr[data-completed="true"] .activity_notes,
+.activity_table tr[data-completed="true"] .activity_status {
+    background-color: #590505;
+    box-shadow: inset 0 0 0 9999px #590505;
+}
+
+.activity_table tr[data-completed="true"] td.activity_name::before {
+    background: transparent;
+}
+
+.activity_table tr[data-completed="true"] .activity_status .activity_check_off {
+    display: inline-flex;
+    visibility: visible;
+}
+
+.activity_table tr[data-completed="true"] .activity_status .activity_check_on {
+    display: none;
+    visibility: hidden;
+}
+
+.activity_table tr:hover[data-completed="true"] .activity_notes,
+.activity_table tr:hover[data-completed="true"] .activity_status {
+    background-color: #3b0404;
+    box-shadow: inset 0 0 0 9999px #3b0404;
+}
+
+.activity_table tr:hover[data-completed="true"] td.activity_name::before {
+    background: transparent;
+}
+
+.activity_table tr[data-completed="false"] .activity_notes,
+.activity_table tr[data-completed="false"] .activity_status,
+.activity_table tr[data-completed="idle"] .activity_notes,
+.activity_table tr[data-completed="idle"] .activity_status,
+.activity_table tr[data-completed="running"] .activity_notes,
+.activity_table tr[data-completed="running"] .activity_status {
+    background-color: #590505;
+    box-shadow: inset 0 0 0 9999px #590505;
+}
+
+.activity_table tr:hover[data-completed="false"] .activity_notes,
+.activity_table tr:hover[data-completed="false"] .activity_status,
+.activity_table tr:hover[data-completed="idle"] .activity_notes,
+.activity_table tr:hover[data-completed="idle"] .activity_status,
+.activity_table tr:hover[data-completed="running"] .activity_notes,
+.activity_table tr:hover[data-completed="running"] .activity_status {
+    background-color: #3b0404;
+    box-shadow: inset 0 0 0 9999px #3b0404;
+}

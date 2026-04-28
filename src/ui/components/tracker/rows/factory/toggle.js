@@ -10,6 +10,11 @@ export function createToggleTaskHandler(sectionKey, taskId, task, {
 }) {
   return function toggleTask() {
     const isCompleted = getTaskState(sectionKey, taskId, task);
+    const cooldownMinutes = Number.isFinite(task?.cooldownMinutes)
+      ? task.cooldownMinutes
+      : Number.isFinite(task?.cooldown)
+        ? task.cooldown
+        : parseInt(task?.cooldownMinutes ?? task?.cooldown, 10);
 
     if (isCompleted) {
       setTaskCompleted(sectionKey, taskId, false, { load, save });
@@ -21,8 +26,8 @@ export function createToggleTaskHandler(sectionKey, taskId, task, {
         startFarmingTimer(taskId, task, { load, save });
       }
 
-      if (task?.cooldown) {
-        startCooldown(taskId, task.cooldown, { load, save });
+      if (Number.isFinite(cooldownMinutes) && cooldownMinutes > 0) {
+        startCooldown(taskId, cooldownMinutes, { load, save });
       }
     }
 

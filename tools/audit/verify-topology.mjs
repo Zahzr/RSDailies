@@ -6,6 +6,8 @@ const failures = [];
 const mustExist = [
   'src/ui/app-shell/html/index.html',
   'src/ui/app-shell/runtime/layout-loader.js',
+  'src/ui/app-shell/runtime/render-app-shell.js',
+  'src/ui/app-shell/runtime/section-panel.js',
   'src/ui/app-shell/styles/index.css',
   'src/ui/components/headers/header.render.js',
   'src/ui/components/tracker/rows/row.render.js',
@@ -80,7 +82,10 @@ const forbidden = [
   'src/features/views/view.js',
   'src/features/views/index.js',
   'src/features/views/index',
-  'src/app/runtime/legacy-app.js'
+  'src/app/runtime/legacy-app.js',
+  'src/ui/app-shell/html/dashboard.html',
+  'src/ui/components/custom-tasks/modal/custom-task-modal.js',
+  'src/features/tasks/index.js'
 ];
 for (const rel of forbidden) {
   if (fs.existsSync(path.join(root, rel))) failures.push('Forbidden removed or misplaced path remains: ' + rel);

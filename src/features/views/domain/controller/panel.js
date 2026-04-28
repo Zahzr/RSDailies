@@ -1,5 +1,6 @@
 import { getPageMode, syncStoredViewModeToPageMode, setPageMode } from '../model.js';
 import { positionPanel } from '../../../../ui/components/views/view-panel.js';
+import { getPrimaryNavItems, getViewsButtonLabel, getViewsPanelGroups } from '../../../../ui/components/views/views-menu.js';
 
 export function closeFloatingControls(documentRef = document) {
   ['profile-control', 'settings-control', 'views-control'].forEach((id) => {
@@ -20,18 +21,12 @@ function replaceNode(element) {
 
 function setViewsButtonLabel(button, mode) {
   if (!button) return;
-  const labelMap = { overview: 'Overview', all: 'Tasks', gathering: 'Gathering', rs3farming: 'Timers', custom: 'Overview', rs3daily: 'Tasks', rs3weekly: 'Tasks', rs3monthly: 'Tasks' };
   const textNode = button.querySelector('.expanding_text');
-  if (textNode) textNode.innerHTML = `&nbsp;${labelMap[mode] || 'Overview'}`;
+  if (textNode) textNode.innerHTML = `&nbsp;${getViewsButtonLabel(mode)}`;
 }
 
 function buildViewsDefinition() {
-  return [
-    { heading: 'Home', items: [{ mode: 'overview', label: 'Overview' }] },
-    { heading: 'Tasks', items: [{ mode: 'all', label: 'Tasks' }] },
-    { heading: 'Gathering', items: [{ mode: 'gathering', label: 'Gathering' }] },
-    { heading: 'Timers', items: [{ mode: 'rs3farming', label: 'Farming' }] }
-  ];
+  return getViewsPanelGroups();
 }
 
 function renderViewsList(list, onSelectView) {
@@ -67,11 +62,7 @@ function upsertPrimaryNavLinks(documentRef, onSelectMode) {
   if (!navList) return;
   navList.querySelectorAll('[data-primary-page-link="true"]').forEach((node) => node.remove());
   const resourcesItem = navList.querySelector('.nav-item.dropdown');
-  const definitions = [
-    { mode: 'all', label: 'Tasks' },
-    { mode: 'gathering', label: 'Gathering' },
-    { mode: 'rs3farming', label: 'Timers' }
-  ];
+  const definitions = getPrimaryNavItems();
 
   definitions.forEach((def) => {
     const li = documentRef.createElement('li');

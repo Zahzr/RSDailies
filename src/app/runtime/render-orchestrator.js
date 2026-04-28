@@ -1,21 +1,9 @@
 import {
-  renderStandardSection,
-  renderWeekliesWithChildren,
-  renderGroupedGathering,
-  renderGroupedFarming,
-  formatFarmingDurationNote,
-  buildFarmingLocationTask
-} from '../../ui/components/tracker/sections/index.js';
-import {
   renderOverviewPanel,
   applyPageModeVisibility,
   collectOverviewItems
 } from '../../ui/components/overview/index.js';
-import { createHeaderRow } from '../../ui/components/headers/index.js';
-import { createRow, createRightSideChildRow } from '../../ui/components/tracker/rows/index.js';
-import { applyOrderingAndSort } from '../../ui/components/tracker/tables/utils/table.utils.js';
-import { formatDurationMs as formatDurationMsCore } from '../../core/time/formatters.js';
-import { nextDailyBoundary, nextWeeklyBoundary, nextMonthlyBoundary } from '../../core/time/boundaries.js';
+import { createRow } from '../../ui/components/tracker/rows/index.js';
 import {
   clearAllSectionBodies,
   getSectionElements,
@@ -27,10 +15,12 @@ import {
 import { createUiContext } from './render-orchestrator/overview-ui-context.js';
 import {
   appendCustomEmptyPlaceholder,
-  getGroupCountdown,
   hideAllSortButtons,
   movePenguinsBlockToBottom
 } from './render-orchestrator/panel-helpers.js';
+import { getTrackerPageSectionIds, getTrackerSections } from '../registries/unified-registry.js';
+import { renderTrackerSection } from '../../ui/renderers/tracker-section-renderer.js';
+import { StorageKeyBuilder } from '../../core/storage/keys-builder.js';
 
 export function renderApp(deps) {
   const {
@@ -55,8 +45,10 @@ export function renderApp(deps) {
 
   const uiContext = createUiContext(deps, () => renderApp(deps));
   const sections = getResolvedSections();
-  const sectionKeys = ['custom', 'rs3farming', 'gathering', 'rs3daily', 'rs3weekly', 'rs3monthly'];
+  const sectionDefinitions = getTrackerSections();
+  const sectionKeys = sectionDefinitions.map((section) => section.id);
   const mode = getPageMode();
+  const visibleSectionIds = new Set(getTrackerPageSectionIds(mode));
 
   reorderDashboardSections(sectionKeys);
   applyPageModeVisibility(mode);
@@ -66,14 +58,15 @@ export function renderApp(deps) {
 
   clearAllSectionBodies(sectionKeys);
 
-  sectionKeys.forEach((key) => {
+  sectionDefinitions.forEach((sectionDefinition) => {
+    const key = sectionDefinition.id;
     const { tbody } = getSectionElements(key);
     if (!tbody) return;
 
-    const sectionTasks = key === 'rs3farming' ? sections.rs3farming : sections[key];
-    const hidden = !!load(`hideSection:${key}`, false);
-    const showHidden = !!load(`showHidden:${key}`, false);
-    const visibleByMode = setSectionModeVisibility(key, mode);
+    const sectionTasks = sections[key];
+    const hidden = !!load(StorageKeyBuilder.sectionHidden(key), false);
+    const showHidden = !!load(StorageKeyBuilder.sectionShowHidden(key), false);
+    const visibleByMode = setSectionModeVisibility(key, visibleSectionIds);
     if (!visibleByMode) return;
 
     setSectionHiddenState(key, hidden, showHidden);
@@ -82,52 +75,13 @@ export function renderApp(deps) {
       return;
     }
 
-    if (!sectionTasks) {
-      if (key === 'custom') appendCustomEmptyPlaceholder(tbody);
-      bindSectionControls(key, { sortable: false });
-      return;
-    }
-
-    const sortedTasks = key === 'rs3farming'
-      ? []
-      : applyOrderingAndSort(key, Array.isArray(sectionTasks) ? sectionTasks : [], { load });
-
-    if (key === 'rs3farming') {
-      renderGroupedFarming(tbody, sectionTasks, {
-        isCollapsedBlock: deps.isCollapsedBlock,
-        getFarmingHeaderStatus,
-        formatFarmingDurationNote,
-        buildFarmingLocationTask,
-        createHeaderRow,
-        createRow,
-        createRightSideChildRow,
-        formatDurationMs: formatDurationMsCore,
-        context: uiContext
-      });
-    } else if (key === 'gathering') {
-      renderGroupedGathering(tbody, sortedTasks, {
-        isCollapsedBlock: deps.isCollapsedBlock,
-        createHeaderRow,
-        createRow,
-        context: uiContext,
-        getGroupCountdown: (groupName) => getGroupCountdown(groupName, {
-          formatDurationMsCore,
-          nextDailyBoundary,
-          nextWeeklyBoundary,
-          nextMonthlyBoundary
-        })
-      });
-    } else if (key === 'rs3weekly') {
-      renderWeekliesWithChildren(tbody, sortedTasks, {
-        isCollapsedBlock: deps.isCollapsedBlock,
-        createHeaderRow,
-        createRow,
-        createRightSideChildRow,
-        context: uiContext
-      });
-    } else {
-      renderStandardSection(tbody, key, sortedTasks, { createRow, context: uiContext });
-    }
+    renderTrackerSection(tbody, sectionDefinition, sectionTasks, {
+      key,
+      load,
+      uiContext,
+      isCollapsedBlock: deps.isCollapsedBlock,
+      getFarmingHeaderStatus,
+    });
 
     if (key === 'custom' && tbody.children.length === 0) appendCustomEmptyPlaceholder(tbody);
     bindSectionControls(key, { sortable: false });
@@ -151,8 +105,11 @@ export function renderApp(deps) {
   fetchProfits();
   updateProfileHeader();
 
-  ['custom', 'gathering', 'rs3daily', 'rs3weekly', 'rs3monthly'].forEach((key) => {
-    const tasks = sections[key];
-    if (Array.isArray(tasks)) tasks.forEach((task) => maybeNotifyTaskAlert(task, key));
-  });
+  sectionDefinitions
+    .filter((section) => section.supportsTaskNotifications)
+    .forEach((section) => {
+      const key = section.id;
+      const tasks = sections[key];
+      if (Array.isArray(tasks)) tasks.forEach((task) => maybeNotifyTaskAlert(task, key));
+    });
 }

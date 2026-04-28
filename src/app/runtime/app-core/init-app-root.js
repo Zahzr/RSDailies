@@ -1,4 +1,5 @@
-export function runAppInitialization({ initProfileContext, syncStoredViewModeToPageMode, applySettingsToDom, checkAutoReset, updateCountdowns, setupSectionBindings, controlEntries, renderApp }) {
+export function runAppInitialization({ migrateStorageShape, initProfileContext, syncStoredViewModeToPageMode, applySettingsToDom, checkAutoReset, updateCountdowns, setupSectionBindings, controlEntries, renderApp }) {
+  migrateStorageShape?.();
   initProfileContext();
   syncStoredViewModeToPageMode();
   applySettingsToDom();

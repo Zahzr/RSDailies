@@ -1,0 +1,35 @@
+:root {
+    --ds-bg: #000;
+    --ds-text: #c3c3c3;
+    --ds-muted: #b9b9b9;
+    --ds-muted-2: #cfcfcf;
+    --ds-footer: #777;
+    --ds-link-hover: #4083ca;
+    --ds-nav-bg: #1f2f38;
+    --ds-menu-bg: #343a40;
+    --ds-panel-bg: #111;
+    --ds-panel-border: #2a2a2a;
+    --ds-panel-header-start: #151515;
+    --ds-panel-header-end: #1d232b;
+    --ds-panel-header-border: #2d2d2d;
+    --ds-row-name-bg: #111;
+    --ds-row-child-bg: #0a0a0a;
+    --ds-row-group-start: #141414;
+    --ds-row-group-end: #1b222a;
+    --ds-row-subgroup-start: #171717;
+    --ds-row-subgroup-end: #202020;
+    --ds-row-complete: #163600;
+    --ds-row-complete-hover: #102700;
+    --ds-row-incomplete: #590505;
+    --ds-row-incomplete-hover: #3b0404;
+    --ds-row-hidden: #4a3a08;
+    --ds-row-hidden-hover: #382c06;
+    --ds-row-name-overlay: rgba(40, 130, 73, 0.18);
+    --ds-row-name-overlay-hover: rgba(40, 130, 73, 0.25);
+    --ds-row-status-border: rgba(0, 0, 0, 0.18);
+    --ds-duration-note: #aad4ff;
+    --ds-location-note: #b8d8b0;
+    --ds-profit: #c1991c;
+    --ds-checkbox-width: 56px;
+    --ds-checkbox-width-sm: 48px;
+}

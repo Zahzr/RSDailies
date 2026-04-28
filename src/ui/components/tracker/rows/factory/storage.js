@@ -1,17 +1,19 @@
+import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
+
 export function getHiddenRows(sectionKey, load) {
-  return { ...(load(`hiddenRows:${sectionKey}`, {}) || {}) };
+  return { ...(load(StorageKeyBuilder.sectionHiddenRows(sectionKey), {}) || {}) };
 }
 
 export function saveHiddenRows(sectionKey, value, save) {
-  save(`hiddenRows:${sectionKey}`, value);
+  save(StorageKeyBuilder.sectionHiddenRows(sectionKey), value);
 }
 
 export function getRemovedRows(sectionKey, load) {
-  return { ...(load(`removedRows:${sectionKey}`, {}) || {}) };
+  return { ...(load(StorageKeyBuilder.sectionRemovedRows(sectionKey), {}) || {}) };
 }
 
 export function saveRemovedRows(sectionKey, value, save) {
-  save(`removedRows:${sectionKey}`, value);
+  save(StorageKeyBuilder.sectionRemovedRows(sectionKey), value);
 }
 
 export function hideCompletedRow(sectionKey, taskId, task, { load, save }) {

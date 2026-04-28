@@ -9,13 +9,22 @@ import {
 export function setupImportExport({
   documentRef = document,
   navigatorRef = navigator,
-  onImport = () => window.location.reload()
+  buildExportToken = () => '',
+  importProfileToken = () => {},
+  onImport = () => window.location.reload(),
+  storage = window.localStorage,
 } = {}) {
   const elements = getImportExportElements(documentRef);
   if (!hasImportExportElements(elements)) return;
 
+  const buttonReplacement = cloneInteractiveElement(elements.tokenButton);
   const copyReplacement = cloneInteractiveElement(elements.tokenCopy);
   const importReplacement = cloneInteractiveElement(elements.tokenImport);
+
+  buttonReplacement.addEventListener('click', () => {
+    elements.tokenOutput.value = buildExportToken(storage);
+    elements.tokenInput.classList.remove('is-invalid');
+  });
 
   copyReplacement.addEventListener('click', async (event) => {
     event.preventDefault();
@@ -35,6 +44,7 @@ export function setupImportExport({
       return;
     }
 
+    importProfileToken(value, storage);
     onImport(value);
   });
 }

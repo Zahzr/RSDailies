@@ -1,0 +1,2 @@
+export function applyPrimaryButtonPrimitive(button, variant = 'secondary') { if (!button) return button; button.classList.add('primitive-btn', `primitive-btn-${variant}`); return button; }
+export function createPrimaryButton(label, options = {}) { const button = document.createElement('button'); button.type = options.type || 'button'; button.textContent = label; button.className = `btn btn-${options.bootstrapVariant || 'secondary'} btn-sm active primitive-btn`; if (options.id) button.id = options.id; if (options.title) button.title = options.title; return button; }

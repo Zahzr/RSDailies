@@ -7,11 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "node --test",
+    "test:e2e": "playwright test",
+    "verify:full": "npm run test && npm run test:e2e && npm run audit && npm run build",
     "audit:imports": "node tools/audit/check-imports.mjs",
     "audit:topology": "node tools/audit/verify-topology.mjs",
-    "audit": "npm run audit:imports && npm run audit:topology"
+    "audit:content": "node tools/audit/validate-content.mjs",
+    "audit:timers": "node tools/audit/validate-timers.mjs",
+    "audit": "npm run audit:imports && npm run audit:topology && npm run audit:content && npm run audit:timers"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "vite": "^5.4.19"
   },
   "description": "Configuration-first RuneScape task tracker refactor with canonical UI, domain, data, app, and audit boundaries."

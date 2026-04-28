@@ -1,0 +1,122 @@
+<div class="container-fluid">
+    <a class="navbar-brand" href=".">
+        <img src="/RSDailies/img/dailyscape.png" alt="RSDailies" width="24" height="24" class="d-inline-block align-text-top">
+        RSDailies
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    More Resources
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="https://runescape.wiki/w/Money_making_guide" target="_blank"
+                        rel="noreferrer noopener">Money Making Guide</a>
+                    <a class="dropdown-item" href="https://runescape.wiki/w/Distractions_and_Diversions" target="_blank"
+                        rel="noreferrer noopener">Distractions and Diversions</a>
+                    <a class="dropdown-item" href="https://pvme.github.io" target="_blank" rel="noreferrer noopener">PVM
+                        Encyclopedia</a>
+                    <a class="dropdown-item" href="https://runepixels.com/" target="_blank"
+                        rel="noreferrer noopener">Runepixels</a>
+                    <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header">RS3 Discords</h6>
+                    <a class="dropdown-item" href="https://discord.gg/rs" target="_blank"
+                        rel="noreferrer noopener">Official RuneScape</a>
+                    <a class="dropdown-item" href="https://discord.gg/ahelp" target="_blank"
+                        rel="noreferrer noopener">Achievement Help</a>
+                    <a class="dropdown-item" href="https://discord.gg/whirlpooldnd" target="_blank"
+                        rel="noreferrer noopener">Deep Sea Fishing</a>
+                    <a class="dropdown-item" href="https://discord.gg/nnrmtTU" target="_blank"
+                        rel="noreferrer noopener">Player Owned Farms</a>
+                </div>
+            </li>
+        </ul>
+
+        <ul class="navbar-nav nav-pills ms-auto nav-right">
+            <li class="nav-item dropdown">
+                <a class="nav-link expanding_button" href="#" id="profile-button" title="Profiles">
+                    <span id="profile-name" style="display:none; visibility:hidden;"></span>&#128100;<span
+                        class="expanding_text">&nbsp;Profiles</span>
+                </a>
+                <div id="profile-control" style="display:none; visibility:hidden;" data-display="none">
+                    <strong>Profiles</strong>
+                    <ul id="profile-list"></ul>
+                    <form id="profile-form" autocomplete="off">
+                        <div class="row g-3 align-items-right">
+                            <div class="col-auto form-check" style="padding: 0 0 0 5px;">
+                                <input type="text" class="form-control" id="profileName" name="profileName"
+                                    placeholder="New Profile Name" maxlength="25" required>
+                                <div class="invalid-feedback">Enter a profile name.</div>
+                            </div>
+                            <div class="col-auto" style="padding: 0 5px 0 0;">
+                                <button type="submit" class="btn btn-primary">+</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link expanding_button" href="#" id="settings-button" title="Settings">
+                    &#9881;<span class="expanding_text">&nbsp;Settings</span>
+                </a>
+                <div id="settings-control" style="display:none; visibility:hidden;" data-display="none">
+                    <strong>Settings</strong>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="setting-split-daily-tables" checked>
+                        <label class="form-check-label" for="setting-split-daily-tables">Split Dailies and
+                            Gathering</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="setting-split-weekly-tables" checked>
+                        <label class="form-check-label" for="setting-split-weekly-tables">Split Weeklies inside
+                            Gathering</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="setting-3tick-herbs">
+                        <label class="form-check-label" for="setting-3tick-herbs">Speedy Growth Upgrade</label>
+                    </div>
+                    <div class="form-check settings-block">
+                        <input class="form-check-input" type="checkbox" id="setting-browser-notif">
+                        <label class="form-check-label" for="setting-browser-notif">Browser notifications on reset /
+                            ready timers</label>
+                    </div>
+                    <div class="form-group settings-block">
+                        <label for="setting-webhook-url">Discord Webhook URL (optional)</label>
+                        <input type="text" class="form-control" id="setting-webhook-url"
+                            placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+                    <div class="form-group settings-block">
+                        <label for="setting-webhook-user-id">Discord User ID to mention (optional)</label>
+                        <input type="text" class="form-control" id="setting-webhook-user-id"
+                            placeholder="123456789012345678">
+                    </div>
+                    <div class="form-group settings-block">
+                        <label for="setting-webhook-message-template">Webhook message template (optional)</label>
+                        <input type="text" class="form-control" id="setting-webhook-message-template"
+                            placeholder="RSDailies: {task} is due.">
+                        <small class="form-text text-muted">Use {task} for the task name.</small>
+                    </div>
+                    <div class="settings-actions">
+                        <button id="save-settings-btn" type="button" class="btn btn-primary btn-sm">Save
+                            Settings</button>
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link expanding_button" href="#" id="token-button" title="Import / Export"
+                    data-bs-toggle="modal" data-bs-target="#token-modal">
+                    &#8646;<span class="expanding_text">&nbsp;Import / Export</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

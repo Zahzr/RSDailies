@@ -1,17 +1,18 @@
 import { formatDurationMs } from '../../../core/time/formatters.js';
 import { getTimerMinutes } from './timer-math.js';
+import { StorageKeyBuilder } from '../../../core/storage/keys-builder.js';
 
 function getNow() {
   return Date.now();
 }
 
 function getFarmingTimers(load) {
-  const value = load('farmingTimers', {});
+  const value = load(StorageKeyBuilder.farmingTimers(), {});
   return value && typeof value === 'object' ? value : {};
 }
 
 function saveFarmingTimers(nextTimers, save) {
-  save('farmingTimers', nextTimers);
+  save(StorageKeyBuilder.farmingTimers(), nextTimers);
 }
 
 function cloneTimers(load) {
@@ -22,8 +23,8 @@ function clearChildProgressForTimer(taskId, { load, save }) {
   if (!taskId) return false;
 
   const prefix = `rs3farming::${taskId}::`;
-  const completed = { ...(load('completed:rs3farming', {}) || {}) };
-  const hiddenRows = { ...(load('hiddenRows:rs3farming', {}) || {}) };
+  const completed = { ...(load(StorageKeyBuilder.sectionCompletion('rs3farming'), {}) || {}) };
+  const hiddenRows = { ...(load(StorageKeyBuilder.sectionHiddenRows('rs3farming'), {}) || {}) };
 
   let changed = false;
 
@@ -42,8 +43,8 @@ function clearChildProgressForTimer(taskId, { load, save }) {
   });
 
   if (changed) {
-    save('completed:rs3farming', completed);
-    save('hiddenRows:rs3farming', hiddenRows);
+    save(StorageKeyBuilder.sectionCompletion('rs3farming'), completed);
+    save(StorageKeyBuilder.sectionHiddenRows('rs3farming'), hiddenRows);
   }
 
   return changed;

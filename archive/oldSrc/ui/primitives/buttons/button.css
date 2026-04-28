@@ -1,0 +1,2 @@
+.primitive-btn, .btn { box-sizing: border-box; border-width: 1px; border-style: solid; }
+.primitive-btn:hover, .primitive-btn:focus, .btn:hover, .btn:focus { transform: none !important; outline: 1px solid rgba(255,255,255,0.38); outline-offset: 0; box-shadow: 0 0 0 2px rgba(64,131,202,0.25); }

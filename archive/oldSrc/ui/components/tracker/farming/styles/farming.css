@@ -1,0 +1,356 @@
+.header_like_name {
+  padding: 0 !important;
+  background: transparent;
+  min-height: 42px !important;
+}
+
+.header_like_name .header_like_text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 0.38rem 1rem;
+  font-weight: 800;
+  font-size: 1.02rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f2f4f7;
+  text-shadow: 0 0 8px rgba(180, 190, 205, 0.28);
+}
+
+.header_like_color {
+  cursor: default !important;
+  background: inherit !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.header_like_click {
+  cursor: pointer !important;
+}
+
+.header_like_click:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: inset 0 0 0 9999px rgba(255, 255, 255, 0.03) !important;
+}
+
+.header_like_inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 0.55rem;
+  border-radius: 0 !important;
+}
+
+.header_like_controls {
+  right: 30px !important;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity_table thead .header_like_inner > div[style*="position:absolute"],
+.activity_table thead td.header_like_color > div > div[style*="position:absolute"] {
+  right: 30px !important;
+}
+
+.header_like_status {
+  color: #e0e3e8;
+  font-size: 0.94rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+.mini-collapse-btn {
+  min-width: 36px;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-reset-btn {
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.activity_table thead td.header_like_color,
+.farming-parent-row td {
+  background: linear-gradient(90deg, #151515, #1d232b) !important;
+  border-top: 1px solid #4c5663 !important;
+  border-bottom: 1px solid #4c5663 !important;
+  border-radius: 0 !important;
+}
+
+.farming-group-row td,
+.farming-subgroup-row td,
+.farming-timer-subgroup-row td,
+.farming-plain-subgroup-row td,
+.weekly-subgroup-row td,
+.gathering-group-row td,
+.gathering-subgroup-row td {
+  background: linear-gradient(90deg, #222831, #2a323c) !important;
+  border-top: 1px solid #5d6772 !important;
+  border-bottom: 1px solid #5d6772 !important;
+  border-radius: 0 !important;
+}
+
+.farming-group-row .header_like_text,
+.activity_table thead .header_like_text {
+  font-size: 1.08rem;
+}
+
+.farming-subheader-row .header_like_text,
+.weekly-subgroup-row .header_like_text,
+.gathering-subgroup-row .header_like_text {
+  font-size: 0.98rem;
+}
+
+.table_container > .activity_table > thead {
+  position: relative;
+}
+
+.table_container > .activity_table > thead::after {
+  content: '';
+  display: block;
+  height: 8px;
+  background: #000;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.table_container.visible-hidden-section:not(.last-visible-section) .activity_table thead td:first-child {
+  border-bottom-left-radius: 0 !important;
+}
+
+.table_container.visible-hidden-section:not(.last-visible-section) .activity_table thead td:last-child {
+  border-bottom-right-radius: 0 !important;
+}
+
+.table_container.last-visible-section.visible-hidden-section .activity_table thead td:first-child {
+  border-bottom-left-radius: 14px !important;
+  overflow: hidden;
+}
+
+.table_container.last-visible-section.visible-hidden-section .activity_table thead td:last-child {
+  border-bottom-right-radius: 14px !important;
+  overflow: hidden;
+}
+
+.table_container[data-hide="hide"] {
+  margin-bottom: 6px;
+}
+
+.table_container.visible-open-section .activity_table thead td:first-child,
+.table_container.visible-open-section .activity_table thead td:last-child {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.activity_table tbody tr:not(.farming-parent-row):not(.farming-group-row):not(.farming-subgroup-row):not(.weekly-subgroup-row):not(.gathering-group-row):not(.gathering-subgroup-row) td:first-child {
+  border-left: 14px solid #000 !important;
+  background-clip: padding-box;
+}
+
+.activity_table tbody tr:not(.farming-parent-row):not(.farming-group-row):not(.farming-subgroup-row):not(.weekly-subgroup-row):not(.gathering-group-row):not(.gathering-subgroup-row) td:last-child {
+  border-right: 14px solid #000 !important;
+  background-clip: padding-box;
+}
+
+.activity_table tbody tr.farming-subgroup-row td:first-child,
+.activity_table tbody tr.weekly-subgroup-row td:first-child,
+.activity_table tbody tr.gathering-group-row td:first-child,
+.activity_table tbody tr.gathering-subgroup-row td:first-child {
+  border-left: 14px solid #000 !important;
+  background-clip: padding-box;
+}
+
+.activity_table tbody tr.farming-subgroup-row td:last-child,
+.activity_table tbody tr.weekly-subgroup-row td:last-child,
+.activity_table tbody tr.gathering-group-row td:last-child,
+.activity_table tbody tr.gathering-subgroup-row td:last-child {
+  border-right: 14px solid #000 !important;
+  background-clip: padding-box;
+}
+
+.activity_table tbody tr.subgroup-header-row td {
+  position: relative;
+  z-index: 1;
+}
+
+.activity_table tbody tr.subgroup-header-row.subgroup-open-row td::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -8px;
+  height: 8px;
+  background: #000;
+  pointer-events: none;
+}
+
+.activity_table tbody tr.block-end-row td {
+  border-bottom: 5px solid #000 !important;
+  background-clip: padding-box;
+}
+
+.activity_table tbody tr.block-end-row td:first-child {
+  border-bottom-left-radius: 14px !important;
+  overflow: hidden;
+}
+
+.activity_table tbody tr.block-end-row td:last-child {
+  border-bottom-right-radius: 14px !important;
+  overflow: hidden;
+}
+
+.activity_table thead tr td,
+.activity_table tbody tr.farming-parent-row td,
+.activity_table tbody tr.farming-group-row td,
+.activity_table tbody tr.farming-subgroup-row td,
+.activity_table tbody tr.weekly-subgroup-row td,
+.activity_table tbody tr.gathering-group-row td,
+.activity_table tbody tr.gathering-subgroup-row td {
+  border-radius: 0 !important;
+}
+
+.activity_table tbody tr.subgroup-terminal-row td:first-child,
+.activity_table tbody tr.collapsed-subgroup-row td:first-child {
+  border-bottom-left-radius: 14px !important;
+  overflow: hidden;
+}
+
+.activity_table tbody tr.subgroup-terminal-row td:last-child,
+.activity_table tbody tr.collapsed-subgroup-row td:last-child {
+  border-bottom-right-radius: 14px !important;
+  overflow: hidden;
+}
+
+.activity_table tbody tr.custom-empty-row td {
+  border-left: 14px solid #000 !important;
+  border-right: 14px solid #000 !important;
+  background-clip: padding-box;
+  border-bottom-left-radius: 14px !important;
+  border-bottom-right-radius: 14px !important;
+  overflow: hidden;
+}
+
+.farming-child-row td.activity_name {
+  background: #3a4048 !important;
+  box-shadow: inset 0 0 0 9999px #3a4048 !important;
+  min-height: 40px;
+}
+
+.farming-child-row td.activity_name::before {
+  background: #3a4048 !important;
+}
+
+.farming-child-row td.activity_name a,
+.farming-child-row td.activity_name a:active,
+.farming-child-row td.activity_name a:link,
+.farming-child-row td.activity_name a:visited {
+  color: #fff !important;
+  text-decoration: none !important;
+  pointer-events: auto;
+  padding: 0.62rem 4.9rem 0.62rem 0.85rem;
+}
+
+.farming-child-row td.activity_name button.pin-button,
+.farming-child-row td.activity_name button.hide-button,
+.farming-child-row td.activity_name button.delete-button {
+  display: inline-flex !important;
+}
+
+.farming-child-row td.activity_notes,
+.farming-child-row td.activity_status {
+  font-size: 0.92rem;
+  vertical-align: middle;
+  min-height: 40px;
+}
+
+.farming-child-row td.activity_status .activity_check_off,
+.farming-child-row td.activity_status .activity_check_on {
+  min-height: 40px;
+}
+
+.farming-child-row .activity_desc {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 40px;
+  padding-top: 0;
+}
+
+.farming-location-row .activity_desc {
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.farming-location-row .activity_note_line,
+.farming-child-row .activity_note_line,
+.farming-child-row .activity_duration_note {
+  margin-top: 0;
+}
+
+.activity_table tbody tr:hover,
+.activity_table tbody tr:focus-within,
+.activity_table tbody tr:hover td,
+.activity_table tbody tr:focus-within td,
+.activity_table tbody tr:hover td *,
+.activity_table tbody tr:focus-within td * {
+  transform: none !important;
+}
+
+.activity_table tbody tr.subgroup-header-row:hover td,
+.activity_table tbody tr.subgroup-header-row:focus-within td,
+.activity_table tbody tr.subgroup-header-row:hover td *,
+.activity_table tbody tr.subgroup-header-row:focus-within td * {
+  transform: none !important;
+}
+
+.activity_table tr[data-completed="true"] .activity_notes,
+.activity_table tr[data-completed="true"] .activity_status,
+.activity_table tr:hover[data-completed="true"] .activity_notes,
+.activity_table tr:hover[data-completed="true"] .activity_status,
+.activity_table tr[data-completed="false"] .activity_notes,
+.activity_table tr[data-completed="false"] .activity_status,
+.activity_table tr[data-completed="idle"] .activity_notes,
+.activity_table tr[data-completed="idle"] .activity_status,
+.activity_table tr[data-completed="running"] .activity_notes,
+.activity_table tr[data-completed="running"] .activity_status,
+.activity_table tr:hover[data-completed="false"] .activity_notes,
+.activity_table tr:hover[data-completed="false"] .activity_status,
+.activity_table tr:hover[data-completed="idle"] .activity_notes,
+.activity_table tr:hover[data-completed="idle"] .activity_status,
+.activity_table tr:hover[data-completed="running"] .activity_notes,
+.activity_table tr:hover[data-completed="running"] .activity_status {
+  background-color: #590505 !important;
+  box-shadow: inset 0 0 0 9999px #590505 !important;
+}
+
+.activity_table tr[data-completed="true"] td.activity_name::before,
+.activity_table tr:hover[data-completed="true"] td.activity_name::before {
+  background: transparent !important;
+}
+
+.activity_table tr.custom-task-row[data-completed="true"] td.custom-task-timer,
+.activity_table tr.custom-task-row[data-completed="false"] td.custom-task-timer,
+.activity_table tr.custom-task-row[data-completed="idle"] td.custom-task-timer,
+.activity_table tr.custom-task-row[data-completed="running"] td.custom-task-timer,
+.activity_table tr.custom-task-row:hover[data-completed="true"] td.custom-task-timer,
+.activity_table tr.custom-task-row:hover[data-completed="false"] td.custom-task-timer,
+.activity_table tr.custom-task-row:hover[data-completed="idle"] td.custom-task-timer,
+.activity_table tr.custom-task-row:hover[data-completed="running"] td.custom-task-timer {
+  background: linear-gradient(90deg, #313844, #39414d) !important;
+  box-shadow: none !important;
+}

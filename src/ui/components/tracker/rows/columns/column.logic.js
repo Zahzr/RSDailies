@@ -1,5 +1,6 @@
 import { calculateGoldValue, formatGold } from '../../../../../core/calculators/GoldCalc.js';
 import { formatDurationMs } from '../../../../../core/time/formatters.js';
+import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
 import { COLUMN_TYPES } from './column.constants.js';
 
 function normalizeMinutes(value) {
@@ -11,7 +12,7 @@ export function getCustomTimerText(taskId, task, load) {
   const cooldownMinutes = normalizeMinutes(task?.cooldownMinutes);
   if (!Number.isFinite(cooldownMinutes) || cooldownMinutes < 1) return '';
 
-  const cooldowns = load?.('cooldowns', {}) || {};
+  const cooldowns = load?.(StorageKeyBuilder.cooldowns(), {}) || {};
   const active = cooldowns?.[taskId];
   if (active?.readyAt && active.readyAt > Date.now()) {
     return formatDurationMs(active.readyAt - Date.now());

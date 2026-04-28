@@ -1,0 +1,84 @@
+<div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 id="custom-task-modal-title" class="modal-title">Add Custom Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+            <form id="custom-task-form" autocomplete="off" novalidate>
+                <div class="mb-3">
+                    <label for="custom-task-name" class="form-label">Task Name</label>
+                    <input id="custom-task-name" type="text" class="form-control" maxlength="60"
+                        placeholder="Example: Buy feathers" required>
+                    <div class="form-text">
+                        Give this task a short, clear name.
+                    </div>
+                    <div class="invalid-feedback">Enter a task name.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="custom-task-note" class="form-label">Task Note</label>
+                    <textarea id="custom-task-note" class="form-control" rows="3" maxlength="240"
+                        placeholder="Optional reminder, route, cost, or short instructions."></textarea>
+                    <div class="form-text">
+                        Optional. Use this for reminders or extra context.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="custom-task-wiki" class="form-label">Wiki / URL</label>
+                    <input id="custom-task-wiki" type="url" class="form-control" inputmode="url"
+                        placeholder="https://runescape.wiki/...">
+                    <div class="form-text">
+                        Optional. Must start with http:// or https:// if used.
+                    </div>
+                    <div class="invalid-feedback">Enter a valid URL starting with http:// or https://</div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="custom-task-reset" class="form-label">Reset Type</label>
+                        <select id="custom-task-reset" class="form-select">
+                            <option value="daily" selected>Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="timer">Repeating Timer</option>
+                        </select>
+                        <div class="form-text">
+                            Choose how this task repeats.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="custom-task-alert" class="form-label">Alert Days Before Reset</label>
+                        <input id="custom-task-alert" type="number" class="form-control" value="0" min="0" step="1">
+                        <div class="form-text">
+                            Use 0 for same-day alerts.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="custom-task-timer-block" class="row g-3 mt-1" style="display:none; visibility:hidden;">
+                    <div class="col-md-6">
+                        <label for="custom-task-timer-mins" class="form-label">Timer Interval (Minutes)</label>
+                        <input id="custom-task-timer-mins" type="number" class="form-control" value="60" min="1"
+                            step="1">
+                    </div>
+
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="text-muted small">
+                            Repeating timers are stored as cooldown-style custom tasks and refresh on the interval you
+                            enter here.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button id="custom-task-save" type="button" class="btn btn-primary">Add Task</button>
+        </div>
+    </div>
+</div>

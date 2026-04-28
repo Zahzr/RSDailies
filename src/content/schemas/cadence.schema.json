@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cadence.schema.json",
+  "title": "Cadence Definition",
+  "type": "object",
+  "required": ["kind"],
+  "properties": {
+    "kind": { "type": "string", "minLength": 1 },
+    "intervalMinutes": { "type": "number", "minimum": 1 },
+    "window": { "type": "string" },
+    "cap": { "type": "number", "minimum": 0 }
+  },
+  "additionalProperties": true
+}

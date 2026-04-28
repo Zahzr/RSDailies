@@ -1,11 +1,14 @@
+import { getTrackerSection } from '../../../../../app/registries/unified-registry.js';
+import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
+
 export function childStorageKey(sectionKey, parentId, childId) {
-  return `${sectionKey}::${parentId}::${childId}`;
+  return StorageKeyBuilder.childTaskStorageId(sectionKey, parentId, childId);
 }
 
 export function buildPinId(sectionKey, task, options = {}) {
   if (options.overviewPinId) return options.overviewPinId;
   if (options.customStorageId?.includes('::')) return options.customStorageId;
-  return `${sectionKey}::${task.id}`;
+  return StorageKeyBuilder.overviewPinStorageId(sectionKey, task.id);
 }
 
 export function appendWeeklyCollapseButton(nameCell, task, context = {}) {
@@ -35,15 +38,7 @@ export function appendSectionBadge(nameCell, sectionKey) {
   if (!nameCell) return;
   const badge = document.createElement('span');
   badge.className = 'overview-section-badge';
-  const labels = {
-    custom: 'Custom',
-    rs3farming: 'Farming',
-    rs3daily: 'Dailies',
-    gathering: 'Gathering',
-    rs3weekly: 'Weeklies',
-    rs3monthly: 'Monthlies'
-  };
-  badge.textContent = labels[sectionKey] || sectionKey;
+  badge.textContent = getTrackerSection(sectionKey)?.shortLabel || getTrackerSection(sectionKey)?.label || sectionKey;
   nameCell.appendChild(badge);
 }
 

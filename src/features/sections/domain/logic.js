@@ -9,17 +9,25 @@ import {
   clearCooldownsForTaskIds
 } from './logic/reset-helpers.js';
 import { cleanupTaskNotificationsForReset } from '../../notifications/domain/bridge.js';
+import { StorageKeyBuilder } from '../../../core/storage/keys-builder.js';
+import { getTrackerSections } from '../../../app/registries/unified-registry.js';
 
 export { clearCompletionFor, resetCustomCompletions } from './logic/reset-helpers.js';
 
+function getResettableSectionsForFrequency(frequency) {
+  return getTrackerSections()
+    .filter((section) => section.resetFrequency === frequency)
+    .map((section) => section.id);
+}
+
 export function resetSectionView(sectionKey, { load, save, removeKey }) {
-  save(`completed:${sectionKey}`, {});
-  save(`hiddenRows:${sectionKey}`, {});
-  save(`removedRows:${sectionKey}`, {});
-  save(`order:${sectionKey}`, []);
-  save(`sort:${sectionKey}`, 'default');
-  save(`showHidden:${sectionKey}`, false);
-  save(`hideSection:${sectionKey}`, false);
+  save(StorageKeyBuilder.sectionCompletion(sectionKey), {});
+  save(StorageKeyBuilder.sectionHiddenRows(sectionKey), {});
+  save(StorageKeyBuilder.sectionRemovedRows(sectionKey), {});
+  save(StorageKeyBuilder.sectionOrder(sectionKey), []);
+  save(StorageKeyBuilder.sectionSort(sectionKey), 'default');
+  save(StorageKeyBuilder.sectionShowHidden(sectionKey), false);
+  save(StorageKeyBuilder.sectionHidden(sectionKey), false);
   clearCooldownsForTaskIds(getSectionTaskIds(sectionKey, load), { load, save });
   cleanupTaskNotificationsForReset(sectionKey, { removeKey });
   if (sectionKey === 'rs3farming') saveFarmingTimersFeature({}, save);
@@ -28,23 +36,23 @@ export function resetSectionView(sectionKey, { load, save, removeKey }) {
 
 export function checkAutoReset({ load, save, removeKey }) {
   const now = Date.now();
-  const lastVisit = load('lastVisit', 0);
+  const lastVisit = load(StorageKeyBuilder.lastVisit(), 0);
   let changed = false;
   const prevDaily = nextDailyBoundaryCore(new Date(now - 86400000)).getTime();
   const prevWeekly = nextWeeklyBoundaryCore(new Date(now - 7 * 86400000)).getTime();
   const prevMonthly = nextMonthlyBoundaryCore(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 1, 1))).getTime();
 
   if (lastVisit < prevDaily) {
-    clearCompletionFor('rs3daily', { load, save, removeKey });
+    getResettableSectionsForFrequency('daily').forEach((sectionKey) => clearCompletionFor(sectionKey, { load, save, removeKey }));
     clearGatheringCompletions('daily', { load, save, removeKey });
-    clearCompletionFor('rs3farming', { load, save, removeKey });
+    getResettableSectionsForFrequency('rolling').forEach((sectionKey) => clearCompletionFor(sectionKey, { load, save, removeKey }));
     resetCustomCompletions('daily', { load, save, removeKey });
     maybeBrowserNotify('RSDailies', 'Daily reset happened.');
     maybeWebhookNotify('RSDailies: daily reset happened (UTC).');
     changed = true;
   }
   if (lastVisit < prevWeekly) {
-    clearCompletionFor('rs3weekly', { load, save, removeKey });
+    getResettableSectionsForFrequency('weekly').forEach((sectionKey) => clearCompletionFor(sectionKey, { load, save, removeKey }));
     clearGatheringCompletions('weekly', { load, save, removeKey });
     resetCustomCompletions('weekly', { load, save, removeKey });
     maybeBrowserNotify('RSDailies', 'Weekly reset happened.');
@@ -52,14 +60,14 @@ export function checkAutoReset({ load, save, removeKey }) {
     changed = true;
   }
   if (lastVisit < prevMonthly) {
-    clearCompletionFor('rs3monthly', { load, save, removeKey });
+    getResettableSectionsForFrequency('monthly').forEach((sectionKey) => clearCompletionFor(sectionKey, { load, save, removeKey }));
     resetCustomCompletions('monthly', { load, save, removeKey });
     maybeBrowserNotify('RSDailies', 'Monthly reset happened.');
     maybeWebhookNotify('RSDailies: monthly reset happened (UTC).');
     changed = true;
   }
 
-  save('lastVisit', now);
+  save(StorageKeyBuilder.lastVisit(), now);
   return changed;
 }
 
@@ -80,16 +88,16 @@ export function hideTask(sectionKey, taskId, { load, save }) {
   saveSectionValueFeature(sectionKey, 'completed', section.completed, save);
   saveSectionValueFeature(sectionKey, 'hiddenRows', section.hiddenRows, save);
 
-  const order = load(`order:${sectionKey}`, []);
+  const order = load(StorageKeyBuilder.sectionOrder(sectionKey), []);
   if (Array.isArray(order)) {
     const filtered = order.filter((id) => id !== taskId);
-    save(`order:${sectionKey}`, filtered);
+    save(StorageKeyBuilder.sectionOrder(sectionKey), filtered);
   }
 
-  const removedRows = load(`removedRows:${sectionKey}`, {});
+  const removedRows = load(StorageKeyBuilder.sectionRemovedRows(sectionKey), {});
   if (removedRows[taskId]) {
     delete removedRows[taskId];
-    save(`removedRows:${sectionKey}`, removedRows);
+    save(StorageKeyBuilder.sectionRemovedRows(sectionKey), removedRows);
   }
 
   if (sectionKey === 'rs3farming') saveFarmingTimersFeature({}, save);

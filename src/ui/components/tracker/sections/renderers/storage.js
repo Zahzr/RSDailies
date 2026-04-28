@@ -1,22 +1,24 @@
+import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
+
 export function getHiddenRowsForSection(sectionKey, context) {
-  return { ...((context.load?.(`hiddenRows:${sectionKey}`, {})) || {}) };
+  return { ...((context.load?.(StorageKeyBuilder.sectionHiddenRows(sectionKey), {})) || {}) };
 }
 
 export function getRemovedRowsForSection(sectionKey, context) {
-  return { ...((context.load?.(`removedRows:${sectionKey}`, {})) || {}) };
+  return { ...((context.load?.(StorageKeyBuilder.sectionRemovedRows(sectionKey), {})) || {}) };
 }
 
 export function setHiddenRowsForSection(sectionKey, nextHiddenRows, context) {
-  context.save?.(`hiddenRows:${sectionKey}`, nextHiddenRows);
+  context.save?.(StorageKeyBuilder.sectionHiddenRows(sectionKey), nextHiddenRows);
 }
 
 export function setRemovedRowsForSection(sectionKey, nextRemovedRows, context) {
-  context.save?.(`removedRows:${sectionKey}`, nextRemovedRows);
+  context.save?.(StorageKeyBuilder.sectionRemovedRows(sectionKey), nextRemovedRows);
 }
 
 export function clearCompletedEntries(sectionKey, taskIds, context) {
   const ids = new Set((Array.isArray(taskIds) ? taskIds : []).filter(Boolean));
-  const completed = { ...((context.load?.(`completed:${sectionKey}`, {})) || {}) };
+  const completed = { ...((context.load?.(StorageKeyBuilder.sectionCompletion(sectionKey), {})) || {}) };
   let changed = false;
 
   ids.forEach((taskId) => {
@@ -27,7 +29,7 @@ export function clearCompletedEntries(sectionKey, taskIds, context) {
   });
 
   if (changed) {
-    context.save?.(`completed:${sectionKey}`, completed);
+    context.save?.(StorageKeyBuilder.sectionCompletion(sectionKey), completed);
   }
 }
 
@@ -85,7 +87,7 @@ export function buildRestoreEntries(sectionKey, taskIds, context) {
 export function restoreHiddenRow(sectionKey, taskId, context) {
   const nextHiddenRows = getHiddenRowsForSection(sectionKey, context);
   const nextRemovedRows = getRemovedRowsForSection(sectionKey, context);
-  const completed = { ...((context.load?.(`completed:${sectionKey}`, {})) || {}) };
+  const completed = { ...((context.load?.(StorageKeyBuilder.sectionCompletion(sectionKey), {})) || {}) };
 
   delete nextHiddenRows[taskId];
   delete nextRemovedRows[taskId];
@@ -93,6 +95,6 @@ export function restoreHiddenRow(sectionKey, taskId, context) {
 
   setHiddenRowsForSection(sectionKey, nextHiddenRows, context);
   setRemovedRowsForSection(sectionKey, nextRemovedRows, context);
-  context.save?.(`completed:${sectionKey}`, completed);
+  context.save?.(StorageKeyBuilder.sectionCompletion(sectionKey), completed);
   context.renderApp?.();
 }
