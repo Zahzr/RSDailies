@@ -1,7 +1,7 @@
-import { farmingConfig } from '../../features/farming/config/index.js';
+import { rs3FarmingGroups } from '../../content/games/rs3/sections/farming/groups/farming.groups.js';
 
 function buildFarmingTimerEntries() {
-  const groups = Array.isArray(farmingConfig?.groups) ? farmingConfig.groups : [];
+  const groups = Array.isArray(rs3FarmingGroups) ? rs3FarmingGroups : [];
   const entries = [];
 
   groups.forEach((group) => {

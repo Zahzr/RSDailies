@@ -1,0 +1,78 @@
+.activity_table td.activity_name button.pin-button,
+.activity_table td.activity_name button.hide-button,
+.activity_table td.activity_name button.delete-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.activity_table td.activity_name button.hide-button {
+  right: 8px;
+}
+
+.activity_table td.activity_name button.pin-button {
+  right: 42px;
+}
+
+.activity_table td.activity_name button.delete-button {
+  right: 76px;
+}
+
+.activity_table tbody tr:hover td.activity_name button.pin-button,
+.activity_table tbody tr:hover td.activity_name button.hide-button,
+.activity_table tbody tr:hover td.activity_name button.delete-button,
+.activity_table tbody tr:focus-within td.activity_name button.pin-button,
+.activity_table tbody tr:focus-within td.activity_name button.hide-button,
+.activity_table tbody tr:focus-within td.activity_name button.delete-button {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.activity_table tbody tr,
+.activity_table tbody td,
+.activity_table tbody td * {
+  transform: none;
+  will-change: auto;
+}
+
+.activity_table tbody tr:hover,
+.activity_table tbody tr:focus-within,
+.activity_table tbody tr:hover td,
+.activity_table tbody tr:focus-within td,
+.activity_table tbody tr:hover td *,
+.activity_table tbody tr:focus-within td * {
+  transform: none !important;
+}
+
+.activity_table td.activity_name a,
+.activity_table td.activity_name a:hover,
+.activity_table td.activity_name a:focus,
+.activity_table td.activity_name a:active {
+  text-decoration: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.activity_table tr:hover a::after,
+.activity_table td.activity_name a::after,
+.activity_table td.activity_name a:hover::after,
+.activity_table td.activity_name a:focus::after,
+.activity_table td.activity_name a:active::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  background-image: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}

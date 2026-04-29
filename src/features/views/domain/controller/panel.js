@@ -1,22 +1,14 @@
 import { getPageMode, syncStoredViewModeToPageMode, setPageMode } from '../model.js';
 import { positionPanel } from '../../../../ui/components/views/view-panel.js';
 import { getPrimaryNavItems, getViewsButtonLabel, getViewsPanelGroups } from '../../../../ui/components/views/views-menu.js';
+import { isPanelOpen, replaceInteractiveElement, setPanelOpenState } from '../../../../core/dom/controls.js';
 
 export function closeFloatingControls(documentRef = document) {
   ['profile-control', 'settings-control', 'views-control'].forEach((id) => {
     const element = documentRef.getElementById(id);
     if (!element) return;
-    element.style.display = 'none';
-    element.style.visibility = 'hidden';
-    element.dataset.display = 'none';
+    setPanelOpenState(element, false);
   });
-}
-
-function replaceNode(element) {
-  if (!element) return null;
-  const replacement = element.cloneNode(true);
-  element.replaceWith(replacement);
-  return replacement;
 }
 
 function setViewsButtonLabel(button, mode) {
@@ -89,16 +81,14 @@ export function setupViewsControl({ renderApp = () => {}, documentRef = document
   const list = documentRef.getElementById('views-list');
   if (!panelButton || !panel || !list) return;
 
-  const button = replaceNode(panelButton);
+  const button = replaceInteractiveElement(panelButton);
   const panelTitle = panel.querySelector('strong');
   if (panelTitle && panelTitle.textContent.trim().toLowerCase() === 'views') panelTitle.remove();
 
   function applyMode(mode) {
     setPageMode(mode);
     setViewsButtonLabel(button, mode);
-    panel.style.display = 'none';
-    panel.style.visibility = 'hidden';
-    panel.dataset.display = 'none';
+    setPanelOpenState(panel, false);
     renderApp();
   }
 
@@ -114,20 +104,16 @@ export function setupViewsControl({ renderApp = () => {}, documentRef = document
   function openPanel() {
     closeAllFloatingControls();
     renderList();
-    panel.style.display = 'block';
-    panel.style.visibility = 'visible';
-    panel.dataset.display = 'block';
+    setPanelOpenState(panel, true);
     positionPanel(panel, button, windowRef);
   }
 
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    const visible = panel.dataset.display === 'block';
+    const visible = isPanelOpen(panel);
     if (visible) {
-      panel.style.display = 'none';
-      panel.style.visibility = 'hidden';
-      panel.dataset.display = 'none';
+      setPanelOpenState(panel, false);
     } else {
       openPanel();
     }

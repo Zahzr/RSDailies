@@ -7,13 +7,7 @@ import {
   removeProfileStorage
 } from './store.js';
 import { renderProfileHeader, renderProfileRows } from '../../../ui/components/profiles/profile-view.js';
-
-function replaceNode(element) {
-  if (!element) return null;
-  const replacement = element.cloneNode(true);
-  element.replaceWith(replacement);
-  return replacement;
-}
+import { isPanelOpen, replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
 
 export function updateProfileHeader(profileNameElement = document.getElementById('profile-name')) {
   renderProfileHeader(profileNameElement, getCurrentProfile());
@@ -25,10 +19,10 @@ export function setupProfileControl({
   documentRef = document,
   windowRef = window
 } = {}) {
-  const button = replaceNode(documentRef.getElementById('profile-button'));
+  const button = replaceInteractiveElement(documentRef.getElementById('profile-button'));
   const panel = documentRef.getElementById('profile-control');
   const list = documentRef.getElementById('profile-list');
-  const form = replaceNode(documentRef.getElementById('profile-form'));
+  const form = replaceInteractiveElement(documentRef.getElementById('profile-form'));
 
   if (!button || !panel || !list || !form) return;
 
@@ -67,13 +61,11 @@ export function setupProfileControl({
     event.preventDefault();
     event.stopPropagation();
 
-    const visible = panel.dataset.display === 'block';
+    const visible = isPanelOpen(panel);
     closeFloatingControls();
 
     if (!visible) {
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.dataset.display = 'block';
+      setPanelOpenState(panel, true);
     }
   });
 
@@ -97,9 +89,7 @@ export function setupProfileControl({
     renderProfiles();
     renderApp();
 
-    panel.style.display = 'none';
-    panel.style.visibility = 'hidden';
-    panel.dataset.display = 'none';
+    setPanelOpenState(panel, false);
   });
 
   updateProfileHeader();

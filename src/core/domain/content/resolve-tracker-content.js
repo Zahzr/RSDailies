@@ -1,4 +1,5 @@
 import { loadContentPages } from './load-content.js';
+import { getCanonicalSections } from './catalog.js';
 
 function mergePenguinChildRows(task, weeklyData = {}) {
   const sourceChildren = Array.isArray(task.childRows)
@@ -119,24 +120,6 @@ function resolveSectionItems(section, deps) {
   return normalizeTaskItems(section.items, section.id, deps.getPenguinWeeklyData());
 }
 
-function buildCanonicalSectionDefinitions(pages) {
-  const sections = new Map();
-
-  pages.forEach((page) => {
-    (page.sections || []).forEach((section) => {
-      const current = sections.get(section.id);
-      const nextScore = page.id === section.id ? 2 : 1;
-      const currentScore = current?.score || 0;
-
-      if (!current || nextScore > currentScore) {
-        sections.set(section.id, { score: nextScore, section });
-      }
-    });
-  });
-
-  return Array.from(sections.values()).map((entry) => entry.section);
-}
-
 export function resolveTrackerSections({
   pages = loadContentPages(),
   getCustomTasks = () => [],
@@ -144,7 +127,7 @@ export function resolveTrackerSections({
 } = {}) {
   const deps = { getCustomTasks, getPenguinWeeklyData };
 
-  return buildCanonicalSectionDefinitions(pages).reduce((sections, section) => {
+  return getCanonicalSections({ pages, game: 'rs3' }).reduce((sections, section) => {
     sections[section.id] = resolveSectionItems(section, deps);
     return sections;
   }, {});

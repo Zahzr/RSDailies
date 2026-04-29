@@ -3,13 +3,13 @@
  * Parent section headers should NOT inject inline restore UI.
  * Restore belongs only to subgroup header dropdowns in src/ui/components/headers/.
  */
+import { replaceInteractiveElement } from '../../../../../core/dom/controls.js';
 
 function rebindButton(documentRef, id, onClick) {
   const existing = documentRef.getElementById(id);
   if (!existing) return null;
 
-  const replacement = existing.cloneNode(true);
-  existing.replaceWith(replacement);
+  const replacement = replaceInteractiveElement(existing);
 
   replacement.addEventListener('click', (event) => {
     event.preventDefault();

@@ -20,6 +20,7 @@ import { initApp } from '../boot/init-app.js';
 import { startAppLoops } from '../boot/run-loops.js';
 import { setupGameShell } from '../../ui/pages/GameShell.js';
 import { createScheduler } from './scheduler.js';
+import { migrateStorageShape } from '../../core/storage/migrations.js';
 
 export function createCompositionRoot({ rootElement } = {}) {
   const scheduler = createScheduler();
@@ -35,6 +36,7 @@ export function createCompositionRoot({ rootElement } = {}) {
 
         initApp({
           documentRef,
+          migrateStorageShape,
           initProfileContext,
           syncStoredViewModeToPageMode,
           applySettingsToDom,

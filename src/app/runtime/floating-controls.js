@@ -1,8 +1,22 @@
 /**
  * Orchestration for floating UI panels (Profiles, Settings, Views)
  */
+import { setPanelOpenState } from '../../core/dom/controls.js';
 
 let globalClickCloserBound = false;
+
+const FLOATING_CONTROL_SELECTORS = [
+  '#views-button-panel',
+  '#views-control',
+  '#profile-button',
+  '#profile-control',
+  '#settings-button',
+  '#settings-control',
+  '#token-button',
+  '#token-modal',
+  '#custom_add_button',
+  '#custom-task-modal',
+];
 
 export function setupProfileControl(deps) {
   const {
@@ -68,19 +82,7 @@ export function setupGlobalClickCloser(deps) {
     const target = event.target;
     if (!(target instanceof Element)) return;
 
-    if (
-      target.closest('#views-button') ||
-      target.closest('#views-button-panel') ||
-      target.closest('#views-control') ||
-      target.closest('#profile-button') ||
-      target.closest('#profile-control') ||
-      target.closest('#settings-button') ||
-      target.closest('#settings-control') ||
-      target.closest('#token-button') ||
-      target.closest('#token-modal') ||
-      target.closest('#custom_add_button') ||
-      target.closest('#custom-task-modal')
-    ) {
+    if (FLOATING_CONTROL_SELECTORS.some((selector) => target.closest(selector))) {
       return;
     }
 

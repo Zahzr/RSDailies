@@ -1,20 +1,14 @@
 import { applySettingsToDom, collectSettingsFromDom, getSettings, saveSettings } from './state.js';
-
-function replaceNode(element) {
-  if (!element) return null;
-  const replacement = element.cloneNode(true);
-  element.replaceWith(replacement);
-  return replacement;
-}
+import { isPanelOpen, replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
 
 export function setupSettingsControl({
   renderApp = () => { },
   closeFloatingControls = () => { },
   documentRef = document
 } = {}) {
-  const button = replaceNode(documentRef.getElementById('settings-button'));
+  const button = replaceInteractiveElement(documentRef.getElementById('settings-button'));
   const panel = documentRef.getElementById('settings-control');
-  const saveBtn = replaceNode(documentRef.getElementById('save-settings-btn'));
+  const saveBtn = replaceInteractiveElement(documentRef.getElementById('save-settings-btn'));
 
   if (!button || !panel || !saveBtn) return;
 
@@ -24,13 +18,11 @@ export function setupSettingsControl({
     event.preventDefault();
     event.stopPropagation();
 
-    const visible = panel.dataset.display === 'block';
+    const visible = isPanelOpen(panel);
     closeFloatingControls();
 
     if (!visible) {
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.dataset.display = 'block';
+      setPanelOpenState(panel, true);
     }
   });
 
@@ -49,9 +41,7 @@ export function setupSettingsControl({
       }
     }
 
-    panel.style.display = 'none';
-    panel.style.visibility = 'hidden';
-    panel.dataset.display = 'none';
+    setPanelOpenState(panel, false);
 
     renderApp();
   });

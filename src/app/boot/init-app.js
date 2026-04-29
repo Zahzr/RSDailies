@@ -1,5 +1,6 @@
 export function initApp({
   documentRef = document,
+  migrateStorageShape = () => {},
   initProfileContext,
   syncStoredViewModeToPageMode,
   applySettingsToDom,
@@ -18,6 +19,7 @@ export function initApp({
   renderApp,
 }) {
   const run = () => {
+    migrateStorageShape();
     initProfileContext();
     syncStoredViewModeToPageMode();
     applySettingsToDom();

@@ -1,196 +1,55 @@
 # RSDailies Architecture Authority Map
 
-This document defines the current folder ownership rules for the RSDailies codebase.
-
-The goal is to keep the tracker easy to maintain by making each top-level folder responsible for one clear part of the app.
-
----
+This document defines the active ownership rules for the current codebase.
 
 ## Top-Level Ownership
 
 | Path | Owns |
 |---|---|
-| `assets/` | Static images, icons, and public assets served by Vite. |
-| `docs/` | Current architecture, reference, and handoff documentation. |
-| `src/app/` | App boot, composition, runtime wiring, scheduling, and orchestration. |
-| `src/core/` | Shared non-visual utilities, storage, state, time helpers, IDs, API clients, and calculators. |
-| `src/data/` | Game data and configuration shells for RS3 and OSRS. |
-| `src/features/` | Feature/domain logic, controllers, state, calculations, and configuration. |
-| `src/ui/` | All visual rendering, pages, components, primitives, HTML partials, and CSS. |
-| `tools/` | Developer audit and verification scripts. |
-
----
+| `assets/` | Static images and public assets served by Vite. |
+| `docs/` | Active architecture and reference documentation for the current repo state. |
+| `src/app/` | Boot flow, runtime orchestration, composition, registries, and scheduling. |
+| `src/content/` | Authored tracker pages, sections, task/timer content, and JSON schemas. |
+| `src/core/` | Shared storage, state, migrations, timers, content resolution, DOM helpers, utilities, and API wrappers. |
+| `src/features/` | Feature-specific domain logic, adapters, config sources, and controllers. |
+| `src/ui/` | Shell HTML, page glue, components, primitives, and styles. |
+| `tests/` | Node unit tests and Playwright smoke coverage. |
+| `tools/` | Audit and verification scripts. |
 
 ## Boundary Rules
 
-1. UI rendering belongs in `src/ui/`.
-2. Shared non-visual helpers belong in `src/core/`.
-3. Feature/domain behavior belongs in `src/features/`.
-4. Game and task data belongs in `src/data/` or feature config folders.
-5. Static images and icons belong in `assets/`.
-6. Developer checks belong in `tools/`.
-7. Documentation should stay current and useful.
-8. Removed compatibility paths should not be recreated.
-9. Broad rewrites should be avoided unless they are intentionally planned and verified.
-
----
+1. Rendered UI belongs in `src/ui/`.
+2. Canonical authored tracker structure belongs in `src/content/`.
+3. Shared non-visual infrastructure belongs in `src/core/`.
+4. Feature-specific domain behavior belongs in `src/features/`.
+5. Generated output and temporary artifacts do not belong in the repo state.
+6. Removed legacy or compatibility paths should not be reintroduced without an explicit migration plan.
+7. Documentation must describe the current implementation, not prior planning phases.
 
 ## Runtime Flow
 
 ```mermaid
 flowchart TD
-    A[src/app boot] --> B[src/app runtime]
-    B --> C[src/features domain logic]
-    C --> D[src/data configuration]
-    B --> E[src/ui pages and components]
-    E --> F[src/ui primitives and styles]
-    B --> G[src/core storage/state/time/api utilities]
+    A[src/app boot] --> B[src/app runtime and registries]
+    B --> C[src/core storage, content, timers, migrations]
+    B --> D[src/features domain adapters]
+    B --> E[src/ui shell and renderers]
+    D --> F[src/content authored pages and sections]
 ```
-
----
 
 ## Tracker Rendering Flow
 
 ```mermaid
 flowchart LR
-    A[Data/config] --> B[Feature logic]
-    B --> C[Section renderer]
-    C --> D[Parent header]
-    D --> E[Subparent header]
-    E --> F[Rows]
-    F --> G[Columns]
-    G --> H[UI primitives]
+    A[Page mode] --> B[Unified registry]
+    B --> C[Content loader and validator]
+    C --> D[Content resolver]
+    D --> E[Tracker section renderer]
+    E --> F[Rows, parents, subparents, and table UI]
 ```
 
----
+## Notes
 
-## Tracker UI Systems
-
-Tracker UI is organized under:
-
-```text
-src/ui/components/tracker/
-├── farming/
-├── parents/
-├── rows/
-├── sections/
-├── subparents/
-└── tables/
-```
-
-### Rows
-
-```text
-src/ui/components/tracker/rows/
-├── row.constants.js
-├── row.logic.js
-├── row.render.js
-├── row.styles.css
-├── columns/
-├── factory/
-└── templates/
-```
-
-### Columns
-
-```text
-src/ui/components/tracker/rows/columns/
-├── column.constants.js
-├── column.logic.js
-├── column.render.js
-├── column.styles.css
-├── hooks/
-├── types/
-└── utils/
-```
-
-Rows should use the column system instead of owning individual column internals directly.
-
----
-
-## UI Rule
-
-If a file renders markup, controls layout, or owns CSS behavior, it should live under `src/ui/`.
-
-Examples:
-
-- Headers
-- Buttons
-- Rows
-- Tables
-- Menus
-- Modals
-- Section renderers
-- Page selection UI
-- App shell HTML/CSS
-
----
-
-## Feature Rule
-
-If a file decides app behavior but does not render UI, it should live under `src/features/`.
-
-Examples:
-
-- Section state logic
-- Settings controllers
-- View controllers
-- Farming timer math
-- Profile stores
-- Task configuration adapters
-
----
-
-## Core Rule
-
-If a file is reusable, non-visual, and not tied to one feature, it should live under `src/core/`.
-
-Examples:
-
-- Storage helpers
-- Time formatting
-- Countdown helpers
-- DOM utilities
-- ID helpers
-- API wrappers
-- Shared calculators
-
-## What This Document Is For
-
-- **Stops random folder sprawl** - keeps files in predictable places
-- **Guides AI edits** - ensures AI knows where each piece of code belongs
-- **Sets boundaries** - clear rules about what belongs in UI vs. features vs. core
-- **Supports staged improvements** - allows targeted cleanup passes without breaking everything
-- **Keeps maintenance clear** - easy to know where to look when bugs or missing features pop up
-
-This document is the **contract** between you and future developers (including AI).
-
-If you want to change this file later, you should:
-
-1. Plan the change intentionally
-2. Update the rules
-3. Verify that the site still builds and works
-4. Update screenshots or examples if necessary
-
----
-
-## How To Use This Today
-
-When you add or modify code:
-
-1. Ask yourself:
-   - Is this UI or logic?
-   - Is it reusable or feature-specific?
-   - Does it belong in `ui`, `features`, or `core`?
-2. Update the appropriate file
-3. Verify the change works
-4. If the change is significant, update this document with the new structure
-
----
-
-## What This Document Is Not For
-
-- **Not a style guide** - use `src/ui/styles/` for that
-- **Not a full API reference** - use code comments and JSDoc
-- **Not a design spec** - use `docs/design` if you want visual mockups
-- **Not a strict template** - you can add folders inside these paths (e.g. `src/ui/components/tracker/rows/columns/types/`)
+- `src/content/` is the active authored hierarchy for tracker pages and sections.
+- `src/features/tasks/config/` and `src/features/farming/config/` are still valid upstream config sources where content adapters currently draw task or timer collections.
+- Compatibility fields such as `legacyMode` and `legacySectionId` exist to support storage migration and old saved state, not as permission to restore old architecture.

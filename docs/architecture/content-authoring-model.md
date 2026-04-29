@@ -13,6 +13,13 @@ The tracker now has three primary authority layers:
 - `src/core/`
   Shared domain infrastructure such as content validation, content resolution, storage keys, migrations, and timer registry.
 
+Feature configuration still feeds part of the authored content surface today:
+
+- `src/features/tasks/config/`
+- `src/features/farming/config/`
+
+Those modules are upstream data sources for several `src/content/games/rs3/sections/**/tasks` and `groups` adapters. UI and runtime code should consume `src/content/`, even when the content layer is still sourcing from those feature configs under the hood.
+
 ## Page Definitions
 
 Current authored tracker pages live under:
@@ -98,6 +105,15 @@ Shared timer definitions live in:
 - `src/core/timers/timer-registry.js`
 
 Current timer registry coverage is the farming timer set extracted from the existing farming config groups.
+
+## Compatibility Fields
+
+Some authored definitions still carry compatibility fields:
+
+- `legacyMode`
+- `legacySectionId`
+
+These exist only for migration and backfill behavior. New runtime features should prefer canonical page IDs, section IDs, and registry metadata.
 
 ## Verification
 

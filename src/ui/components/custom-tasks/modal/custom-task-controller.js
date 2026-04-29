@@ -1,13 +1,14 @@
 import { buildCustomTask, isValidOptionalUrl } from './controller/builders.js';
-import { cloneAndReplace, readTaskForm, resetCustomTaskForm, syncTimerVisibility } from './controller/form.js';
+import { readTaskForm, resetCustomTaskForm, syncTimerVisibility } from './controller/form.js';
 import { promptAddCustomTask } from './controller/prompt.js';
+import { replaceInteractiveElement } from '../../../../core/dom/controls.js';
 
 export function setupCustomAdd(deps) {
   const { getCustomTasks, saveCustomTasks, renderApp, bootstrapRef = window.bootstrap, documentRef = document } = deps;
   const existingAddBtn = documentRef.getElementById('custom_add_button');
   if (!existingAddBtn) return;
 
-  const addBtn = cloneAndReplace(existingAddBtn);
+  const addBtn = replaceInteractiveElement(existingAddBtn);
   const modalEl = documentRef.getElementById('custom-task-modal');
   let saveBtn = documentRef.getElementById('custom-task-save');
   const nameInput = documentRef.getElementById('custom-task-name');
@@ -30,7 +31,7 @@ export function setupCustomAdd(deps) {
     return;
   }
 
-  saveBtn = cloneAndReplace(saveBtn);
+  saveBtn = replaceInteractiveElement(saveBtn);
   resetSelect.addEventListener('change', () => syncTimerVisibility(resetSelect, timerBlock, alertInput));
 
   addBtn.addEventListener('click', (event) => {

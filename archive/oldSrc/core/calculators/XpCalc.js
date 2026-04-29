@@ -1,1 +1,0 @@
-export function calculateXp(totalActions, xpEach) { const actions = Number(totalActions); const xp = Number(xpEach); if (!Number.isFinite(actions) || !Number.isFinite(xp)) return 0; return Math.round(actions * xp); }

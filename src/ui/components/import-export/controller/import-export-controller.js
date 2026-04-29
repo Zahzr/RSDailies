@@ -1,10 +1,10 @@
 import {
-  cloneInteractiveElement,
   copyTextToClipboard,
   getImportExportElements,
   hasImportExportElements,
   readImportToken
 } from '../logic/import-export.logic.js';
+import { replaceInteractiveElement } from '../../../../core/dom/controls.js';
 
 export function setupImportExport({
   documentRef = document,
@@ -17,9 +17,9 @@ export function setupImportExport({
   const elements = getImportExportElements(documentRef);
   if (!hasImportExportElements(elements)) return;
 
-  const buttonReplacement = cloneInteractiveElement(elements.tokenButton);
-  const copyReplacement = cloneInteractiveElement(elements.tokenCopy);
-  const importReplacement = cloneInteractiveElement(elements.tokenImport);
+  const buttonReplacement = replaceInteractiveElement(elements.tokenButton);
+  const copyReplacement = replaceInteractiveElement(elements.tokenCopy);
+  const importReplacement = replaceInteractiveElement(elements.tokenImport);
 
   buttonReplacement.addEventListener('click', () => {
     elements.tokenOutput.value = buildExportToken(storage);

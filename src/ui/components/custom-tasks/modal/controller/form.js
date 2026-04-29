@@ -1,10 +1,3 @@
-export function cloneAndReplace(element) {
-  if (!element) return null;
-  const replacement = element.cloneNode(true);
-  element.replaceWith(replacement);
-  return replacement;
-}
-
 export function resetCustomTaskForm({ nameInput, noteInput, wikiInput, resetSelect, alertInput, timerMinsInput, timerBlock }) {
   nameInput.value = '';
   noteInput.value = '';

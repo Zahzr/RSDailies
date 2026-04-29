@@ -1,23 +1,5 @@
 import { loadContentPages } from './load-content.js';
-
-function getCanonicalSectionsById(pages = loadContentPages()) {
-  const sections = new Map();
-
-  pages.forEach((page) => {
-    (page.sections || []).forEach((section) => {
-      const current = sections.get(section.id);
-      const score = page.id === section.id ? 2 : 1;
-
-      if (!current || score > current.score) {
-        sections.set(section.id, { score, section });
-      }
-    });
-  });
-
-  return new Map(
-    Array.from(sections.entries()).map(([sectionId, entry]) => [sectionId, entry.section])
-  );
-}
+import { getCanonicalSectionsById } from './catalog.js';
 
 function flattenTaskIds(tasks = []) {
   return tasks.flatMap((task) => {
@@ -42,7 +24,7 @@ function flattenGroupTaskIds(sectionId, groups = []) {
 }
 
 export function getContentSectionDefinition(sectionId, { pages = loadContentPages() } = {}) {
-  return getCanonicalSectionsById(pages).get(sectionId) || null;
+  return getCanonicalSectionsById({ pages, game: 'rs3' }).get(sectionId) || null;
 }
 
 export function getContentSectionTaskIds(sectionId, { pages = loadContentPages(), customTasks = [] } = {}) {

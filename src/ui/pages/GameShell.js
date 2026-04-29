@@ -7,7 +7,7 @@ function ensureOsrsEmptyState(documentRef) {
   panel = documentRef.createElement('div');
   panel.id = 'osrs-empty-state';
   panel.className = 'container-xl osrs-empty-state';
-  panel.innerHTML = `<div class="alert alert-dark border-secondary text-center" role="status"><h2 class="h4 mb-2">Old School RuneScape</h2><p class="mb-0">The OSRS shell is active. Add OSRS task configuration files under <code>src/data/osrs</code> and the tracker shell can render them without changing RS3 logic.</p></div>`;
+  panel.innerHTML = `<div class="alert alert-dark border-secondary text-center" role="status"><h2 class="h4 mb-2">Old School RuneScape</h2><p class="mb-0">The OSRS shell is active. Add authored OSRS tracker pages under <code>src/content/games/osrs/pages</code> and wire sections through the content layer instead of older data files.</p></div>`;
 
   const dashboard = documentRef.getElementById('dashboard-container');
   dashboard?.parentNode?.insertBefore(panel, dashboard);

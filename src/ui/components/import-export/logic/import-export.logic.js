@@ -15,12 +15,6 @@ export function hasImportExportElements(elements) {
   return Boolean(elements.tokenButton && elements.tokenModal && elements.tokenOutput && elements.tokenInput && elements.tokenCopy && elements.tokenImport);
 }
 
-export function cloneInteractiveElement(element) {
-  const replacement = element.cloneNode(true);
-  element.replaceWith(replacement);
-  return replacement;
-}
-
 export async function copyTextToClipboard(text, fallbackTarget, documentRef = document, navigatorRef = navigator) {
   try {
     await navigatorRef.clipboard.writeText(text);

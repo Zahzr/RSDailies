@@ -1,2 +1,0 @@
-export const USER_AGENT_NOTE = 'Use a descriptive User-Agent when wiring this service to the RuneScape Wiki APIs in production.';
-export async function fetchGrandExchangePrice(itemId, fetchImpl = fetch) { if (!itemId) return null; const url = `https://prices.runescape.wiki/api/v1/rs/latest?id=${encodeURIComponent(itemId)}`; const response = await fetchImpl(url, { headers: { Accept: 'application/json' } }); if (!response.ok) throw new Error(`Grand Exchange request failed: ${response.status}`); const json = await response.json(); return json?.data?.[itemId] || null; }
