@@ -1,4 +1,4 @@
-export const hops = {
+export const hopsTimerGroup = {
   id: 'hops',
   label: 'Hops',
   note: 'Hop run timer with patch checklist rows.',
@@ -14,7 +14,8 @@ export const hops = {
       alertOnReady: true,
       autoClearOnReady: false,
       vanishOnStart: true,
-      timerKind: 'run'
+      timerKind: 'run',
+      timerCategory: 'farming',
     }
   ],
   plots: [
@@ -25,4 +26,4 @@ export const hops = {
   ]
 };
 
-export default hops;
+export default hopsTimerGroup;

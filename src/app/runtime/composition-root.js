@@ -13,7 +13,7 @@ import {
   setupCustomAdd,
   startPenguinSync,
   updateCountdowns,
-  cleanupReadyFarmingTimers,
+  cleanupReadyTimers,
   cleanupReadyCooldowns
 } from './app-core/runtime-api.js';
 import { initApp } from '../boot/init-app.js';
@@ -56,7 +56,7 @@ export function createCompositionRoot({ rootElement } = {}) {
             startAppLoops({
               updateCountdowns,
               checkAutoReset,
-              cleanupReadyFarmingTimers,
+              cleanupReadyTimers,
               cleanupReadyCooldowns,
               startPenguinSync,
               renderApp,

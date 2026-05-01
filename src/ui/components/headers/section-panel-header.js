@@ -1,4 +1,5 @@
 import { HEADER_CLASSES, HEADER_CONTROL_TEXT } from './header.constants.js';
+import { renderHeaderFrameHtml } from './header.frame.js';
 
 function renderControlButton(id, className, text, variant = 'secondary') {
   return `<button id="${id}" type="button" class="btn btn-${variant} btn-sm active primitive-btn ${className}">${text}</button>`;
@@ -27,17 +28,12 @@ function renderHeaderControls(section) {
 }
 
 export function renderSectionPanelHeader(section, colspan) {
-  return `
-      <tr>
-        <td colspan="${colspan}" class="${HEADER_CLASSES.cell}">
-          <div class="${HEADER_CLASSES.bar} section-panel-header">
-            <div class="${HEADER_CLASSES.title} section-panel-title">
-              <span class="${HEADER_CLASSES.titleText}">${section.label}</span>
-            </div>
-            <div class="${HEADER_CLASSES.controls} section-panel-controls">
-              ${renderHeaderControls(section)}
-            </div>
-          </div>
-        </td>
-      </tr>`.trim();
+  return renderHeaderFrameHtml({
+    label: section.label,
+    colspan,
+    controlsHtml: renderHeaderControls(section),
+    barClassName: 'section-panel-header',
+    titleClassName: 'section-panel-title',
+    controlsClassName: 'section-panel-controls'
+  });
 }

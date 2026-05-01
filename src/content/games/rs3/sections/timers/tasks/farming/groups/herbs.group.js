@@ -1,4 +1,4 @@
-export const herbs = {
+export const herbsTimerGroup = {
   id: 'herbs',
   label: 'Herbs',
   note: 'Main herb run timer with individual patch checklist rows.',
@@ -15,7 +15,8 @@ export const herbs = {
       alertOnReady: true,
       autoClearOnReady: false,
       vanishOnStart: true,
-      timerKind: 'run'
+      timerKind: 'run',
+      timerCategory: 'farming',
     }
   ],
   plots: [
@@ -30,4 +31,4 @@ export const herbs = {
   ]
 };
 
-export default herbs;
+export default herbsTimerGroup;

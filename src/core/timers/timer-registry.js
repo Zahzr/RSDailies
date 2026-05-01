@@ -1,7 +1,7 @@
-import { rs3FarmingGroups } from '../../content/games/rs3/sections/farming/groups/farming.groups.js';
+import { rs3FarmingTimerGroups } from '../../content/games/rs3/sections/timers/tasks/farming/farming.tasks.js';
 
 function buildFarmingTimerEntries() {
-  const groups = Array.isArray(rs3FarmingGroups) ? rs3FarmingGroups : [];
+  const groups = Array.isArray(rs3FarmingTimerGroups) ? rs3FarmingTimerGroups : [];
   const entries = [];
 
   groups.forEach((group) => {
@@ -17,6 +17,7 @@ function buildFarmingTimerEntries() {
           id: timerId,
           groupId: group.id,
           groupLabel: group.label || group.name || group.id,
+          category: timer?.timerCategory || 'farming',
           game: 'rs3',
         },
       ]);
@@ -42,4 +43,8 @@ export function getAllTimerDefinitions() {
 
 export function getTimerDefinitionsByGroup(groupId) {
   return getAllTimerDefinitions().filter((timer) => timer.groupId === groupId);
+}
+
+export function getTimerDefinitionsByCategory(category) {
+  return getAllTimerDefinitions().filter((timer) => timer.category === category);
 }

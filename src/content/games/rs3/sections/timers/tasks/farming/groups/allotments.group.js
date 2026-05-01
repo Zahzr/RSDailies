@@ -1,4 +1,4 @@
-export const allotments = {
+export const allotmentsTimerGroup = {
   id: 'allotments',
   label: 'Allotments',
   note: 'Allotment run timer with patch checklist rows.',
@@ -14,7 +14,8 @@ export const allotments = {
       alertOnReady: true,
       autoClearOnReady: false,
       vanishOnStart: true,
-      timerKind: 'run'
+      timerKind: 'run',
+      timerCategory: 'farming',
     }
   ],
   plots: [
@@ -31,4 +32,4 @@ export const allotments = {
   ]
 };
 
-export default allotments;
+export default allotmentsTimerGroup;

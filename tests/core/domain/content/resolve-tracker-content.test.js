@@ -45,14 +45,14 @@ const pages = [
     ],
   },
   {
-    id: 'rs3farming',
-    title: 'Farming',
+    id: 'timers',
+    title: 'Timers',
     game: 'rs3',
     layout: 'tracker',
     sections: [
       {
-        id: 'rs3farming',
-        label: 'Farming',
+        id: 'timers',
+        label: 'Timers',
         renderVariant: 'timer-groups',
         groups: [
           {
@@ -67,7 +67,7 @@ const pages = [
   },
 ];
 
-test('content resolver hydrates custom, weekly, and farming sections', () => {
+test('content resolver hydrates custom, weekly, and timer sections', () => {
   const sections = resolveTrackerSections({
     pages,
     getCustomTasks: () => [{ id: 'custom-1', name: 'Custom Task' }],
@@ -76,7 +76,7 @@ test('content resolver hydrates custom, weekly, and farming sections', () => {
 
   assert.deepEqual(sections.custom, [{ id: 'custom-1', name: 'Custom Task' }]);
   assert.equal(sections.rs3weekly[0].children[0].name, 'Ice Mountain');
-  assert.equal(sections.rs3farming[0].subgroups[0].timerTask.id, 'farm-herbs');
+  assert.equal(sections.timers[0].subgroups[0].timerTask.id, 'farm-herbs');
 });
 
 test('content resolver preserves page section order and resolves page-local items', () => {
@@ -88,4 +88,27 @@ test('content resolver preserves page section order and resolves page-local item
 
   assert.deepEqual(page.sections.map((section) => section.id), ['rs3daily', 'rs3weekly']);
   assert.equal(page.sections[1].resolvedItems[0].children[0].name, 'Varrock');
+});
+
+test('content resolver supports blank OSRS workspace sections', () => {
+  const osrsPages = [
+    {
+      id: 'osrsall',
+      title: 'Tasks',
+      game: 'osrs',
+      layout: 'tracker',
+      sections: [
+        { id: 'osrsdaily', label: 'Dailies', displayOrder: 1, renderVariant: 'standard', items: [] },
+        { id: 'osrsweekly', label: 'Weeklies', displayOrder: 2, renderVariant: 'standard', items: [] },
+        { id: 'osrsmonthly', label: 'Monthlies', displayOrder: 3, renderVariant: 'standard', items: [] },
+      ],
+    },
+  ];
+
+  const sections = resolveTrackerSections({ pages: osrsPages, game: 'osrs' });
+  const page = resolveTrackerPage('osrsall', { pages: osrsPages });
+
+  assert.deepEqual(Object.keys(sections), ['osrsdaily', 'osrsweekly', 'osrsmonthly']);
+  assert.deepEqual(page.sections.map((section) => section.id), ['osrsdaily', 'osrsweekly', 'osrsmonthly']);
+  assert.deepEqual(page.sections.map((section) => section.resolvedItems), [[], [], []]);
 });

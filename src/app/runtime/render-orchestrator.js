@@ -21,16 +21,17 @@ import {
 import { getTrackerPageSectionIds, getTrackerSections } from '../registries/unified-registry.js';
 import { renderTrackerSection } from '../../ui/renderers/tracker-section-renderer.js';
 import { StorageKeyBuilder } from '../../core/storage/keys-builder.js';
+import { GAMES, getSelectedGame } from '../../core/state/GameContext.js';
 
 export function renderApp(deps) {
   const {
     load,
     getTaskState,
     getResolvedSections,
-    cleanupReadyFarmingTimers,
+    cleanupReadyTimers,
     cleanupReadyCooldowns,
     hideTooltip,
-    getFarmingHeaderStatus,
+    getTimerHeaderStatus,
     bindSectionControls,
     getPageMode,
     getOverviewPins,
@@ -39,16 +40,18 @@ export function renderApp(deps) {
     maybeNotifyTaskAlert
   } = deps;
 
-  cleanupReadyFarmingTimers();
+  cleanupReadyTimers();
   cleanupReadyCooldowns();
   hideTooltip();
 
+  const game = getSelectedGame() === GAMES.OSRS ? GAMES.OSRS : GAMES.RS3;
   const uiContext = createUiContext(deps, () => renderApp(deps));
-  const sections = getResolvedSections();
-  const sectionDefinitions = getTrackerSections();
-  const sectionKeys = sectionDefinitions.map((section) => section.id);
-  const mode = getPageMode();
-  const visibleSectionIds = new Set(getTrackerPageSectionIds(mode));
+  const sections = getResolvedSections(game);
+  const sectionDefinitions = getTrackerSections(game);
+  const allSectionDefinitions = getTrackerSections();
+  const sectionKeys = allSectionDefinitions.map((section) => section.id);
+  const mode = getPageMode(game);
+  const visibleSectionIds = new Set(getTrackerPageSectionIds(mode, game));
 
   reorderDashboardSections(sectionKeys);
   applyPageModeVisibility(mode);
@@ -58,7 +61,7 @@ export function renderApp(deps) {
 
   clearAllSectionBodies(sectionKeys);
 
-  sectionDefinitions.forEach((sectionDefinition) => {
+  allSectionDefinitions.forEach((sectionDefinition) => {
     const key = sectionDefinition.id;
     const { tbody } = getSectionElements(key);
     if (!tbody) return;
@@ -80,7 +83,7 @@ export function renderApp(deps) {
       load,
       uiContext,
       isCollapsedBlock: deps.isCollapsedBlock,
-      getFarmingHeaderStatus,
+      getTimerHeaderStatus,
     });
 
     if (key === 'custom' && tbody.children.length === 0) appendCustomEmptyPlaceholder(tbody);
@@ -91,7 +94,7 @@ export function renderApp(deps) {
   markVisibleSectionEdges(sectionKeys);
 
   renderOverviewPanel(sections, {
-    getPageMode,
+    getPageMode: () => getPageMode(game),
     getOverviewPins,
     load,
     applyPageModeVisibility,

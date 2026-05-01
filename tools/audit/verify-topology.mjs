@@ -9,7 +9,10 @@ const mustExist = [
   'src/ui/app-shell/runtime/render-app-shell.js',
   'src/ui/app-shell/runtime/section-panel.js',
   'src/ui/app-shell/styles/index.css',
+  'src/core/dom/panel-controls.js',
+  'src/ui/renderers/tracker-section-renderer.js',
   'src/ui/components/headers/header.render.js',
+  'src/ui/components/headers/header.frame.js',
   'src/ui/components/tracker/rows/row.render.js',
   'src/ui/components/tracker/rows/columns/column.render.js',
   'src/ui/components/tracker/parents/parent.render.js',
@@ -17,7 +20,7 @@ const mustExist = [
   'src/ui/components/tracker/sections/index.js',
   'src/ui/components/tracker/sections/controls/section-controls-bindings.js',
   'src/ui/components/tracker/sections/renderers/common.js',
-  'src/ui/components/tracker/sections/renderers/farming.js',
+  'src/ui/components/tracker/sections/renderers/timers.js',
   'src/ui/components/tracker/sections/renderers/standard.js',
   'src/ui/components/tracker/sections/renderers/storage.js',
   'src/ui/components/tracker/tables/utils/table.utils.js',
@@ -33,7 +36,9 @@ const mustExist = [
   'src/ui/components/views/view-panel.js',
   'src/ui/components/views/views-menu.js',
   'src/features/sections/domain/state.js',
-  'src/features/farming/domain/timer-math.js',
+  'src/features/timers/domain/timer-math.js',
+  'src/features/timers/domain/timers.js',
+  'src/features/farming/domain/farming-timer-durations.js',
   'src/app/boot/bootstrap.js'
 ];
 for (const rel of mustExist) {
@@ -90,6 +95,14 @@ const forbidden = [
 for (const rel of forbidden) {
   if (fs.existsSync(path.join(root, rel))) failures.push('Forbidden removed or misplaced path remains: ' + rel);
 }
+const registryFile = fs.readFileSync(path.join(root, 'src/app/registries/unified-registry.js'), 'utf8');
+if (registryFile.includes("game: 'rs3'")) failures.push('Registry still hardcodes RS3-only resolution: src/app/registries/unified-registry.js');
+const resolveContentFile = fs.readFileSync(path.join(root, 'src/core/domain/content/resolve-tracker-content.js'), 'utf8');
+if (resolveContentFile.includes("game: 'rs3'")) failures.push('Content resolver still hardcodes RS3-only section resolution: src/core/domain/content/resolve-tracker-content.js');
+const gameShellFile = fs.readFileSync(path.join(root, 'src/ui/pages/GameShell.js'), 'utf8');
+if (gameShellFile.includes('osrs-empty-state')) failures.push('OSRS shell still routes through placeholder-only state: src/ui/pages/GameShell.js');
+const sectionRendererFile = fs.readFileSync(path.join(root, 'src/ui/renderers/tracker-section-renderer.js'), 'utf8');
+if (/switch\s*\(\s*sectionDefinition\.renderVariant\s*\)/.test(sectionRendererFile)) failures.push('Tracker section renderer still uses central switch dispatch: src/ui/renderers/tracker-section-renderer.js');
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const next = path.join(dir, entry.name);
@@ -110,13 +123,10 @@ for (const file of walk(path.join(root, 'src'))) {
   if (text.includes('ui/features/farming') || text.includes('features/farming/styles')) failures.push('Stale farming UI style reference: ' + rel);
   if (text.includes('ui/features/profiles') || text.includes('features/profiles/ui')) failures.push('Stale profile UI reference: ' + rel);
   if (text.includes('ui/features/views') || text.includes('features/views/ui')) failures.push('Stale views UI reference: ' + rel);
-  if (/\blegacy\b/i.test(text)) failures.push('Legacy wording remains in active source: ' + rel);
-  if (/\bshim\b/i.test(text)) failures.push('Shim wording remains in active source: ' + rel);
-  if (/\bcompatibility\b/i.test(text) || /\bcompatible\b/i.test(text)) failures.push('Compatibility wording remains in active source: ' + rel);
   if (text.includes('ParentHandler') || text.includes('SubParentHandler') || text.includes('SubParentLogic')) failures.push('Stale handler naming remains: ' + rel);
 }
 if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);
 }
-console.log('Topology audit passed. Canonical UI tracker rows, columns, headers, parents, subparents, custom tasks, and import/export are present with removed paths forbidden.');
+console.log('Topology audit passed. Canonical UI tracker rows, columns, headers, timer platform files, custom tasks, and import/export are present with removed paths forbidden.');

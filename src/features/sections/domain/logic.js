@@ -1,4 +1,4 @@
-import { getSectionState as getSectionStateFeature, saveSectionValue as saveSectionValueFeature, saveFarmingTimers as saveFarmingTimersFeature } from './state.js';
+import { getSectionState as getSectionStateFeature, saveSectionValue as saveSectionValueFeature, saveTimers as saveTimersFeature } from './state.js';
 import { nextDailyBoundary as nextDailyBoundaryCore, nextWeeklyBoundary as nextWeeklyBoundaryCore, nextMonthlyBoundary as nextMonthlyBoundaryCore } from '../../../core/time/boundaries.js';
 import { maybeBrowserNotify, maybeWebhookNotify } from '../../notifications/domain/bridge.js';
 import {
@@ -11,6 +11,7 @@ import {
 import { cleanupTaskNotificationsForReset } from '../../notifications/domain/bridge.js';
 import { StorageKeyBuilder } from '../../../core/storage/keys-builder.js';
 import { getTrackerSections } from '../../../app/registries/unified-registry.js';
+import { TIMER_SECTION_KEY } from '../../timers/domain/timers.js';
 
 export { clearCompletionFor, resetCustomCompletions } from './logic/reset-helpers.js';
 
@@ -30,7 +31,7 @@ export function resetSectionView(sectionKey, { load, save, removeKey }) {
   save(StorageKeyBuilder.sectionHidden(sectionKey), false);
   clearCooldownsForTaskIds(getSectionTaskIds(sectionKey, load), { load, save });
   cleanupTaskNotificationsForReset(sectionKey, { removeKey });
-  if (sectionKey === 'rs3farming') saveFarmingTimersFeature({}, save);
+  if (sectionKey === TIMER_SECTION_KEY) saveTimersFeature({}, save);
   if (sectionKey === 'custom') save('notified:custom', {});
 }
 
@@ -100,5 +101,5 @@ export function hideTask(sectionKey, taskId, { load, save }) {
     save(StorageKeyBuilder.sectionRemovedRows(sectionKey), removedRows);
   }
 
-  if (sectionKey === 'rs3farming') saveFarmingTimersFeature({}, save);
+  if (sectionKey === TIMER_SECTION_KEY) saveTimersFeature({}, save);
 }

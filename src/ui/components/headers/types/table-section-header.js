@@ -1,4 +1,5 @@
 import { HEADER_CLASSES } from '../header.constants.js';
+import { createHeaderFrameRow } from '../header.frame.js';
 import { createCollapseButton } from '../controls/collapse-button.js';
 import { createResetButton } from '../controls/reset-button.js';
 import { createRestoreMenu } from '../controls/restore-menu.js';
@@ -15,50 +16,38 @@ export function createTableSectionHeader(label, blockId, options = {}) {
     context = {}
   } = options;
 
-  const row = document.createElement('tr');
-  row.className = [HEADER_CLASSES.row, className].filter(Boolean).join(' ');
-
-  const cell = document.createElement('td');
-  cell.colSpan = 3;
-  cell.className = HEADER_CLASSES.cell;
-
-  const bar = document.createElement('div');
-  bar.className = HEADER_CLASSES.bar;
-
-  const center = document.createElement('div');
-  center.className = HEADER_CLASSES.title;
-  center.innerHTML = `<span class="${HEADER_CLASSES.titleText}">${label}</span>`;
-
-  const controls = document.createElement('div');
-  controls.className = HEADER_CLASSES.controls;
+  const controls = [];
 
   if (rightText) {
     const status = document.createElement('span');
     status.className = HEADER_CLASSES.status;
     status.textContent = rightText;
-    controls.appendChild(status);
+    controls.push(status);
   }
 
-  if (onResetClick) controls.appendChild(createResetButton(onResetClick));
+  if (onResetClick) controls.push(createResetButton(onResetClick));
 
   const restoreMenu = createRestoreMenu(restoreOptions, onRestoreSelect);
-  if (restoreMenu) controls.appendChild(restoreMenu);
+  if (restoreMenu) controls.push(restoreMenu);
 
   const collapse = (collapsible && blockId) ? createCollapseButton(blockId, context) : null;
-  if (collapse) controls.appendChild(collapse);
+  if (collapse) controls.push(collapse);
 
-  bar.append(center, controls);
-  cell.appendChild(bar);
+  const { row, controlsHost } = createHeaderFrameRow({
+    label,
+    controls,
+    rowClassName: [HEADER_CLASSES.row, className].filter(Boolean).join(' '),
+    titleIsHtml: true
+  });
 
   if (onRightClick) {
-    controls.classList.add(HEADER_CLASSES.clickable);
-    controls.addEventListener('click', (event) => {
+    controlsHost.classList.add(HEADER_CLASSES.clickable);
+    controlsHost.addEventListener('click', (event) => {
       if (collapse && event.target.closest('.mini-collapse-btn')) return;
       if (event.target.closest('.mini-reset-btn, select')) return;
       onRightClick();
     });
   }
 
-  row.appendChild(cell);
   return row;
 }

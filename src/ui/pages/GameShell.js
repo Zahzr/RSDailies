@@ -1,19 +1,5 @@
 import { GAMES, getSelectedGame, setSelectedGame, subscribeToGameChanges } from '../../core/state/GameContext.js';
 
-function ensureOsrsEmptyState(documentRef) {
-  let panel = documentRef.getElementById('osrs-empty-state');
-  if (panel) return panel;
-
-  panel = documentRef.createElement('div');
-  panel.id = 'osrs-empty-state';
-  panel.className = 'container-xl osrs-empty-state';
-  panel.innerHTML = `<div class="alert alert-dark border-secondary text-center" role="status"><h2 class="h4 mb-2">Old School RuneScape</h2><p class="mb-0">The OSRS shell is active. Add authored OSRS tracker pages under <code>src/content/games/osrs/pages</code> and wire sections through the content layer instead of older data files.</p></div>`;
-
-  const dashboard = documentRef.getElementById('dashboard-container');
-  dashboard?.parentNode?.insertBefore(panel, dashboard);
-  return panel;
-}
-
 function ensureGameSelectionPage(documentRef) {
   let page = documentRef.getElementById('game-selection-page');
   if (page) return page;
@@ -61,18 +47,15 @@ function bindGameChoices(documentRef) {
 function renderGame(documentRef) {
   const game = getSelectedGame();
   const hasGame = game === GAMES.RS3 || game === GAMES.OSRS;
-  const isOsrs = game === GAMES.OSRS;
 
   const dashboard = documentRef.getElementById('dashboard-container');
   const overview = documentRef.getElementById('overview-mount');
   const selection = ensureGameSelectionPage(documentRef);
-  const osrsPanel = ensureOsrsEmptyState(documentRef);
   const switcher = documentRef.getElementById('game-switcher-control');
 
   selection.hidden = hasGame;
-  if (dashboard) dashboard.hidden = !hasGame || isOsrs;
-  if (overview) overview.hidden = !hasGame || isOsrs;
-  osrsPanel.hidden = !hasGame || !isOsrs;
+  if (dashboard) dashboard.hidden = !hasGame;
+  if (overview) overview.hidden = !hasGame;
   if (switcher) switcher.hidden = !hasGame;
 
   documentRef.querySelectorAll('[data-game-choice]').forEach((button) => {

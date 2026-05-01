@@ -8,7 +8,7 @@ test('storage key builder returns stable global keys', () => {
   assert.equal(StorageKeyBuilder.lastVisit(), 'lastVisit');
   assert.equal(StorageKeyBuilder.overviewPins(), 'overviewPins');
   assert.equal(StorageKeyBuilder.customTasks(), 'customTasks');
-  assert.equal(StorageKeyBuilder.farmingTimers(), 'farmingTimers');
+  assert.equal(StorageKeyBuilder.timers(), 'timers');
 });
 
 test('storage key builder returns stable section keys', () => {
@@ -26,7 +26,7 @@ test('storage key builder returns stable section keys', () => {
 
 test('storage key builder preserves child storage ids', () => {
   assert.equal(
-    StorageKeyBuilder.childTaskStorageId('rs3farming', 'farm-herbs', 'herb-falador'),
-    'rs3farming::farm-herbs::herb-falador'
+    StorageKeyBuilder.childTaskStorageId('timers', 'farm-herbs', 'herb-falador'),
+    'timers::farm-herbs::herb-falador'
   );
 });

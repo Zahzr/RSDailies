@@ -1,4 +1,4 @@
-export const trees = {
+export const treesTimerGroup = {
   id: 'trees',
   label: 'Trees',
   note: 'Tree timers broken into compact child groups.',
@@ -15,6 +15,7 @@ export const trees = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [
         { id: 'tree-lumbridge', name: 'Lumbridge', wiki: 'https://runescape.wiki/w/Tree_patch' },
         { id: 'tree-falador', name: 'Falador', wiki: 'https://runescape.wiki/w/Tree_patch' },
@@ -35,6 +36,7 @@ export const trees = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [
         { id: 'fruit-gnome-stronghold', name: 'Gnome Stronghold', wiki: 'https://runescape.wiki/w/Fruit_Tree_Patch' },
         { id: 'fruit-gnome-village', name: 'Tree Gnome Village', wiki: 'https://runescape.wiki/w/Fruit_Tree_Patch' },
@@ -56,6 +58,7 @@ export const trees = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [
         { id: 'spirit-port-sarim', name: 'Port Sarim', wiki: 'https://runescape.wiki/w/Spirit_tree_patch' },
         { id: 'spirit-etceteria', name: 'Etceteria', wiki: 'https://runescape.wiki/w/Spirit_tree_patch' },
@@ -75,6 +78,7 @@ export const trees = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'calquat-brimhaven', name: 'Brimhaven', wiki: 'https://runescape.wiki/w/Calquat_patch' }]
     },
     {
@@ -89,6 +93,7 @@ export const trees = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [
         { id: 'elder-gnome-stronghold', name: 'Gnome Stronghold', wiki: 'https://runescape.wiki/w/Elder_tree_patch' },
         { id: 'elder-falador', name: 'Falador', wiki: 'https://runescape.wiki/w/Elder_tree_patch' }
@@ -98,4 +103,4 @@ export const trees = {
   plots: []
 };
 
-export default trees;
+export default treesTimerGroup;

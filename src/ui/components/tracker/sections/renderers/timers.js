@@ -1,13 +1,12 @@
 import {
   appendRows,
-  buildFarmingLocationTask,
+  buildTimerLocationTask,
   centeredHeaderLabel,
-  collectFarmingGroupTaskIds,
+  collectTimerGroupTaskIds,
   finalizeSubgroupBlock,
-  formatFarmingDurationNote,
+  formatTimerDurationNote,
   getRenderableHeaderStatus,
-  makeFarmingChildStorageId,
-  markLastVisibleRow
+  makeTimerChildStorageId,
 } from './common.js';
 import {
   buildRestoreEntries,
@@ -17,37 +16,42 @@ import {
   resetTaskList,
   restoreHiddenRow,
   setHiddenRowsForSection,
-  setRemovedRowsForSection
+  setRemovedRowsForSection,
 } from './storage.js';
 
-function resetFarmingRows(taskIds, context, timerIds = []) {
-  clearCompletedEntries('rs3farming', taskIds, context);
+const TIMER_SECTION_KEY = 'timers';
 
-  const hiddenRows = getHiddenRowsForSection('rs3farming', context);
-  const removedRows = getRemovedRowsForSection('rs3farming', context);
+function resetTimerRows(taskIds, context, timerIds = []) {
+  clearCompletedEntries(TIMER_SECTION_KEY, taskIds, context);
+
+  const hiddenRows = getHiddenRowsForSection(TIMER_SECTION_KEY, context);
+  const removedRows = getRemovedRowsForSection(TIMER_SECTION_KEY, context);
 
   taskIds.forEach((taskId) => {
     delete hiddenRows[taskId];
     delete removedRows[taskId];
   });
 
-  timerIds.forEach((timerId) => context.clearFarmingTimer?.(timerId));
+  timerIds.forEach((timerId) => context.clearTimer?.(timerId));
 
-  setHiddenRowsForSection('rs3farming', hiddenRows, context);
-  setRemovedRowsForSection('rs3farming', removedRows, context);
+  setHiddenRowsForSection(TIMER_SECTION_KEY, hiddenRows, context);
+  setRemovedRowsForSection(TIMER_SECTION_KEY, removedRows, context);
   context.renderApp?.();
 }
 
 function buildTimerPlotRows(timerTask, subgroup, createRightSideChildRow, formatDurationMs, statusNote, context) {
-  const durationNote = formatFarmingDurationNote(timerTask, { formatDurationMs });
+  const durationNote = formatTimerDurationNote(timerTask, {
+    formatDurationMs,
+    getSettingsValue: context.getSettingsValue,
+  });
   const plots = Array.isArray(subgroup.plots) ? subgroup.plots : [];
   const rows = [];
 
   plots.forEach((plot) => {
-    const childTask = buildFarmingLocationTask(plot, timerTask, { durationNote, statusNote });
-    const childRow = createRightSideChildRow('rs3farming', childTask, timerTask.id, {
+    const childTask = buildTimerLocationTask(plot, timerTask, { durationNote, statusNote });
+    const childRow = createRightSideChildRow(TIMER_SECTION_KEY, childTask, timerTask.id, {
       extraClass: 'farming-child-row',
-      context
+      context,
     });
     if (childRow) rows.push(childRow);
   });
@@ -55,23 +59,23 @@ function buildTimerPlotRows(timerTask, subgroup, createRightSideChildRow, format
   return rows;
 }
 
-function renderFarmingSingleTimerGroup(tbody, group, subgroup, deps) {
+function renderSingleTimerGroup(tbody, group, subgroup, deps) {
   const {
     isCollapsedBlock,
-    getFarmingHeaderStatus,
+    getTimerHeaderStatus,
     createHeaderRow,
     createRightSideChildRow,
     formatDurationMs,
-    context
+    context,
   } = deps;
 
   const timerTask = subgroup.timerTask;
-  const blockId = `group-collapse-rs3farming-${group.id}-${timerTask.id}`;
+  const blockId = `group-collapse-timers-${group.id}-${timerTask.id}`;
   const collapsed = isCollapsedBlock(blockId);
   const plotIds = (Array.isArray(subgroup.plots) ? subgroup.plots : [])
-    .map((plot) => makeFarmingChildStorageId(timerTask.id, plot.id));
-  const restoreOptions = buildRestoreEntries('rs3farming', plotIds, context);
-  const headerStatus = getFarmingHeaderStatus?.(timerTask) || { note: '', state: 'idle' };
+    .map((plot) => makeTimerChildStorageId(timerTask.id, plot.id));
+  const restoreOptions = buildRestoreEntries(TIMER_SECTION_KEY, plotIds, context);
+  const headerStatus = getTimerHeaderStatus?.(timerTask) || { note: '', state: 'idle' };
 
   const plotRows = collapsed
     ? []
@@ -87,10 +91,10 @@ function renderFarmingSingleTimerGroup(tbody, group, subgroup, deps) {
   const headerRow = createHeaderRow(centeredHeaderLabel(group.name), blockId, {
     className: 'farming-group-row farming-parent-row',
     rightText: getRenderableHeaderStatus(headerStatus),
-    onResetClick: () => resetFarmingRows(plotIds, context, [timerTask.id]),
+    onResetClick: () => resetTimerRows(plotIds, context, [timerTask.id]),
     restoreOptions,
-    onRestoreSelect: (taskId) => restoreHiddenRow('rs3farming', taskId, context),
-    context
+    onRestoreSelect: (taskId) => restoreHiddenRow(TIMER_SECTION_KEY, taskId, context),
+    context,
   });
 
   finalizeSubgroupBlock(headerRow, plotRows, { collapsed });
@@ -98,15 +102,15 @@ function renderFarmingSingleTimerGroup(tbody, group, subgroup, deps) {
   if (!collapsed) appendRows(tbody, plotRows);
 }
 
-export function renderGroupedFarming(tbody, groups, deps) {
+export function renderGroupedTimers(tbody, groups, deps) {
   const {
     isCollapsedBlock,
-    getFarmingHeaderStatus,
+    getTimerHeaderStatus,
     createHeaderRow,
     createRow,
     createRightSideChildRow,
     formatDurationMs,
-    context
+    context,
   } = deps;
   if (!tbody) return;
 
@@ -114,26 +118,26 @@ export function renderGroupedFarming(tbody, groups, deps) {
     const subgroups = Array.isArray(group.subgroups) ? group.subgroups : [];
 
     if (subgroups.length === 1 && subgroups[0]?.isTimer && subgroups[0]?.timerTask) {
-      renderFarmingSingleTimerGroup(tbody, group, subgroups[0], deps);
+      renderSingleTimerGroup(tbody, group, subgroups[0], deps);
       return;
     }
 
-    const groupBlockId = `group-collapse-rs3farming-parent-${group.id}`;
+    const groupBlockId = `group-collapse-timers-parent-${group.id}`;
     const groupCollapsed = isCollapsedBlock(groupBlockId);
-    const groupTaskIds = collectFarmingGroupTaskIds(group);
-    const groupRestoreOptions = buildRestoreEntries('rs3farming', groupTaskIds, context);
+    const groupTaskIds = collectTimerGroupTaskIds(group);
+    const groupRestoreOptions = buildRestoreEntries(TIMER_SECTION_KEY, groupTaskIds, context);
 
     const groupRows = [];
 
     subgroups.forEach((subgroup, subgroupIndex) => {
       if (subgroup.isTimer && subgroup.timerTask) {
         const timerTask = subgroup.timerTask;
-        const blockId = `group-collapse-rs3farming-${group.id}-${timerTask.id}`;
+        const blockId = `group-collapse-timers-${group.id}-${timerTask.id}`;
         const collapsed = isCollapsedBlock(blockId);
         const plotIds = (Array.isArray(subgroup.plots) ? subgroup.plots : [])
-          .map((plot) => makeFarmingChildStorageId(timerTask.id, plot.id));
-        const restoreOptions = buildRestoreEntries('rs3farming', plotIds, context);
-        const headerStatus = getFarmingHeaderStatus?.(timerTask) || { note: '', state: 'idle' };
+          .map((plot) => makeTimerChildStorageId(timerTask.id, plot.id));
+        const restoreOptions = buildRestoreEntries(TIMER_SECTION_KEY, plotIds, context);
+        const headerStatus = getTimerHeaderStatus?.(timerTask) || { note: '', state: 'idle' };
         const plotRows = collapsed
           ? []
           : buildTimerPlotRows(
@@ -148,10 +152,10 @@ export function renderGroupedFarming(tbody, groups, deps) {
         const subgroupHeader = createHeaderRow(centeredHeaderLabel(subgroup.name), blockId, {
           className: 'farming-subgroup-row farming-subheader-row farming-timer-subgroup-row',
           rightText: getRenderableHeaderStatus(headerStatus),
-          onResetClick: () => resetFarmingRows(plotIds, context, [timerTask.id]),
+          onResetClick: () => resetTimerRows(plotIds, context, [timerTask.id]),
           restoreOptions,
-          onRestoreSelect: (taskId) => restoreHiddenRow('rs3farming', taskId, context),
-          context
+          onRestoreSelect: (taskId) => restoreHiddenRow(TIMER_SECTION_KEY, taskId, context),
+          context,
         });
 
         const isLastSubgroup = groupIndex === allGroups.length - 1 && subgroupIndex === subgroups.length - 1;
@@ -161,24 +165,24 @@ export function renderGroupedFarming(tbody, groups, deps) {
       }
 
       if (Array.isArray(subgroup.tasks) && subgroup.tasks.length > 0) {
-        const blockId = `group-collapse-rs3farming-${group.id}-${subgroup.id}`;
+        const blockId = `group-collapse-timers-${group.id}-${subgroup.id}`;
         const collapsed = isCollapsedBlock(blockId);
         const taskIds = subgroup.tasks.map((task) => task.id);
-        const restoreOptions = buildRestoreEntries('rs3farming', taskIds, context);
+        const restoreOptions = buildRestoreEntries(TIMER_SECTION_KEY, taskIds, context);
         const rows = [];
         if (!collapsed) {
           subgroup.tasks.forEach((task) => {
-            const row = createRow('rs3farming', task, { context });
+            const row = createRow(TIMER_SECTION_KEY, task, { context });
             if (row) rows.push(row);
           });
         }
 
         const subgroupHeader = createHeaderRow(centeredHeaderLabel(subgroup.name), blockId, {
           className: 'farming-subgroup-row farming-subheader-row farming-plain-subgroup-row',
-          onResetClick: () => resetTaskList('rs3farming', subgroup.tasks, context),
+          onResetClick: () => resetTaskList(TIMER_SECTION_KEY, subgroup.tasks, context),
           restoreOptions,
-          onRestoreSelect: (taskId) => restoreHiddenRow('rs3farming', taskId, context),
-          context
+          onRestoreSelect: (taskId) => restoreHiddenRow(TIMER_SECTION_KEY, taskId, context),
+          context,
         });
 
         const isLastSubgroup = groupIndex === allGroups.length - 1 && subgroupIndex === subgroups.length - 1;
@@ -193,11 +197,11 @@ export function renderGroupedFarming(tbody, groups, deps) {
         const timerIds = subgroups
           .filter((subgroup) => subgroup?.isTimer && subgroup?.timerTask?.id)
           .map((subgroup) => subgroup.timerTask.id);
-        resetFarmingRows(groupTaskIds, context, timerIds);
+        resetTimerRows(groupTaskIds, context, timerIds);
       },
       restoreOptions: groupRestoreOptions,
-      onRestoreSelect: (taskId) => restoreHiddenRow('rs3farming', taskId, context),
-      context
+      onRestoreSelect: (taskId) => restoreHiddenRow(TIMER_SECTION_KEY, taskId, context),
+      context,
     });
 
     finalizeSubgroupBlock(groupHeader, groupRows, { collapsed: groupCollapsed });

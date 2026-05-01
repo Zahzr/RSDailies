@@ -43,11 +43,11 @@ function collectFarmingPins(groups, pins, into) {
 
     group.subgroups.forEach((subgroup) => {
       if (subgroup.isTimer && subgroup.timerTask) {
-        const pinId = `rs3farming::${subgroup.timerTask.id}`;
+        const pinId = `timers::${subgroup.timerTask.id}`;
         if (pins[pinId]) {
           into.push({
             task: subgroup.timerTask,
-            sectionKey: 'rs3farming',
+            sectionKey: 'timers',
             pinId,
             pinTimestamp: getPinTimestamp(pins, pinId),
           });
@@ -56,7 +56,7 @@ function collectFarmingPins(groups, pins, into) {
       }
 
       if (Array.isArray(subgroup.tasks)) {
-        collectTaskPins(subgroup.tasks, 'rs3farming', pins, into);
+        collectTaskPins(subgroup.tasks, 'timers', pins, into);
       }
     });
   });

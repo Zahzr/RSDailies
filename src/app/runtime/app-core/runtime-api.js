@@ -2,7 +2,7 @@ import { initProfileContext, setupProfileControl as setupProfileControlFeature, 
 import { getSettings, applySettingsToDom as applySettingsToDomFeature, setupSettingsControl as setupSettingsControlFeature } from '../../../features/settings/domain/controller.js';
 import { closeFloatingControls, setupViewsControl as setupViewsControlFeature } from '../../../features/views/domain/controller.js';
 import { getPageMode, syncStoredViewModeToPageMode } from '../../../features/views/domain/model.js';
-import { startFarmingTimer, clearFarmingTimer, cleanupReadyFarmingTimers as cleanupReadyFarmingTimersFeature, getFarmingHeaderStatus } from '../../../features/farming/domain/timers.js';
+import { startTimer, clearTimer, cleanupReadyTimers as cleanupReadyTimersFeature, getTimerHeaderStatus } from '../../../features/timers/domain/timers.js';
 import { startCooldown, cleanupReadyCooldowns as cleanupReadyCooldownsFeature } from '../../../features/cooldowns/domain/timers.js';
 import { maybeNotifyTaskAlert, maybeBrowserNotify, maybeWebhookNotify } from '../../../features/notifications/domain/bridge.js';
 import { syncPenguinWeeklyData } from '../../../features/penguins/index.js';
@@ -13,7 +13,7 @@ import { setupCustomAdd as setupCustomAddFeature } from '../../../ui/components/
 import { nextDailyBoundary, nextWeeklyBoundary, nextMonthlyBoundary } from '../../../core/time/boundaries.js';
 import { formatDurationMs } from '../../../core/time/formatters.js';
 import { hideTooltip } from '../../../ui/primitives/tooltips/tooltip-engine.js';
-import { load, save, removeKey, saveSectionValue, getSectionState, isCollapsedBlock, setCollapsedBlock, getCustomTasks, saveCustomTasks, getFarmingTimers, getCooldowns, getOverviewPins } from '../storage-bridge.js';
+import { load, save, removeKey, saveSectionValue, getSectionState, isCollapsedBlock, setCollapsedBlock, getCustomTasks, saveCustomTasks, getTimers, getCooldowns, getOverviewPins } from '../storage-bridge.js';
 import { setupProfileControl as setupProfileControlBridge, setupSettingsControl as setupSettingsControlBridge, setupViewsControl as setupViewsControlBridge, closeFloatingControls as closeFloatingControlsBridge, setupGlobalClickCloser as setupGlobalClickCloserBridge, updateProfileHeader as updateProfileHeaderBridge } from '../floating-controls.js';
 import { renderApp as renderAppCore } from '../render-orchestrator.js';
 import { setupFeatureControls } from './setup-controls.js';
@@ -24,13 +24,14 @@ import { resolveTrackerSections } from '../../../core/domain/content/resolve-tra
 import { getTrackerSectionIds } from '../../registries/unified-registry.js';
 import { migrateStorageShape } from '../../../core/storage/migrations.js';
 import { buildExportToken, importProfileToken } from '../../../features/profiles/domain/model.js';
+import { GAMES, getSelectedGame } from '../../../core/state/GameContext.js';
 
 const getStorageDeps = () => ({ load, save, removeKey });
 export { initProfileContext, syncStoredViewModeToPageMode };
 export const applySettingsToDom = () => applySettingsToDomBridge(applySettingsToDomFeature, getSettings, document);
 export const checkAutoReset = () => checkAutoResetBridge(checkAutoResetFeature, getStorageDeps);
 export const updateCountdowns = () => updateCountdownsBridge(document, { nextDailyBoundary, nextWeeklyBoundary, nextMonthlyBoundary, formatDurationMs });
-export const cleanupReadyFarmingTimers = () => cleanupReadyFarmingTimersFeature({ load, save });
+export const cleanupReadyTimers = () => cleanupReadyTimersFeature({ load, save });
 export const cleanupReadyCooldowns = () => cleanupReadyCooldownsFeature({ load, save });
 
 const renderApp = createRenderAppRunner(renderAppCore, {
@@ -39,16 +40,20 @@ const renderApp = createRenderAppRunner(renderAppCore, {
   getCustomTasks: () => getCustomTasks(load),
   saveCustomTasks: (tasks) => saveCustomTasks(tasks, save),
   getCooldowns: () => getCooldowns(load),
-  getFarmingTimers: () => getFarmingTimers(load),
-  cleanupReadyFarmingTimers: () => cleanupReadyFarmingTimersFeature({ load, save }),
+  getTimers: () => getTimers(load),
+  cleanupReadyTimers: () => cleanupReadyTimersFeature({ load, save }),
   cleanupReadyCooldowns: () => cleanupReadyCooldownsFeature({ load, save }),
   hideTooltip: () => hideTooltip(document),
-  getResolvedSections: () => resolveTrackerSections({ getCustomTasks: () => getCustomTasks(load), getPenguinWeeklyData: () => load('penguinWeeklyData', {}) }),
-  getFarmingHeaderStatus: (task) => getFarmingHeaderStatus(task, { load }),
+  getResolvedSections: (game = null) => resolveTrackerSections({
+    game: game || (getSelectedGame() === GAMES.OSRS ? GAMES.OSRS : GAMES.RS3),
+    getCustomTasks: () => getCustomTasks(load),
+    getPenguinWeeklyData: () => load('penguinWeeklyData', {}),
+  }),
+  getTimerHeaderStatus: (task) => getTimerHeaderStatus(task, { load }),
   hideTask: (sectionKey, taskId) => hideTask(sectionKey, taskId, { load, save }),
   setTaskCompleted: (sectionKey, taskId, complete) => setTaskCompleted(sectionKey, taskId, complete, { load, save }),
-  clearFarmingTimer: (taskId) => clearFarmingTimer(taskId, { load, save }),
-  startFarmingTimer: (task) => startFarmingTimer(task, { load, save }),
+  clearTimer: (taskId) => clearTimer(taskId, { load, save }),
+  startTimer: (task) => startTimer(task, { load, save }),
   startCooldown: (taskId, minutes) => startCooldown(taskId, minutes, { load, save }),
   isCollapsedBlock: (blockId) => isCollapsedBlock(blockId, load),
   setCollapsedBlock: (blockId, collapsed) => setCollapsedBlock(blockId, collapsed, load, save),

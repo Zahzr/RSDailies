@@ -1,7 +1,7 @@
 export function startAppLoops({
     updateCountdowns,
     checkAutoReset,
-    cleanupReadyFarmingTimers,
+    cleanupReadyTimers,
     cleanupReadyCooldowns,
     startPenguinSync,
     renderApp,
@@ -11,10 +11,10 @@ export function startAppLoops({
   
     const maintenanceLoopId = intervalRef(() => {
       const resetChanged = checkAutoReset();
-      const farmingChanged = cleanupReadyFarmingTimers();
+      const timerChanged = cleanupReadyTimers();
       const cooldownChanged = cleanupReadyCooldowns();
   
-      if (resetChanged || farmingChanged || cooldownChanged) {
+      if (resetChanged || timerChanged || cooldownChanged) {
         renderApp();
       }
     }, 1000);

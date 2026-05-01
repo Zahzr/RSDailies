@@ -1,5 +1,6 @@
 import { applySettingsToDom, collectSettingsFromDom, getSettings, saveSettings } from './state.js';
-import { isPanelOpen, replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
+import { replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
+import { bindFloatingPanelTrigger } from '../../../core/dom/panel-controls.js';
 
 export function setupSettingsControl({
   renderApp = () => { },
@@ -14,16 +15,13 @@ export function setupSettingsControl({
 
   applySettingsToDom(documentRef, getSettings());
 
-  button.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const visible = isPanelOpen(panel);
-    closeFloatingControls();
-
-    if (!visible) {
+  bindFloatingPanelTrigger({
+    button,
+    panel,
+    closePanels: closeFloatingControls,
+    onOpen: () => {
       setPanelOpenState(panel, true);
-    }
+    },
   });
 
   saveBtn.addEventListener('click', async (event) => {

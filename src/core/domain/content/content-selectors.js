@@ -23,16 +23,16 @@ function flattenGroupTaskIds(sectionId, groups = []) {
   });
 }
 
-export function getContentSectionDefinition(sectionId, { pages = loadContentPages() } = {}) {
-  return getCanonicalSectionsById({ pages, game: 'rs3' }).get(sectionId) || null;
+export function getContentSectionDefinition(sectionId, { pages = loadContentPages(), game = null } = {}) {
+  return getCanonicalSectionsById({ pages, game }).get(sectionId) || null;
 }
 
-export function getContentSectionTaskIds(sectionId, { pages = loadContentPages(), customTasks = [] } = {}) {
+export function getContentSectionTaskIds(sectionId, { pages = loadContentPages(), game = null, customTasks = [] } = {}) {
   if (sectionId === 'custom') {
     return customTasks.map((task) => task.id).filter(Boolean);
   }
 
-  const section = getContentSectionDefinition(sectionId, { pages });
+  const section = getContentSectionDefinition(sectionId, { pages, game });
   if (!section) {
     return [];
   }
@@ -48,9 +48,9 @@ export function getContentSectionTaskIds(sectionId, { pages = loadContentPages()
   return [];
 }
 
-export function getContentSectionTaskIdsByCadence(sectionId, cadence, { pages = loadContentPages() } = {}) {
+export function getContentSectionTaskIdsByCadence(sectionId, cadence, { pages = loadContentPages(), game = null } = {}) {
   const normalizedCadence = String(cadence || '').toLowerCase();
-  const section = getContentSectionDefinition(sectionId, { pages });
+  const section = getContentSectionDefinition(sectionId, { pages, game });
 
   if (!section || !Array.isArray(section.items)) {
     return [];

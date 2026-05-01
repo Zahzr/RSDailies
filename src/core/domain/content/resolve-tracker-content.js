@@ -39,7 +39,7 @@ function normalizeTaskItems(items, sectionId, penguinWeeklyData) {
   return items.map((task) => mergePenguinChildRows(task, penguinWeeklyData));
 }
 
-function normalizeFarmingTimer(timer, group, index) {
+function normalizeTimerEntry(timer, group, index) {
   const timerId = timer?.id || `${group.id}-timer-${index}`;
 
   return {
@@ -73,10 +73,10 @@ function normalizeStandalonePlots(group) {
   ];
 }
 
-function normalizeFarmingGroup(group) {
+function normalizeTimerGroup(group) {
   const timerSubgroups = Array.isArray(group?.timers)
     ? group.timers.map((timer, index) => {
-      const timerTask = normalizeFarmingTimer(timer, group, index);
+      const timerTask = normalizeTimerEntry(timer, group, index);
       const plots = Array.isArray(timer?.plots)
         ? timer.plots
         : Array.isArray(group?.plots)
@@ -104,8 +104,8 @@ function normalizeFarmingGroup(group) {
   };
 }
 
-function normalizeFarmingGroups(groups) {
-  return Array.isArray(groups) ? groups.map(normalizeFarmingGroup) : [];
+function normalizeTimerGroups(groups) {
+  return Array.isArray(groups) ? groups.map(normalizeTimerGroup) : [];
 }
 
 function resolveSectionItems(section, deps) {
@@ -114,7 +114,7 @@ function resolveSectionItems(section, deps) {
   }
 
   if (Array.isArray(section.groups)) {
-    return normalizeFarmingGroups(section.groups);
+    return normalizeTimerGroups(section.groups);
   }
 
   return normalizeTaskItems(section.items, section.id, deps.getPenguinWeeklyData());
@@ -122,12 +122,13 @@ function resolveSectionItems(section, deps) {
 
 export function resolveTrackerSections({
   pages = loadContentPages(),
+  game = null,
   getCustomTasks = () => [],
   getPenguinWeeklyData = () => ({}),
 } = {}) {
   const deps = { getCustomTasks, getPenguinWeeklyData };
 
-  return getCanonicalSections({ pages, game: 'rs3' }).reduce((sections, section) => {
+  return getCanonicalSections({ pages, game }).reduce((sections, section) => {
     sections[section.id] = resolveSectionItems(section, deps);
     return sections;
   }, {});

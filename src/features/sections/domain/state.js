@@ -34,15 +34,15 @@ export function saveCustomTasks(tasks, save) {
 }
 
 /* =========================
-   FARMING TIMERS
+   TIMERS
 ========================= */
 
-export function getFarmingTimers(load) {
-  return safeObject(load(StorageKeyBuilder.farmingTimers(), {}));
+export function getTimers(load) {
+  return safeObject(load(StorageKeyBuilder.timers(), {}));
 }
 
-export function saveFarmingTimers(timers, save) {
-  save(StorageKeyBuilder.farmingTimers(), safeObject(timers));
+export function saveTimers(timers, save) {
+  save(StorageKeyBuilder.timers(), safeObject(timers));
 }
 
 /* =========================

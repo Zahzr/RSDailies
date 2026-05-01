@@ -19,8 +19,8 @@ export const StorageKeyBuilder = Object.freeze({
     return 'customTasks';
   },
 
-  farmingTimers() {
-    return 'farmingTimers';
+  timers() {
+    return 'timers';
   },
 
   cooldowns() {

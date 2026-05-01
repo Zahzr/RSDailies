@@ -1,4 +1,4 @@
-export const specialty = {
+export const specialtyTimerGroup = {
   id: 'specialty',
   label: 'Specialty',
   note: 'Specialty farming timers with compact location checklists.',
@@ -15,6 +15,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [
         { id: 'bush-rimmington', name: 'Rimmington', wiki: 'https://runescape.wiki/w/Bush_patch' },
         { id: 'bush-ardougne', name: 'Ardougne', wiki: 'https://runescape.wiki/w/Bush_patch' },
@@ -34,6 +35,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'harvest',
+      timerCategory: 'farming',
       plots: [
         { id: 'cactus-al-kharid', name: 'Al Kharid', wiki: 'https://runescape.wiki/w/Cactus_patch' },
         { id: 'cactus-menaphos', name: 'Menaphos', wiki: 'https://runescape.wiki/w/Cactus_patch' }
@@ -51,6 +53,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'mushroom-canifis', name: 'Canifis', wiki: 'https://runescape.wiki/w/Mushroom_patch' }]
     },
     {
@@ -65,6 +68,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'belladonna-draynor', name: 'Draynor Manor', wiki: 'https://runescape.wiki/w/Belladonna_patch' }]
     },
     {
@@ -79,6 +83,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'celastrus-anachronia', name: 'Anachronia', wiki: 'https://runescape.wiki/w/Celastrus_patch' }]
     },
     {
@@ -93,6 +98,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'redwood-farming-guild', name: 'Farming Guild / Manor Farm area', wiki: 'https://runescape.wiki/w/Redwood_tree_patch' }]
     },
     {
@@ -107,6 +113,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'harvest',
+      timerCategory: 'farming',
       plots: [{ id: 'crystal-prifddinas', name: 'Prifddinas', wiki: 'https://runescape.wiki/w/Crystal_tree' }]
     },
     {
@@ -121,6 +128,7 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'anima-anachronia', name: 'Anachronia', wiki: 'https://runescape.wiki/w/Anima_patch' }]
     },
     {
@@ -135,10 +143,11 @@ export const specialty = {
       autoClearOnReady: false,
       vanishOnStart: true,
       timerKind: 'growth',
+      timerCategory: 'farming',
       plots: [{ id: 'bloodweed-wilderness', name: 'Wilderness', wiki: 'https://runescape.wiki/w/Bloodweed_patch' }]
     }
   ],
   plots: []
 };
 
-export default specialty;
+export default specialtyTimerGroup;

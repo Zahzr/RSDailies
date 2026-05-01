@@ -1,5 +1,9 @@
 import { buildEmptyMessage, buildOverviewCard, buildPanelChrome, buildSplitDivider, sortAlphabetical, sortTopFive } from './overview.dom.js';
 
+function isOverviewMode(mode) {
+  return typeof mode === 'string' && (mode === 'overview' || mode.endsWith('-overview'));
+}
+
 export function formatOverviewCountdown(kind, targetMs, { formatDurationMs }) {
   const diff = targetMs - Date.now();
   if (diff <= 0) return 'READY';
@@ -9,7 +13,7 @@ export function formatOverviewCountdown(kind, targetMs, { formatDurationMs }) {
 export function applyPageModeVisibility(mode) {
   const overview = document.getElementById('overview-wrapper');
   if (!overview) return;
-  overview.style.display = mode === 'overview' ? '' : 'none';
+  overview.style.display = isOverviewMode(mode) ? '' : 'none';
 }
 
 export function renderOverviewPanel(sections, deps) {
@@ -21,7 +25,7 @@ export function renderOverviewPanel(sections, deps) {
 
   const items = collectOverviewItems(sections, { getOverviewPins, load });
   const chrome = buildPanelChrome();
-  const compact = getPageMode() !== 'overview';
+  const compact = !isOverviewMode(getPageMode());
 
   if (items.length === 0) {
     chrome.content.appendChild(buildEmptyMessage('Pin any task with the star icon to surface it here.'));

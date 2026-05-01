@@ -1,5 +1,6 @@
 import { getTrackerSection } from '../../../../../app/registries/unified-registry.js';
 import { StorageKeyBuilder } from '../../../../../core/storage/keys-builder.js';
+import { TIMER_SECTION_KEY } from '../../../../../features/timers/domain/timers.js';
 
 export function childStorageKey(sectionKey, parentId, childId) {
   return StorageKeyBuilder.childTaskStorageId(sectionKey, parentId, childId);
@@ -71,9 +72,9 @@ export function syncRowActionLayout(nameCell) {
 
 export function isFarmingChildStorageId(sectionKey, taskId, task) {
   return (
-    sectionKey === 'rs3farming' &&
+    sectionKey === TIMER_SECTION_KEY &&
     typeof taskId === 'string' &&
-    taskId.startsWith('rs3farming::') &&
+    taskId.startsWith(`${TIMER_SECTION_KEY}::`) &&
     taskId.split('::').length >= 3 &&
     !task?.isTimerParent
   );

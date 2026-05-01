@@ -7,7 +7,8 @@ import {
   removeProfileStorage
 } from './store.js';
 import { renderProfileHeader, renderProfileRows } from '../../../ui/components/profiles/profile-view.js';
-import { isPanelOpen, replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
+import { replaceInteractiveElement, setPanelOpenState } from '../../../core/dom/controls.js';
+import { bindFloatingPanelTrigger } from '../../../core/dom/panel-controls.js';
 
 export function updateProfileHeader(profileNameElement = document.getElementById('profile-name')) {
   renderProfileHeader(profileNameElement, getCurrentProfile());
@@ -57,16 +58,13 @@ export function setupProfileControl({
     });
   }
 
-  button.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const visible = isPanelOpen(panel);
-    closeFloatingControls();
-
-    if (!visible) {
+  bindFloatingPanelTrigger({
+    button,
+    panel,
+    closePanels: closeFloatingControls,
+    onOpen: () => {
       setPanelOpenState(panel, true);
-    }
+    },
   });
 
   form.addEventListener('submit', (event) => {

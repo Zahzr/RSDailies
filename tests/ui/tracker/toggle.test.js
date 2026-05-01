@@ -14,8 +14,8 @@ test('toggle handler starts cooldowns from cooldownMinutes', () => {
     setTaskCompleted: (sectionKey, taskId, completed) => {
       completedCall = { sectionKey, taskId, completed };
     },
-    clearFarmingTimer: () => {},
-    startFarmingTimer: () => {},
+    clearTimer: () => {},
+    startTimer: () => {},
     startCooldown: (taskId, minutes) => {
       started = { taskId, minutes };
     },

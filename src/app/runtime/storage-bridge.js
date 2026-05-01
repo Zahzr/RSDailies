@@ -5,8 +5,8 @@ import {
   isCollapsedBlock as isCollapsedBlockFeature,
   getCustomTasks as getCustomTasksFeature,
   saveCustomTasks as saveCustomTasksFeature,
-  getFarmingTimers as getFarmingTimersFeature,
-  saveFarmingTimers as saveFarmingTimersFeature,
+  getTimers as getTimersFeature,
+  saveTimers as saveTimersFeature,
   getCooldowns as getCooldownsFeature,
   saveCooldowns as saveCooldownsFeature,
   getOverviewPins as getOverviewPinsFeature,
@@ -64,12 +64,12 @@ export function saveCustomTasks(tasks) {
   saveCustomTasksFeature(tasks, save);
 }
 
-export function getFarmingTimers() {
-  return getFarmingTimersFeature(load);
+export function getTimers() {
+  return getTimersFeature(load);
 }
 
-export function saveFarmingTimers(timers) {
-  saveFarmingTimersFeature(timers, save);
+export function saveTimers(timers) {
+  saveTimersFeature(timers, save);
 }
 
 export function getCooldowns() {

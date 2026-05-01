@@ -3,8 +3,8 @@ export function createToggleTaskHandler(sectionKey, taskId, task, {
   save,
   getTaskState,
   setTaskCompleted,
-  clearFarmingTimer,
-  startFarmingTimer,
+  clearTimer,
+  startTimer,
   startCooldown,
   renderApp
 }) {
@@ -22,9 +22,9 @@ export function createToggleTaskHandler(sectionKey, taskId, task, {
     } else {
       setTaskCompleted(sectionKey, taskId, true, { load, save });
 
-      if (sectionKey === 'rs3farming') {
-        clearFarmingTimer(taskId, { load, save });
-        startFarmingTimer(taskId, task, { load, save });
+      if (sectionKey === 'timers') {
+        clearTimer(taskId, { load, save });
+        startTimer(task, { load, save });
       }
 
       if (Number.isFinite(cooldownMinutes) && cooldownMinutes > 0) {

@@ -1,4 +1,4 @@
-import { getTimerMinutes } from '../../../../../features/farming/domain/timer-math.js';
+import { getTimerMinutes } from '../../../../../features/timers/domain/timer-math.js';
 
 export function centeredHeaderLabel(text) {
   return `<span style="display:block;width:100%;text-align:center;">${text}</span>`;
@@ -12,18 +12,18 @@ export function getRenderableHeaderStatus(status) {
   return '';
 }
 
-export function formatFarmingDurationNote(task, { formatDurationMs }) {
+export function formatTimerDurationNote(task, { formatDurationMs, getSettingsValue = () => ({}) }) {
   if (typeof task?.durationNote === 'string' && task.durationNote.trim()) {
     return task.durationNote.trim();
   }
 
-  const minutes = getTimerMinutes(task);
+  const minutes = getTimerMinutes(task, getSettingsValue());
   if (!minutes) return '';
   const ms = minutes * 60 * 1000;
   return `Growth time: ${formatDurationMs(ms)}`;
 }
 
-export function buildFarmingLocationTask(plot, timerTask, details = {}) {
+export function buildTimerLocationTask(plot, timerTask, details = {}) {
   const {
     durationNote = '',
     statusNote = ''
@@ -126,11 +126,11 @@ export function finalizeSubgroupBlock(headerRow, rows, options = {}) {
   return terminalRow;
 }
 
-export function makeFarmingChildStorageId(timerTaskId, plotId) {
-  return `rs3farming::${timerTaskId}::${plotId}`;
+export function makeTimerChildStorageId(timerTaskId, plotId) {
+  return `timers::${timerTaskId}::${plotId}`;
 }
 
-export function collectFarmingGroupTaskIds(group) {
+export function collectTimerGroupTaskIds(group) {
   const ids = [];
   const subgroups = Array.isArray(group?.subgroups) ? group.subgroups : [];
 
@@ -139,7 +139,7 @@ export function collectFarmingGroupTaskIds(group) {
       const timerTaskId = subgroup.timerTask.id;
       const plots = Array.isArray(subgroup.plots) ? subgroup.plots : [];
       plots.forEach((plot) => {
-        ids.push(makeFarmingChildStorageId(timerTaskId, plot.id));
+        ids.push(makeTimerChildStorageId(timerTaskId, plot.id));
       });
       return;
     }

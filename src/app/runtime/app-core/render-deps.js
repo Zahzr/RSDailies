@@ -1,10 +1,11 @@
 import { getSettings } from '../../../features/settings/domain/state.js';
+import { TIMER_SECTION_KEY } from '../../../features/timers/domain/timers.js';
 
 export function createRenderAppRunner(renderAppCore, deps) {
   const {
-    load, save, getSectionState, getCustomTasks, saveCustomTasks, getCooldowns, getFarmingTimers,
-    getResolvedSections, getFarmingHeaderStatus, hideTask, setTaskCompleted, clearFarmingTimer,
-    startFarmingTimer, startCooldown, isCollapsedBlock, setCollapsedBlock, fetchProfits,
+    load, save, getSectionState, getCustomTasks, saveCustomTasks, getCooldowns, getTimers,
+    getResolvedSections, getTimerHeaderStatus, hideTask, setTaskCompleted, clearTimer,
+    startTimer, startCooldown, isCollapsedBlock, setCollapsedBlock, fetchProfits,
     updateProfileHeaderBridge, updateProfileHeaderFeature, maybeNotifyTaskAlert, bindSectionControls,
     resetSectionView, getPageMode, getOverviewPins
   } = deps;
@@ -16,7 +17,7 @@ export function createRenderAppRunner(renderAppCore, deps) {
       getSectionState: (sectionKey) => getSectionState(sectionKey),
       getCustomTasks,
       saveCustomTasks,
-      cleanupReadyFarmingTimers: deps.cleanupReadyFarmingTimers,
+      cleanupReadyTimers: deps.cleanupReadyTimers,
       cleanupReadyCooldowns: deps.cleanupReadyCooldowns,
       hideTooltip: deps.hideTooltip,
       getTaskState: (sectionKey, taskId, task) => {
@@ -24,15 +25,15 @@ export function createRenderAppRunner(renderAppCore, deps) {
         const hiddenRows = section.hiddenRows || {};
         const completed = section.completed || {};
         const cooldowns = getCooldowns();
-        const farmingTimers = getFarmingTimers();
+        const timers = getTimers();
         const settings = getSettings();
 
         if (hiddenRows[taskId]) return 'hide';
         if (task?.cooldownMinutes && cooldowns[taskId]?.readyAt > Date.now()) return 'running';
-        if (sectionKey === 'rs3farming' && task?.isTimerParent) {
-          const active = !!farmingTimers[task.id];
+        if (sectionKey === TIMER_SECTION_KEY && task?.isTimerParent) {
+          const active = !!timers[task.id];
           if (!active) return 'idle';
-          return farmingTimers[task.id]?.readyAt > Date.now() ? 'running' : 'ready';
+          return timers[task.id]?.readyAt > Date.now() ? 'running' : 'ready';
         }
 
         const isCompleted = !!completed[taskId];
@@ -40,11 +41,11 @@ export function createRenderAppRunner(renderAppCore, deps) {
         return isCompleted ? 'true' : 'false';
       },
       getResolvedSections,
-      getFarmingHeaderStatus,
+      getTimerHeaderStatus,
       hideTask,
       setTaskCompleted,
-      clearFarmingTimer,
-      startFarmingTimer,
+      clearTimer,
+      startTimer,
       startCooldown,
       isCollapsedBlock,
       setCollapsedBlock,

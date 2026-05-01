@@ -15,15 +15,20 @@ test('rs3 shell loads and renders tracker workspace', async ({ page }) => {
   await page.getByRole('link', { name: 'Gathering' }).click();
   await expect(page.locator('#gathering-container')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Timers' }).click();
-  await expect(page.locator('#rs3farming-container')).toBeVisible();
+  await page.getByRole('button', { name: 'Timers' }).click();
+  await page.getByRole('link', { name: 'Farming' }).click();
+  await expect(page.locator('#timers-container')).toBeVisible();
 });
 
-test('osrs shell loads empty-state workspace', async ({ page }) => {
+test('osrs shell loads blank tracker workspace', async ({ page }) => {
   await page.goto('/');
 
   await page.getByRole('button', { name: 'Old School RuneScape' }).click();
 
-  await expect(page.locator('#osrs-empty-state')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Old School RuneScape' })).toBeVisible();
+  await expect(page.locator('#dashboard-container')).toBeVisible();
+  await expect(page.locator('#osrsdaily-container')).toBeVisible();
+  await expect(page.locator('#osrsweekly-container')).toBeVisible();
+  await expect(page.locator('#osrsmonthly-container')).toBeVisible();
+  await expect(page.locator('#views-button-panel')).toBeVisible();
+  await expect(page.locator('#rs3daily-container')).not.toBeVisible();
 });

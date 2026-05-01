@@ -1,16 +1,16 @@
-import { rs3FarmingGroups } from './groups/farming.groups.js';
+import { rs3FarmingTimerGroups } from './tasks/farming/farming.tasks.js';
 
-export const rs3FarmingSection = {
-  id: 'rs3farming',
-  label: 'Farming',
-  shortLabel: 'Farming',
+export const rs3TimersSection = {
+  id: 'timers',
+  label: 'Timers',
+  shortLabel: 'Timers',
   game: 'rs3',
   displayOrder: 1,
   legacySectionId: 'rs3farming',
   resetFrequency: 'rolling',
   renderVariant: 'timer-groups',
-  containerId: 'rs3farming-container',
-  tableId: 'rs3farming-table',
+  containerId: 'timers-container',
+  tableId: 'timers-table',
   includedInAllMode: false,
   supportsTaskNotifications: false,
   shell: {
@@ -20,7 +20,7 @@ export const rs3FarmingSection = {
     showResetButton: true,
     showCountdown: false,
   },
-  groups: rs3FarmingGroups,
+  groups: rs3FarmingTimerGroups,
 };
 
-export default rs3FarmingSection;
+export default rs3TimersSection;
