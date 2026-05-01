@@ -9,7 +9,8 @@ export function createToggleTaskHandler(sectionKey, taskId, task, {
   renderApp
 }) {
   return function toggleTask() {
-    const isCompleted = getTaskState(sectionKey, taskId, task);
+    const state = getTaskState(sectionKey, taskId, task);
+    const isCompleted = (state === 'true' || state === 'hide');
     const cooldownMinutes = Number.isFinite(task?.cooldownMinutes)
       ? task.cooldownMinutes
       : Number.isFinite(task?.cooldown)

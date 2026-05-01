@@ -75,43 +75,50 @@ function isVisibleRow(row) {
 }
 
 export function markLastVisibleRow(rows, options = {}) {
-  const { fallbackRow = null } = options;
+  const { fallbackRow = null, skipEdgeClasses = false } = options;
   const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
 
-  list.forEach(clearEdgeClasses);
-  clearEdgeClasses(fallbackRow);
+  if (!skipEdgeClasses) {
+    list.forEach(clearEdgeClasses);
+    clearEdgeClasses(fallbackRow);
+  }
 
   const visibleRows = list.filter(isVisibleRow);
-  const target = visibleRows[visibleRows.length - 1] || fallbackRow || list[list.length - 1] || null;
+  const target = visibleRows[visibleRows.length - 1] || fallbackRow || null;
   if (!target) return null;
 
-  target.classList.add('block-end-row', 'subsection-end-row');
+  if (!skipEdgeClasses) {
+    target.classList.add('block-end-row', 'subsection-end-row');
+  }
   return target;
 }
 
 export function finalizeSubgroupBlock(headerRow, rows, options = {}) {
   if (!headerRow) return null;
 
-  const { collapsed = false } = options;
+  const { collapsed = false, skipEdgeClasses = false } = options;
   headerRow.classList.add('subgroup-header-row');
-  headerRow.classList.remove(
-    'subgroup-open-row',
-    'subgroup-terminal-row',
-    'collapsed-subgroup-row',
-    'subgroup-last-row',
-    'block-end-row',
-    'subsection-end-row'
-  );
+    headerRow.classList.remove(
+      'subgroup-open-row',
+      'subgroup-terminal-row',
+      'collapsed-subgroup-row',
+      'subgroup-last-row'
+    );
+    if (!skipEdgeClasses) {
+      headerRow.classList.remove('block-end-row', 'subsection-end-row');
+    }
 
-  const terminalRow = markLastVisibleRow(rows);
-  if (collapsed || !terminalRow) {
+    const visibleRows = Array.isArray(rows) ? rows.filter(isVisibleRow) : [];
+    const terminalRow = markLastVisibleRow(visibleRows, { skipEdgeClasses });
+  if (collapsed || visibleRows.length === 0 || !terminalRow) {
     headerRow.classList.add(
       'subgroup-terminal-row',
       'collapsed-subgroup-row',
-      'subgroup-last-row',
-      'block-end-row',
-      'subsection-end-row'
+      'subgroup-last-row'
     );
+    if (!skipEdgeClasses) {
+      headerRow.classList.add('block-end-row', 'subsection-end-row');
+    }
     return headerRow;
   }
 

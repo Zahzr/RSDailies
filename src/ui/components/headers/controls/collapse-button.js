@@ -1,4 +1,4 @@
-import { HEADER_CONTROL_LABELS } from '../header.constants.js';
+import { HEADER_CONTROL_LABELS, HEADER_CONTROL_TEXT } from '../header.constants.js';
 import { getCollapseState, resolveHeaderContext } from '../header.logic.js';
 
 export function createCollapseButton(blockId, context = {}) {
@@ -8,7 +8,7 @@ export function createCollapseButton(blockId, context = {}) {
   button.className = 'btn btn-secondary btn-sm mini-collapse-btn primitive-btn';
 
   const collapsed = getCollapseState(blockId, { isCollapsedBlock });
-  button.textContent = collapsed ? '\u25B6' : '\u25BC';
+  button.textContent = collapsed ? HEADER_CONTROL_TEXT.show : HEADER_CONTROL_TEXT.hide;
   button.setAttribute('aria-label', collapsed ? HEADER_CONTROL_LABELS.expand : HEADER_CONTROL_LABELS.collapse);
 
   button.addEventListener('click', (event) => {

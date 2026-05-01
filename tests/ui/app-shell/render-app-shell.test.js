@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildSectionPanelHtml } from '../../../src/ui/app-shell/runtime/section-panel.js';
+import { HEADER_CONTROL_TEXT } from '../../../src/ui/components/headers/header.constants.js';
 
 test('section panel renderer builds shell markup from registry metadata', () => {
   const html = buildSectionPanelHtml({
@@ -22,5 +23,7 @@ test('section panel renderer builds shell markup from registry metadata', () => 
   assert.match(html, /id="rs3daily-container"/);
   assert.match(html, /id="rs3daily_reset_button"/);
   assert.match(html, /id="countdown-rs3daily"/);
+  assert.match(html, new RegExp(HEADER_CONTROL_TEXT.reset));
+  assert.match(html, /section-panel-controls/);
   assert.match(html, /<tbody><\/tbody>/);
 });

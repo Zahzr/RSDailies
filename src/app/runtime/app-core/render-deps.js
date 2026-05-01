@@ -1,3 +1,5 @@
+import { getSettings } from '../../../features/settings/domain/state.js';
+
 export function createRenderAppRunner(renderAppCore, deps) {
   const {
     load, save, getSectionState, getCustomTasks, saveCustomTasks, getCooldowns, getFarmingTimers,
@@ -23,6 +25,8 @@ export function createRenderAppRunner(renderAppCore, deps) {
         const completed = section.completed || {};
         const cooldowns = getCooldowns();
         const farmingTimers = getFarmingTimers();
+        const settings = getSettings();
+
         if (hiddenRows[taskId]) return 'hide';
         if (task?.cooldownMinutes && cooldowns[taskId]?.readyAt > Date.now()) return 'running';
         if (sectionKey === 'rs3farming' && task?.isTimerParent) {
@@ -30,7 +34,10 @@ export function createRenderAppRunner(renderAppCore, deps) {
           if (!active) return 'idle';
           return farmingTimers[task.id]?.readyAt > Date.now() ? 'running' : 'ready';
         }
-        return completed[taskId] ? 'true' : 'false';
+
+        const isCompleted = !!completed[taskId];
+        if (isCompleted && !settings.showCompletedTasks) return 'hide';
+        return isCompleted ? 'true' : 'false';
       },
       getResolvedSections,
       getFarmingHeaderStatus,

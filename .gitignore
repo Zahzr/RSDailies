@@ -35,6 +35,9 @@ message*.txt
 /src/test/*.log
 /src/test/*.txt
 
+# Copilot screenshot saving for chat reference
+/assets/screenshots/
+
 # Verification files
 googlec7c393bb3b6c202e.html
 **/googlec7c393bb3b6c202e.html

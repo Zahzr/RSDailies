@@ -32,4 +32,8 @@
     --ds-profit: #c1991c;
     --ds-checkbox-width: 56px;
     --ds-checkbox-width-sm: 48px;
+    --ds-section-gap: 6px;
+    --ds-row-height: 30px;
+    --ds-rounding-radius: 14px;
+    --ds-checkbox-border: rgba(255, 255, 255, 0.15);
 }

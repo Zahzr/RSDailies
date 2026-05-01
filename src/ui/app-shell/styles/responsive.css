@@ -8,10 +8,6 @@
         width: 48px;
     }
 
-    .activity_table td.activity_name {
-        min-height: 54px;
-    }
-
     .activity_table td.activity_name a,
     .activity_table td.activity_name a:active,
     .activity_table td.activity_name a:link,
@@ -34,8 +30,14 @@
         align-items: flex-start;
     }
 
-    .header_like_inner {
-        justify-content: flex-end;
+    .section-panel-controls {
+        right: 14px;
+        gap: 4px;
+    }
+
+    .section-panel-controls .btn,
+    .section-panel-countdown {
+        font-size: 0.85rem;
     }
 }
 

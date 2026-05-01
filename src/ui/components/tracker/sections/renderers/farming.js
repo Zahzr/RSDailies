@@ -154,7 +154,8 @@ export function renderGroupedFarming(tbody, groups, deps) {
           context
         });
 
-        finalizeSubgroupBlock(subgroupHeader, plotRows, { collapsed });
+        const isLastSubgroup = groupIndex === allGroups.length - 1 && subgroupIndex === subgroups.length - 1;
+        finalizeSubgroupBlock(subgroupHeader, plotRows, { collapsed, skipEdgeClasses: !isLastSubgroup });
         groupRows.push(subgroupHeader, ...plotRows);
         return;
       }
@@ -180,7 +181,8 @@ export function renderGroupedFarming(tbody, groups, deps) {
           context
         });
 
-        finalizeSubgroupBlock(subgroupHeader, rows, { collapsed });
+        const isLastSubgroup = groupIndex === allGroups.length - 1 && subgroupIndex === subgroups.length - 1;
+        finalizeSubgroupBlock(subgroupHeader, rows, { collapsed, skipEdgeClasses: !isLastSubgroup });
         groupRows.push(subgroupHeader, ...rows);
       }
     });

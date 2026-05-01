@@ -29,6 +29,7 @@ export function normalizeSettings(partial = {}) {
   return {
     splitDailyTables: partial.splitDailyTables !== false,
     splitWeeklyTables: partial.splitWeeklyTables !== false,
+    showCompletedTasks: partial.showCompletedTasks === true,
     herbTicks,
     growthOffsetMinutes: deriveGrowthOffsetMinutes(herbTicks),
     browserNotif: !!partial.browserNotif,
@@ -61,6 +62,7 @@ export function applySettingsToDom(documentRef = document, settings = getSetting
   const fieldIds = getSettingsFieldIds();
   const splitDaily = documentRef.getElementById(fieldIds.splitDailyTables);
   const splitWeekly = documentRef.getElementById(fieldIds.splitWeeklyTables);
+  const showCompleted = documentRef.getElementById(fieldIds.showCompletedTasks);
   const herbs3 = documentRef.getElementById(fieldIds.herbTicks);
   const growthOffset = documentRef.getElementById(fieldIds.growthOffset);
   const browserNotif = documentRef.getElementById(fieldIds.browserNotif);
@@ -70,6 +72,7 @@ export function applySettingsToDom(documentRef = document, settings = getSetting
 
   if (splitDaily) splitDaily.checked = settings.splitDailyTables !== false;
   if (splitWeekly) splitWeekly.checked = settings.splitWeeklyTables !== false;
+  if (showCompleted) showCompleted.checked = settings.showCompletedTasks === true;
   if (herbs3) herbs3.checked = settings.herbTicks === 3;
   if (browserNotif) browserNotif.checked = !!settings.browserNotif;
   if (webhook) webhook.value = settings.webhookUrl || '';
@@ -94,6 +97,7 @@ export function collectSettingsFromDom(documentRef = document) {
   return normalizeSettings({
     splitDailyTables: !!documentRef.getElementById(fieldIds.splitDailyTables)?.checked,
     splitWeeklyTables: !!documentRef.getElementById(fieldIds.splitWeeklyTables)?.checked,
+    showCompletedTasks: !!documentRef.getElementById(fieldIds.showCompletedTasks)?.checked,
     herbTicks,
     browserNotif: !!documentRef.getElementById(fieldIds.browserNotif)?.checked,
     webhookUrl: (documentRef.getElementById(fieldIds.webhookUrl)?.value || '').trim(),

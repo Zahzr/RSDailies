@@ -1,4 +1,5 @@
-import { appendRows, markLastVisibleRow, centeredHeaderLabel, finalizeSubgroupBlock } from './common.js';
+import { appendRows, markLastVisibleRow, centeredHeaderLabel } from './common.js';
+import { renderUnifiedSection } from './section-engine.js';
 import {
   buildRestoreEntries,
   resetTaskList,
@@ -29,71 +30,51 @@ export function renderWeekliesWithChildren(
   if (!tbody) return;
 
   let penguinTask = null;
-  const normalRows = [];
+  const normalTasks = [];
 
   tasks.forEach((task) => {
     if (task.id === 'penguins') {
       penguinTask = task;
       return;
     }
-
-    const row = createRow('rs3weekly', task, { context });
-    if (row) normalRows.push(row);
-
-    if (!Array.isArray(task.children) || task.children.length === 0) return;
-
-    const blockId = `row-collapse-${task.id}`;
-    if (isCollapsedBlock(blockId)) return;
-
-    const childRows = [];
-    task.children.forEach((child) => {
-      const childRow = createRightSideChildRow('rs3weekly', child, task.id, {
-        extraClass: 'weekly-child-row',
-        context
-      });
-      if (childRow) childRows.push(childRow);
-    });
-
-    markLastVisibleRow(childRows);
-    normalRows.push(...childRows);
+    normalTasks.push(task);
   });
 
-  appendRows(tbody, normalRows);
+  const blocks = [
+    {
+      id: 'weekly-standard',
+      kind: 'rows',
+      tasks: normalTasks
+    }
+  ];
 
-  if (!penguinTask || !Array.isArray(penguinTask.children) || penguinTask.children.length === 0) return;
+  if (penguinTask && Array.isArray(penguinTask.children) && penguinTask.children.length > 0) {
+    const blockId = `row-collapse-${penguinTask.id}`;
+    const restoreOptions = buildRestoreEntries(
+      'rs3weekly',
+      penguinTask.children.map((child) => child.id),
+      context
+    );
 
-  const blockId = `row-collapse-${penguinTask.id}`;
-  const collapsed = isCollapsedBlock(blockId);
-  const restoreOptions = buildRestoreEntries(
-    'rs3weekly',
-    penguinTask.children.map((child) => child.id),
-    context
-  );
-
-  const penguinRows = [];
-  if (!collapsed) {
-    penguinTask.children.forEach((child) => {
-      const childRow = createRow(
-        'rs3weekly',
-        { ...child, wiki: child.wiki || penguinTask.wiki || '' },
-        { extraClass: 'weekly-child-row', context }
-      );
-      if (childRow) penguinRows.push(childRow);
+    blocks.push({
+      id: blockId,
+      kind: 'subgroup',
+      title: centeredHeaderLabel(penguinTask.name),
+      tasks: penguinTask.children.map((child) => ({ ...child, wiki: child.wiki || penguinTask.wiki || '' })),
+      headerMode: 'attached',
+      onResetClick: () => resetTaskList('rs3weekly', penguinTask.children, context),
+      restoreOptions,
+      onRestoreSelect: (taskId) => restoreHiddenRow('rs3weekly', taskId, context)
     });
   }
 
-  const headerRow = createHeaderRow(centeredHeaderLabel(penguinTask.name), blockId, {
-    className: 'farming-subgroup-row farming-subheader-row weekly-subgroup-row',
-    onResetClick: () => resetTaskList('rs3weekly', penguinTask.children, context),
-    restoreOptions,
-    onRestoreSelect: (taskId) => restoreHiddenRow('rs3weekly', taskId, context),
+  renderUnifiedSection(tbody, blocks, {
+    sectionKey: 'rs3weekly',
+    createRow,
+    createHeaderRow,
+    isCollapsedBlock,
     context
   });
-
-  finalizeSubgroupBlock(headerRow, penguinRows, { collapsed });
-  tbody.appendChild(headerRow);
-  if (collapsed) return;
-  appendRows(tbody, penguinRows);
 }
 
 export function renderGroupedGathering(
@@ -113,37 +94,32 @@ export function renderGroupedGathering(
       grouped.get(groupName).push(task);
     });
 
-  [...grouped.entries()].forEach(([groupName, groupTasks], index, allGroups) => {
+  const blocks = [...grouped.entries()].map(([groupName, groupTasks]) => {
     const blockId = `group-collapse-gathering-${groupName}`;
-    const collapsed = isCollapsedBlock(blockId);
     const restoreOptions = buildRestoreEntries(
       'gathering',
       groupTasks.map((task) => task.id),
       context
     );
 
-    const rows = [];
-    if (!collapsed) {
-      groupTasks.forEach((task) => {
-        const row = createRow('gathering', task, { context });
-        if (row) rows.push(row);
-      });
-    }
-
-    const headerRow = createHeaderRow(centeredHeaderLabel(groupName), blockId, {
-      className: 'gathering-group-row farming-subheader-row gathering-subgroup-row',
+    return {
+      id: blockId,
+      kind: 'subgroup',
+      title: centeredHeaderLabel(groupName),
+      tasks: groupTasks,
+      headerMode: 'default',
       rightText: getGroupCountdown?.(groupName) || '',
-      onResetClick: () => {
-        resetTaskList('gathering', groupTasks, context);
-      },
+      onResetClick: () => resetTaskList('gathering', groupTasks, context),
       restoreOptions,
-      onRestoreSelect: (taskId) => restoreHiddenRow('gathering', taskId, context),
-      context
-    });
+      onRestoreSelect: (taskId) => restoreHiddenRow('gathering', taskId, context)
+    };
+  });
 
-    finalizeSubgroupBlock(headerRow, rows, { collapsed });
-    tbody.appendChild(headerRow);
-    if (collapsed) return;
-    appendRows(tbody, rows);
+  renderUnifiedSection(tbody, blocks, {
+    sectionKey: 'gathering',
+    createRow,
+    createHeaderRow,
+    isCollapsedBlock,
+    context
   });
 }

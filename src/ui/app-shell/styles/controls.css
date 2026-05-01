@@ -134,19 +134,6 @@
   box-shadow: none;
 }
 
-div.table_container .show_hidden_button,
-div.table_container .unhide_button {
-  display: none;
-}
-
-div.table_container[data-hide="hide"] .hide_button {
-  display: none;
-}
-
-div.table_container[data-hide="hide"] .unhide_button {
-  display: inline-block;
-}
-
 div.table_container[data-show-hidden="true"] .show_hidden_button {
   background: var(--ds-warning);
   border-color: var(--ds-warning);

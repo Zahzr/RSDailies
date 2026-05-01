@@ -17,3 +17,9 @@ export const HEADER_CONTROL_LABELS = {
   restoreItem: 'Restore item',
   restorePlaceholder: 'Select removed item...'
 };
+
+export const HEADER_CONTROL_TEXT = {
+  reset: '\u267B',
+  hide: '\u25BC',
+  show: '\u25B6'
+};

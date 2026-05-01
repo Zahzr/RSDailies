@@ -47,7 +47,6 @@
   min-height: 42px;
   gap: 8px;
   padding: 0 0.55rem;
-  border-radius: 0 !important;
 }
 
 .header_like_controls {
@@ -60,6 +59,31 @@
   gap: 8px;
   min-height: 32px;
   z-index: 5;
+}
+
+.section-panel-header {
+  --section-panel-controls-right: 18px;
+  --section-panel-controls-gap: 6px;
+  padding-right: 0.85rem;
+}
+
+.section-panel-title {
+  width: 100%;
+  text-align: center;
+}
+
+.section-panel-controls {
+  right: var(--section-panel-controls-right);
+  gap: var(--section-panel-controls-gap);
+}
+
+.section-panel-controls .btn {
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.section-panel-countdown {
+  min-width: 80px;
 }
 
 .header_like_status {
@@ -102,7 +126,10 @@
   width: 100%;
 }
 
-.mini-collapse-btn {
+.mini-collapse-btn,
+.mini-reset-btn,
+.section-panel-reset-button,
+.section-panel-toggle-button {
   min-width: 36px;
   width: 36px;
   height: 32px;
@@ -113,45 +140,35 @@
   justify-content: center;
 }
 
-.mini-reset-btn {
-  min-height: 32px;
-  white-space: nowrap;
+.mini-reset-btn,
+.section-panel-reset-button {
+  font-size: 1.1rem;
 }
 
-.activity_table thead td.header_like_color,
-.farming-parent-row td {
+.activity_table thead td.header_like_color {
   background: linear-gradient(90deg, var(--ds-panel-header-start), var(--ds-panel-header-end)) !important;
   border-top: 1px solid var(--ds-panel-header-border) !important;
   border-bottom: 1px solid var(--ds-panel-header-border) !important;
-  border-radius: 0 !important;
 }
 
-.farming-group-row td,
-.farming-subgroup-row td,
-.farming-timer-subgroup-row td,
-.farming-plain-subgroup-row td,
-.weekly-subgroup-row td,
-.gathering-group-row td,
-.gathering-subgroup-row td {
-  background: linear-gradient(90deg, var(--ds-row-group-start), var(--ds-row-group-end)) !important;
-  border-top: 1px solid var(--ds-panel-header-border) !important;
-  border-bottom: 1px solid var(--ds-panel-header-border) !important;
-  border-radius: 0 !important;
-}
-
-.farming-group-row .header_like_text,
 .activity_table thead .header_like_text {
   font-size: 1.08rem;
-}
-
-.farming-subheader-row .header_like_text,
-.weekly-subgroup-row .header_like_text,
-.gathering-subgroup-row .header_like_text {
-  font-size: 0.98rem;
 }
 
 .activity_table tbody .header_like_inner {
   min-height: 44px;
   padding-left: 1rem;
   padding-right: 2.2rem;
+}
+
+div.table_container .section-panel-controls .unhide_button {
+  display: none;
+}
+
+div.table_container[data-hide="hide"] .section-panel-controls .hide_button {
+  display: none;
+}
+
+div.table_container[data-hide="hide"] .section-panel-controls .unhide_button {
+  display: inline-flex;
 }
