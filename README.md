@@ -1,108 +1,153 @@
 ![Dailyscape Banner](assets/screenshots/banner.png)
 
-# 🌌 Dailyscape
+# 🌌 Dailyscape: The Definitive RuneScape Task Ecosystem
 
-**Dailyscape** is a premium, configuration-first task management ecosystem for RuneScape players. It is built on an atomic, single-owner architecture that prioritizes content authorship, visual excellence, and architectural purity.
-
----
-
-## 🏛️ The Dailyscape Philosophy
-
-Dailyscape is not just a checklist; it is a **Runtime Content Engine**. 
-
-Instead of hardcoded UI elements, the entire application is generated dynamically from a centralized content layer. This allows for rapid iteration across different games (RS3 & OSRS) and ensures that the UI always reflects the current game meta without touching core rendering logic.
-
-### Core Principles
-- **SSoT (Single Source of Truth)**: Every concept has one authoritative owner.
-- **Content-Driven**: Pages, sections, and tasks are authored as pure data.
-- **Atomic Rendering**: UI components are broken down into their smallest functional units.
-- **Game-Aware**: A unified shell that adapts its personality based on the selected game environment.
+**Dailyscape** is a premium, configuration-first task management ecosystem for RuneScape players. Engineered for architectural purity and visual excellence, it transforms the concept of a "tracker" into a dynamic, content-driven runtime engine.
 
 ---
 
-## 🛰️ System Topology
-
-![Topology Icon](assets/screenshots/topology.png)
-
-The project follows a strict anatomical topology, ensuring that logic, state, and UI are never entangled.
-
-### 📂 Directory Breakdown
-
-| Directory | Purpose | Ownership |
-| :--- | :--- | :--- |
-| `src/app/` | **The Brain** | Runtime orchestration, registries, and the boot lifecycle. |
-| `src/content/` | **The Heart** | Canonical authored tasks, section definitions, and page layouts. |
-| `src/core/` | **The Skeleton** | Shared infrastructure: storage migrations, game-aware resolution, and DOM helpers. |
-| `src/features/` | **The Muscle** | Domain-specific logic for Timers, Sections, and Profiles. |
-| `src/ui/` | **The Skin** | Design tokens, atomic components, and pure renderers. |
-| `tools/` | **The Audit** | Scripts to ensure the topology remains pristine and verified. |
-
----
-
-## 🔄 The Life of a Task: Start to Finish
-
-How does a simple JS object become a sleek, interactive tracker row?
-
-1.  **Authorship**: A task is defined in `src/content/rs3/tasks/`.
-2.  **Resolution**: The `Content Resolver` in `src/core/domain/content/` hydrates the task definition, applying game-specific filters.
-3.  **Registration**: The `Unified Registry` maps the task to a specific section and page.
-4.  **Orchestration**: The `Render Orchestrator` triggers the `Section Orchestrator` to iterate through the active page layout.
-5.  **Rendering**: The `Standard Renderer` or `Timer Renderer` transforms the task data into a DOM node using atomic row templates.
-6.  **Attachment**: Action handlers and state listeners are attached, connecting the UI to `localStorage` through the storage layer.
+## 📑 Table of Contents
+1.  [Project Overview](#-project-overview)
+2.  [Architectural Anatomy (The Topology)](#-architectural-anatomy-the-topology)
+3.  [The Core Engine Mechanics](#-the-core-engine-mechanics)
+4.  [Technical Implementation Detail](#-technical-implementation-detail)
+    *   [Data Schemas](#data-schemas)
+    *   [State & Persistence](#state--persistence)
+    *   [Reset Orchestration](#reset-orchestration)
+5.  [Feature Deep-Dive](#-feature-deep-dive)
+    *   [Precision Timers](#precision-timers)
+    *   [Section Engine](#section-engine)
+    *   [Custom Tasks](#custom-tasks)
+6.  [Verification & Quality Assurance](#-verification--quality-assurance)
+7.  [Developer Guide](#-developer-guide)
+8.  [Legal & Credits](#-legal--credits)
 
 ---
 
-## ✨ Core Features
+## 🏛️ Project Overview
+
+Dailyscape is built on the philosophy that **Content is Logic**. Unlike traditional trackers that hardcode UI elements, Dailyscape treats every task, section, and page as authored data. 
+
+### Core Concept: The Runtime Content Engine
+The application acts as a "shell" that hydrates itself from a centralized repository of game data. This decoupling of **Content (The What)** from **Runtime (The How)** and **UI (The Look)** allows for:
+- **Instant Scaling**: Adding a new game (like OSRS) is a matter of adding content files, not writing new UI logic.
+- **SSoT (Single Source of Truth)**: A task's definition lives in one place and is propagated across the entire system.
+- **Predictable Iteration**: AI agents and human developers can modify the tracker with zero risk of breaking the core orchestration.
+
+---
+
+## 🛰️ Architectural Anatomy (The Topology)
+
+![Architecture Layers](assets/screenshots/layers.png)
+
+Dailyscape follows a strict anatomical topology. Each layer is isolated and has a singular responsibility.
+
+### 📂 Detailed Directory Map
+
+| Layer | Path | Responsibility | Canonical Owner |
+| :--- | :--- | :--- | :--- |
+| **The Brain** | `src/app/` | Orchestration, Registries, and Lifecycle. | `render-orchestrator.js` |
+| **The Heart** | `src/content/` | Authored Tasks, Sections, and Page Layouts. | `src/content/rs3/tasks/` |
+| **The Skeleton** | `src/core/` | Infrastructure, Migrations, and Storage. | `migrations.js`, `storage.js` |
+| **The Muscle** | `src/features/` | Domain-specific logic and state rules. | `timer-math.js`, `logic.js` |
+| **The Skin** | `src/ui/` | Design Tokens, Atomic Components, and Styles. | `tokens.css`, `base.css` |
+| **The Audit** | `tools/` | Topological and content integrity verification. | `verify-topology.mjs` |
+
+---
+
+## 🔄 The Core Engine Mechanics
+
+![Data Flow](assets/screenshots/flow.png)
+
+The transformation from a configuration file to a rendered UI row follows a deterministic pipeline:
+
+1.  **Authorship**: A task (e.g., "Vis Wax") is authored as a JS object in `src/content/rs3/tasks/`.
+2.  **Hydration**: The `Content Resolver` (`src/core/domain/content/`) scans the authored directory, applying default values and resolving wiki links.
+3.  **Registration**: The `Unified Registry` (`src/app/registries/`) maps the task to its assigned section and page based on the active `pageMode`.
+4.  **Orchestration**: The `Render Orchestrator` (`src/app/runtime/`) detects a state change or initial boot and triggers the `Section Orchestrator`.
+5.  **Rendering**:
+    *   The `Tracker Section Renderer` selects the appropriate renderer variant (Standard, Timer, Weekly).
+    *   The `Section Engine` (`section-engine.js`) iterates through the block contract (subgroups or rows).
+    *   The `Standard Row Renderer` populates a template from `src/ui/components/tracker/rows/templates/`.
+6.  **Persistence**: The `Task State Manager` binds the row's checkbox to `localStorage`, ensuring the state is synced across reloads and profiles.
+
+---
+
+## 🛠️ Technical Implementation Detail
+
+### Data Schemas
+Content is validated against strict JSON-like schemas.
+- **Tasks**: `id`, `name`, `wiki`, `reset` (daily, weekly, monthly, etc.), and optional `note` or `location`.
+- **Sections**: `id`, `kind` (standard, timer, gathering), and a list of `tasks` or `subgroups`.
+- **Pages**: A sequence of `sections` that define the vertical layout of a workspace.
+
+### State & Persistence
+- **Storage Scoping**: Keys are generated using a `StorageKeyBuilder` to ensure consistency. Page-mode state is scoped by game (e.g., `pageMode:rs3`).
+- **Profile Isolation**: Each profile (Default, Ironman, etc.) has its own isolated storage prefix.
+- **Migration Path**: The `migrations.js` system handles schema versioning (currently v3), ensuring that legacy user data is safely transformed during updates.
+
+### Reset Orchestration
+The `Reset Orchestrator` (`src/features/sections/domain/logic/reset-orchestrator.js`) manages the temporal logic of the app:
+- **Daily Reset**: Triggers at 00:00 UTC.
+- **Weekly Reset**: Custom logic for Wednesday/Thursday crossovers (RS3 specific).
+- **Auto-Reset**: The system checks for "stale" tasks on every render and automatically clears them based on their `reset` cadence.
+
+---
+
+## ✨ Feature Deep-Dive
 
 ### ⏱️ Precision Timers
-Advanced growth and activity tracking with game-accurate math. Supports Speedy Growth modifiers and category-based grouping.
+The timer system uses a high-frequency render loop combined with cached math to provide real-time updates without taxing the CPU.
+- **Farming Math**: Calculations include "Speedy Growth" modifiers and specific growth stage intervals.
+- **Timer Groups**: Clustered by category (Fruit Trees, Herbs, etc.) for a clean UI.
 
-### 📑 Dynamic Sections
-Collapsible, sortable, and reset-aware sections. Subgroups support "attached" headers for a premium, unified table aesthetic.
+### 📑 Section Engine
+The `Section Engine` is the most complex UI component. It handles:
+- **Attached Headers**: Subgroup headers that "attach" to the table without spacing.
+- **Terminal Row Selection**: Automatically detects the last visible row in a section to apply bottom rounding, even if tasks are hidden or completed.
+- **Gap Management**: Driving consistent vertical spacing through `--ds-section-gap` tokens.
 
-### 👤 Profile Management
-Switch between different accounts or playstyles with zero-latency profile swapping, each with its own isolated task state and settings.
-
-### 🌓 Game-Aware Shell
-A single codebase powering both RS3 and OSRS experiences. The UI adapts its tokens and content based on the active game registry.
-
----
-
-## 🛠️ Technical Stack
-
-- **Engine**: [Vite](https://vitejs.dev/) (Lightning-fast HMR and optimized production builds)
-- **Logic**: Vanilla JavaScript (Modern ES6+, modular, and highly performant)
-- **Aesthetics**: Custom Vanilla CSS (Design tokens, glassmorphism, and responsive layouts)
-- **Verification**: [Playwright](https://playwright.dev/) & Node Test Runner (Full E2E and unit test coverage)
+### 👤 Custom Tasks
+Users can create their own persistence-aware tasks. These are stored in a special `custom` section and treated as first-class citizens in the rendering pipeline.
 
 ---
 
-## 🚀 Getting Started
+## 🛡️ Verification & Quality Assurance
 
-### Development
+We maintain a "Green Only" policy for the main branch. Every change is validated through:
+
+1.  **Topology Audit**: Ensures no files are misplaced and no legacy "dead code" remains.
+2.  **Import Audit**: Prevents circular dependencies and ensures strict layer separation.
+3.  **Content Validation**: Audits every single task and section definition for schema compliance.
+4.  **Timer Audit**: Verifies growth math and duration constants.
+5.  **E2E Smoke Tests**: Playwright scripts that verify RS3 and OSRS workspaces load and render correctly in a production-like environment.
+
 ```bash
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-### Verification & Audit
-We maintain a strict quality gate. Before every commit, we run a full audit.
-```bash
-# Run all tests, audits, and builds
+# Run the full quality gate
 npm run verify:full
 ```
 
-`verify:full` executes:
-- `npm test`: Runs the full unit test suite.
-- `npm run audit`: Verifies topology, imports, content schemas, and timer math.
-- `npm run build`: Validates the production bundle integrity.
-- `npm run test:e2e`: Executes Playwright smoke tests.
+---
+
+## 🛠️ Developer Guide
+
+### Setup
+```bash
+npm install
+npm run dev
+```
+
+### Figma-to-Code Workflow
+When implementing new designs:
+1.  Map visual values to `tokens.css`.
+2.  Update the row template in `src/ui/components/tracker/rows/templates/`.
+3.  Add logic to `src/ui/components/tracker/rows/row.actions.js`.
+4.  Verify rendering through the audit suite.
 
 ---
 
-## ⚖️ Legal
+## ⚖️ Legal & Credits
 
-RuneScape is a trademark of Jagex Ltd. **Dailyscape** is an independent community project and is not affiliated with, endorsed by, or associated with Jagex Ltd.
+- **RuneScape**: RuneScape and Old School RuneScape are trademarks of Jagex Ltd.
+- **Dailyscape**: An independent community project.
+- **Assets**: All game icons and assets are property of Jagex Ltd.
