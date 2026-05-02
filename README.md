@@ -41,8 +41,6 @@ The application acts as a "shell" that hydrates itself from a centralized reposi
 
 ## 🛰️ Architectural Anatomy (The Topology)
 
-![Architecture Layers](assets/img/layers.png)
-
 Dailyscape follows a strict anatomical topology. Each layer is isolated and has a singular responsibility.
 
 ### 📂 Detailed Directory Map
@@ -166,5 +164,5 @@ When implementing new designs:
 ## ⚖️ Legal & Credits
 
 * **RuneScape**: RuneScape and Old School RuneScape are trademarks of Jagex Ltd.
-* **Dailyscape**: An independent community project.
-* **Assets**: All game icons and assets are property of Jagex Ltd.
+* **Dailyscape**: An independent community project. Original source is cloned and altered from the original Dailyscape. Many thanks to them and their beginning work.
+* **Assets**: All game icons and assets are property of Jagex Ltd. Other icons and assets were generated from AI tools or are property of myself (and/or original Dailyscape).
