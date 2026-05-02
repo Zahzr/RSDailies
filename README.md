@@ -32,6 +32,7 @@ Dailyscape is built on the philosophy that **Content is Logic**. Unlike traditio
 ### Core Concept: The Runtime Content Engine
 
 The application acts as a "shell" that hydrates itself from a centralized repository of game data. This decoupling of **Content (The What)** from **Runtime (The How)** and **UI (The Look)** allows for:
+
 * **Instant Scaling**: Adding a new game (like OSRS) is a matter of adding content files, not writing new UI logic.
 * **SSoT (Single Source of Truth)**: A task's definition lives in one place and is propagated across the entire system.
 * **Predictable Iteration**: AI agents and human developers can modify the tracker with zero risk of breaking the core orchestration.
@@ -80,19 +81,22 @@ The transformation from a configuration file to a rendered UI row follows a dete
 ### Data Schemas
 
 Content is validated against strict JSON-like schemas.
+
 * **Tasks**: `id`, `name`, `wiki`, `reset` (daily, weekly, monthly, etc.), and optional `note` or `location`.
 * **Sections**: `id`, `kind` (standard, timer, gathering), and a list of `tasks` or `subgroups`.
 * **Pages**: A sequence of `sections` that define the vertical layout of a workspace.
 
 ### State & Persistence
 
-- **Storage Scoping**: Keys are generated using a `StorageKeyBuilder` to ensure consistency. Page-mode state is scoped by game (e.g., `pageMode:rs3`).
+* **Storage Scoping**: Keys are generated using a `StorageKeyBuilder` to ensure consistency. Page-mode state is scoped by game (e.g., `pageMode:rs3`).
+
 * **Profile Isolation**: Each profile (Default, Ironman, etc.) has its own isolated storage prefix.
 * **Migration Path**: The `migrations.js` system handles schema versioning (currently v3), ensuring that legacy user data is safely transformed during updates.
 
 ### Reset Orchestration
 
 The `Reset Orchestrator` (`src/features/sections/domain/logic/reset-orchestrator.js`) manages the temporal logic of the app:
+
 * **Daily Reset**: Triggers at 00:00 UTC.
 * **Weekly Reset**: Custom logic for Wednesday/Thursday crossovers (RS3 specific).
 * **Auto-Reset**: The system checks for "stale" tasks on every render and automatically clears them based on their `reset` cadence.
@@ -104,12 +108,14 @@ The `Reset Orchestrator` (`src/features/sections/domain/logic/reset-orchestrator
 ### ⏱️ Precision Timers
 
 The timer system uses a high-frequency render loop combined with cached math to provide real-time updates without taxing the CPU.
+
 * **Farming Math**: Calculations include "Speedy Growth" modifiers and specific growth stage intervals.
 * **Timer Groups**: Clustered by category (Fruit Trees, Herbs, etc.) for a clean UI.
 
 ### 📑 Section Engine
 
 The `Section Engine` is the most complex UI component. It handles:
+
 * **Attached Headers**: Subgroup headers that "attach" to the table without spacing.
 * **Terminal Row Selection**: Automatically detects the last visible row in a section to apply bottom rounding, even if tasks are hidden or completed.
 * **Gap Management**: Driving consistent vertical spacing through `--ds-section-gap` tokens.
